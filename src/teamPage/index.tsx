@@ -27,9 +27,16 @@ import { createTeamUiController } from './teamUiController'
 import { emptyCard, getChatRecentSummary as getStoreChatRecentSummary, messageTitle, roleAvatarLabel, roleToneClass } from './viewHelpers'
 import { agentControlStatusState, agentControlStatusText } from './agentControlStatusView'
 import { createIndexedDbImageAttachmentRepository } from '../shared/imageAttachmentRepository'
+import './ui/styles/globals.css'
+import { bindAppState, notifyAppState } from './ui/lib/appStore'
+import { createUiBus } from './ui/lib/uiBus'
+import { mountTeamPageApp } from './ui/mount'
+import type { TeamPageServices } from './ui/context/ServicesContext'
 
 const appState = createTeamPageState()
 const imageAttachmentRepository = createIndexedDbImageAttachmentRepository()
+bindAppState(appState)
+const uiBus = createUiBus()
 
 let store: OpenTeamStore = appState.store
 
@@ -456,6 +463,17 @@ const teamUiController = createTeamUiController({
 })
 const registerUi = teamUiController.registerUi
 
+// React 侧挂载（P0 仅 Toaster 空壳；P1 起此调用需移到 createTeamPageDomRefs 之前，渲染 LegacySlot 骨架）。
+const teamPageServices: TeamPageServices = {
+  runCommand,
+  sendRuntimeMessage,
+  iframeHost,
+  imageAttachmentRepository,
+  uiBus,
+  log,
+}
+mountTeamPageApp(teamPageServices)
+
 async function resolveHostTabId(): Promise<void> {
   const tab = await chrome.tabs.getCurrent()
   appState.hostTabId = tab?.id
@@ -487,6 +505,7 @@ function applyStore(nextStore: OpenTeamStore): void {
   syncIframeHost()
   render()
   notifyRoleReadyWaiters()
+  notifyAppState()
 }
 
 function getCurrentChat(): GroupChat | undefined {
@@ -588,6 +607,7 @@ function registerRuntimePush(): void {
       appState.controlStatus = message.controlStatus
       renderAgentControlSettings()
       languageSettingsController.render()
+      notifyAppState()
       return false
     }
     if (orchestrationModalView.handleRuntimeMessage(message)) return false

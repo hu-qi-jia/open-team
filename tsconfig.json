@@ -7,8 +7,13 @@
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "types": ["chrome", "node"],
+    "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "isolatedModules": true,
     "noEmit": true,
     "strict": true,

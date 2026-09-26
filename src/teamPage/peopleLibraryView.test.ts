@@ -195,7 +195,7 @@ function setupPeopleLibraryView(options: { store: OpenTeamStore; templates: Role
 
 describe('team page people library view boundary', () => {
   it('keeps people library rendering, add-person dialogs, and template edits outside the entrypoint', () => {
-    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.ts'), 'utf8')
+    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
     const viewSource = readFileSync(resolve(process.cwd(), 'src/teamPage/peopleLibraryView.ts'), 'utf8')
 
     expect(viewSource).toContain('function renderTemplates(): void')

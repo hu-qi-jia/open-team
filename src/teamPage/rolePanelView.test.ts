@@ -10,7 +10,7 @@ import { createRolePanelView } from './rolePanelView'
 
 describe('team page role panel view boundary', () => {
   it('keeps role panel rendering and role site switching outside the entrypoint', () => {
-    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.ts'), 'utf8')
+    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
     const viewSource = readFileSync(resolve(process.cwd(), 'src/teamPage/rolePanelView.ts'), 'utf8')
 
     expect(viewSource).toContain('function renderRolePanel(): void')

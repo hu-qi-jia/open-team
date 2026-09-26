@@ -10,7 +10,7 @@ import { createComposerView, type ComposerViewDependencies } from './composerVie
 
 describe('team page composer view boundary', () => {
   it('keeps composer rendering, references, mentions, and send flow outside the entrypoint', () => {
-    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.ts'), 'utf8')
+    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
     const viewSource = readFileSync(resolve(process.cwd(), 'src/teamPage/composerView.ts'), 'utf8')
 
     expect(viewSource).toContain('function renderComposerState(): void')

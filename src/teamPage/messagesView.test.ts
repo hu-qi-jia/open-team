@@ -23,7 +23,7 @@ function settleMarkMenuTimer(): void {
 
 describe('team page messages view boundary', () => {
   it('keeps message rendering and message actions outside the team page entrypoint', () => {
-    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.ts'), 'utf8')
+    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
     const viewSource = readFileSync(resolve(process.cwd(), 'src/teamPage/messagesView.ts'), 'utf8')
 
     expect(viewSource).toContain('function renderMessages(): void')
@@ -39,7 +39,7 @@ describe('team page messages view boundary', () => {
   })
 
   it('keeps the image download action pinned inside the image tile', () => {
-    const css = readFileSync(resolve(process.cwd(), 'public/team.css'), 'utf8')
+    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
     const selectorIndex = css.indexOf('.message-image-download.message-tool-btn')
     expect(selectorIndex).toBeGreaterThan(-1)
 

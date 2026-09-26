@@ -7,7 +7,7 @@ import { createFloatingWindowControls } from './floatingWindow'
 
 describe('team page floating window boundary', () => {
   it('keeps drag and minimize controls outside the entrypoint', () => {
-    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.ts'), 'utf8')
+    const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
     const viewSource = readFileSync(resolve(process.cwd(), 'src/teamPage/floatingWindow.ts'), 'utf8')
 
     expect(viewSource).toContain('function ensureShellPositioned(): DOMRect')

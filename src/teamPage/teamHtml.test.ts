@@ -7,7 +7,7 @@ function readTeamHtml(): string {
 }
 
 function readTeamCss(): string {
-  return readFileSync(resolve(process.cwd(), 'public/team.css'), 'utf8')
+  return readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
 }
 
 function readTeamDocument(): string {
@@ -577,7 +577,7 @@ describe('team.html chat creation UI', () => {
 
   it('does not render person settings inside the people drawer', () => {
     const html = readTeamDocument()
-    const source = readFileSync(resolve(process.cwd(), 'src/teamPage/index.ts'), 'utf8')
+    const source = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
 
     expect(html).not.toContain('id="role-editor"')
     expect(html).not.toContain('人员设置')

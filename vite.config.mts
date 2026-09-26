@@ -1,5 +1,7 @@
 /// <reference types="vitest" />
 import { configDefaults, defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 import { build as buildWithEsbuild } from 'esbuild'
 import { join, resolve } from 'path'
 import { copyFileSync, mkdirSync, readFileSync, readdirSync } from 'fs'
@@ -57,6 +59,8 @@ export default defineConfig(({ mode }) => ({
     __OPENTEAM_DEV__: JSON.stringify(mode === 'development'),
   },
   plugins: [
+    react(),
+    tailwindcss(),
     {
       name: 'safe-lodash-global-root',
       transform(source, id) {
@@ -91,6 +95,11 @@ export default defineConfig(({ mode }) => ({
       }
     }
   ],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
@@ -98,14 +107,21 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       input: {
         background: resolve(__dirname, 'src/background/index.ts'),
-        team: resolve(__dirname, 'src/teamPage/index.ts')
+        team: resolve(__dirname, 'src/teamPage/index.tsx')
       },
       output: {
-        entryFileNames: '[name].js'
+        entryFileNames: '[name].js',
+        // public/team.html 以固定文件名引用样式表（静态 HTML，Vite 不会注入 link），
+        // 因此 CSS 产物必须固定为 team.css，其余资源保持默认 hash 命名。
+        assetFileNames(assetInfo) {
+          const name = assetInfo.names?.[0] ?? assetInfo.name ?? ''
+          return name.endsWith('.css') ? 'team.css' : 'assets/[name]-[hash][extname]'
+        }
       }
     }
   },
   test: {
     exclude: [...configDefaults.exclude, '**/.worktrees/**'],
+    setupFiles: ['./src/teamPage/ui/test/setup.ts'],
   }
 }))

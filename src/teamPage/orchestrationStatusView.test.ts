@@ -445,7 +445,7 @@ describe('orchestration status view', () => {
   })
 
   it('keeps the collapsed launcher aligned above the composer right edge', () => {
-    const source = readFileSync(resolve(process.cwd(), 'public/team.css'), 'utf8')
+    const source = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
 
     expect(source).toMatch(/\.orchestration-status-collapsed\s*{[^}]*right:\s*22px;/s)
     expect(source).toMatch(/\.orchestration-status-collapsed\s*{[^}]*bottom:\s*206px;/s)

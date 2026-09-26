@@ -9,7 +9,7 @@ import {
   createEsbuildScriptHardeningOptions,
   createViteBuildHardeningOptions,
   hasTopLevelStaticImport,
-} from '../vite.config'
+} from '../vite.config.mts'
 
 describe('extension security configuration', () => {
   it('pins the unpacked extension id with a stable manifest key', () => {
