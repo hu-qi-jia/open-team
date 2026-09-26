@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { createIframeHost } from '../../iframeHost'
 import type { TeamPageRuntimeClient } from '../../runtimeClient'
+import type { GroupMessage, GroupRole } from '../../../group/types'
 import type { ImageAttachmentRepository } from '../../../shared/imageAttachmentRepository'
 import type { OpenTeamLogger } from '../../../shared/logger'
 import type { UiBus } from '../lib/uiBus'
@@ -30,6 +31,29 @@ export interface TeamPageServices {
   chatOperations: {
     clearMessages(chatId: string): Promise<void>
     deleteChat(chatId: string): Promise<void>
+  }
+  /**
+   * 消息动作组（P2b）：消息流组件的事件期出口。全部方法只允许在事件
+   * 处理器 / effect 中调用（index.tsx 以闭包延迟解引用 vanilla 能力，
+   * 渲染期调用会在装配完成前踩到占位实现）。
+   */
+  messageActions: {
+    /** @ 插入输入框（composerView.insertMention） */
+    insertMention(role: GroupRole): void
+    /** 设置引用回复（composerView.setReference） */
+    setReference(message: GroupMessage): void
+    /** 划词插入当前笔记（notesView.insertTextIntoActiveNote） */
+    insertTextIntoActiveNote(text: string): void
+    /** 重新同步完整回复（roleRecoveryController.resyncMessageReply） */
+    resyncMessageReply(message: GroupMessage): Promise<void>
+    /** 重发 / 重新回复（roleRecoveryController.retryRoleReply） */
+    retryRoleReply(role: GroupRole, messageId?: string): Promise<void>
+    /** 停止回复（roleRecoveryController.stopRoleReply） */
+    stopRoleReply(role: GroupRole): Promise<void>
+    /** 跳转到角色原始 iframe（roleRecoveryController.focusRoleFrame） */
+    focusRoleFrame(chatId: string, roleId: string | undefined): void
+    /** 编排状态浮层（orchestrationStatusView 工厂，P4 收编前保留） */
+    renderOrchestrationStatus(): HTMLElement | undefined
   }
 }
 

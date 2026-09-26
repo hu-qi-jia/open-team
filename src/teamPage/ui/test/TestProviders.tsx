@@ -31,6 +31,16 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
       clearMessages: vi.fn(async () => undefined),
       deleteChat: vi.fn(async () => undefined),
     },
+    messageActions: {
+      insertMention: vi.fn(),
+      setReference: vi.fn(),
+      insertTextIntoActiveNote: vi.fn(),
+      resyncMessageReply: vi.fn(async () => undefined),
+      retryRoleReply: vi.fn(async () => undefined),
+      stopRoleReply: vi.fn(async () => undefined),
+      focusRoleFrame: vi.fn(),
+      renderOrchestrationStatus: vi.fn((): HTMLElement | undefined => undefined),
+    },
     ...overrides,
   }
 }

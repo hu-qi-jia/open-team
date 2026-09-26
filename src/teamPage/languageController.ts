@@ -13,7 +13,11 @@ export interface LanguageSettingsController {
   render(): void
 }
 
-const TEXT_SOURCES = new WeakMap<Text, string>()
+// 每个 Text 节点记录「翻译源文本」与「我们上次写出的结果」：
+// output 用于识别节点在两次翻译之间是否被外部改写（React 重渲会
+// 复用 Text 节点写入新内容）——此时必须以新文本为新翻译源，否则
+// 会把首过缓存的旧文本回写、覆盖外部更新。
+const TEXT_SOURCES = new WeakMap<Text, { source: string; output: string }>()
 const ATTRIBUTE_SOURCES = new WeakMap<Element, Map<string, string>>()
 const TRANSLATED_ATTRIBUTES = ['aria-label', 'title', 'placeholder', 'data-tooltip']
 const SKIP_SELECTOR = [
@@ -96,9 +100,17 @@ function translateTextNodes(root: ParentNode, language: TeamLanguage, doc: Docum
   }
 
   for (const node of nodes) {
-    const source = TEXT_SOURCES.get(node) ?? node.textContent ?? ''
-    if (!TEXT_SOURCES.has(node)) TEXT_SOURCES.set(node, source)
-    node.textContent = translateTextNode(source, language)
+    const current = node.textContent ?? ''
+    const record = TEXT_SOURCES.get(node)
+    if (!record || record.output !== current) {
+      // 首次遇到，或节点已被外部改写：以当前文本为新翻译源
+      TEXT_SOURCES.set(node, { source: current, output: current })
+    }
+    const next = TEXT_SOURCES.get(node)
+    if (!next) continue
+    const output = translateTextNode(next.source, language)
+    next.output = output
+    node.textContent = output
   }
 }
 

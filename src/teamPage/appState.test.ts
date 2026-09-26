@@ -52,7 +52,6 @@ describe('team page app state', () => {
 
   it('keeps mutable page state declarations out of the team page entrypoint', () => {
     const source = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
-    const messagesSource = readFileSync(resolve(process.cwd(), 'src/teamPage/messagesView.ts'), 'utf8')
     const localStateDeclarations = [
       'let selectedChatId',
       'let selectedRoleId',
@@ -77,6 +76,5 @@ describe('team page app state', () => {
       expect(source).not.toContain(declaration)
     }
     expect(source).toContain('appState.selectedChatId')
-    expect(messagesSource).toContain('deps.state.messageNodeCache')
   })
 })

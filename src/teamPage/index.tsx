@@ -11,7 +11,6 @@ import { createTeamPageDomRefs } from './domRefs'
 import { createExternalModelsView } from './externalModelsView'
 import { createFloatingWindowControls } from './floatingWindow'
 import { createIframeHost } from './iframeHost'
-import { createMessagesView } from './messagesView'
 import { createNotesView } from './notesView'
 import { createPeopleLibraryView } from './peopleLibraryView'
 import { createOrchestrationModalView } from './orchestrationModalView'
@@ -23,7 +22,7 @@ import { createTeamPagePrimaryCoordinator } from './teamPagePrimary'
 import { createErrorPresenter, createSuccessPresenter, teamPageLog } from './teamPageServices'
 import { createThemeController } from './themeController'
 import { createTeamUiController } from './teamUiController'
-import { emptyCard, messageTitle, roleAvatarLabel, roleToneClass } from './viewHelpers'
+import { emptyCard, roleAvatarLabel, roleToneClass } from './viewHelpers'
 import { createIndexedDbImageAttachmentRepository } from '../shared/imageAttachmentRepository'
 import './ui/styles/globals.css'
 import { bindAppState, notifyAppState } from './ui/lib/appStore'
@@ -73,11 +72,21 @@ const teamPageServices: TeamPageServices = {
     clearMessages: chatId => chatListActions.clearChatMessages(chatId),
     deleteChat: chatId => chatListActions.deleteChat(chatId),
   },
+  messageActions: {
+    insertMention: role => insertMention(role),
+    setReference: message => setReference(message),
+    insertTextIntoActiveNote: text => insertTextIntoActiveNote(text),
+    resyncMessageReply: message => resyncMessageReply(message),
+    retryRoleReply: (role, messageId) => retryRoleReply(role, messageId),
+    stopRoleReply: role => stopRoleReply(role),
+    focusRoleFrame: (chatId, roleId) => focusRoleFrame(chatId, roleId),
+    renderOrchestrationStatus: () => renderOrchestrationStatusSlot(),
+  },
 }
 mountTeamPageApp(teamPageServices)
 
 const teamDomRefs = createTeamPageDomRefs()
-const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl, messagesEl } = teamDomRefs
+const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl } = teamDomRefs
 const { roleSummaryEl, roleListEl, roleTemplateSelectEl, templateListEl, targetPreviewEl, busyPreviewEl, composerFormEl, sendButtonEl } = teamDomRefs
 const { messageInputEl, referenceDraftEl, mentionPanelEl, errorEl } = teamDomRefs
 const { templateNameEl, templateDescriptionEl, templatePromptEl, templateAiDescriptionEl, generateTemplatePersonaEl, templatePersonaGenerationStatusEl, templateFormTitleEl, themeLightEl, themeDarkEl } = teamDomRefs
@@ -128,6 +137,10 @@ async function testExternalModel(modelId: string): Promise<void> {
 let renderComposerState = (): void => {}
 let insertMention = (_role: GroupRole): void => {}
 let insertTextIntoActiveNote = (_text: string): void => {}
+// 编排状态浮层工厂：依赖 post-mount 创建的 roleRecoveryController，只能
+// 闭包延迟；OrchestrationStatusSlot 的 mount effect 早于模块尾执行
+// （flushSync 会同步冲刷 effect），因此必须先给占位实现（同上三个 let）
+let renderOrchestrationStatusSlot = (): HTMLElement | undefined => undefined
 const floatingWindowControls = createFloatingWindowControls({
   appShellEl,
   closeWindowEl,
@@ -399,39 +412,12 @@ const orchestrationStatusView = createOrchestrationStatusView({
   runCommand,
   showError,
 })
+renderOrchestrationStatusSlot = () => orchestrationStatusView.renderOrchestrationStatus()
 const renderTemplates = peopleLibraryView.renderTemplates
 const renderAddPersonDialog = peopleLibraryView.renderAddPersonDialog
 const openAddPersonDialog = peopleLibraryView.openAddPersonDialog
 const closePeopleModals = peopleLibraryView.closePeopleModals
 const registerPeopleLibraryEvents = peopleLibraryView.registerPeopleLibraryEvents
-const messagesView = createMessagesView({
-  state: appState,
-  getStore: () => store,
-  messagesEl,
-  getCurrentChat,
-  getCurrentRoles,
-  getCurrentMessages,
-  emptyCard,
-  openAddPersonDialog,
-  roleToneClass,
-  roleAvatarLabel,
-  messageTitle,
-  focusRoleFrame,
-  insertMention,
-  setReference,
-  insertTextIntoActiveNote,
-  resyncMessageReply,
-  retryRoleReply,
-  stopRoleReply,
-  loadImageAttachment: id => imageAttachmentRepository.get(id),
-  runCommand,
-  render,
-  showError,
-  showSuccess,
-  renderOrchestrationStatus: orchestrationStatusView.renderOrchestrationStatus,
-  log,
-})
-const renderMessages = messagesView.renderMessages
 const teamUiController = createTeamUiController({
   state: appState,
   closeCreateChatPopover: () => uiBus.emit('close-create-chat-popover'),
@@ -460,6 +446,8 @@ const registerUi = teamUiController.registerUi
 // （弹窗本体仍由 teamUiController 驱动，P4 React 化时整体迁移）；
 // 模板确认后的收表单动作经 deps.closeCreateChatPopover 反向回到 React。
 uiBus.on('open-group-template-create', () => teamUiController.openGroupTemplate())
+// React 消息流空态的「添加人员」→ vanilla 人员库弹窗（P4 React 化前）
+uiBus.on('open-add-person', () => openAddPersonDialog())
 
 async function resolveHostTabId(): Promise<void> {
   const tab = await chrome.tabs.getCurrent()
@@ -560,7 +548,6 @@ function render(): void {
 }
 
 function renderSelectedChat(): void {
-  renderMessages()
   renderComposerState()
   renderRolePanel()
   renderNotes()
