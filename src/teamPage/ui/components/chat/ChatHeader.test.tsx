@@ -93,14 +93,46 @@ describe('ChatHeader', () => {
     expect(document.querySelector<HTMLButtonElement>('#open-orchestration')?.hidden).toBe(true)
   })
 
-  it('keeps the vanilla-bound static controls mounted (theme switch, notes toggle, restore)', () => {
+  it('keeps the vanilla-bound static controls mounted (theme switch, restore)', () => {
     renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
 
     expect(document.querySelector('#theme-switch')).toBeTruthy()
     expect(document.querySelector('#theme-light')).toBeTruthy()
     expect(document.querySelector('#theme-dark')).toBeTruthy()
-    expect(document.querySelector('#toggle-notes-panel')).toBeTruthy()
     expect(document.querySelector('#restore-chat')).toBeTruthy()
+  })
+
+  it('toggles the notes panel through appState and tracks it in aria-expanded', async () => {
+    const user = userEvent.setup()
+    const { state } = renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+
+    const notesToggle = document.querySelector<HTMLButtonElement>('#toggle-notes-panel')!
+    expect(notesToggle.getAttribute('aria-expanded')).toBe('false')
+    expect(notesToggle.getAttribute('aria-controls')).toBe('notes-panel')
+
+    await user.click(notesToggle)
+
+    expect(state.notesPanelOpen).toBe(true)
+    expect(state.activeNoteScope).toBe('chat')
+    await waitFor(() => expect(notesToggle.getAttribute('aria-expanded')).toBe('true'))
+
+    await user.click(notesToggle)
+
+    expect(state.notesPanelOpen).toBe(false)
+    await waitFor(() => expect(notesToggle.getAttribute('aria-expanded')).toBe('false'))
+  })
+
+  it('does not reset the note scope when opening with no chat selected', async () => {
+    const user = userEvent.setup()
+    const state = createTeamPageState()
+    state.activeNoteScope = 'global'
+
+    renderWithServices(<ChatHeader />, { state })
+
+    await user.click(document.querySelector<HTMLButtonElement>('#toggle-notes-panel')!)
+
+    expect(state.notesPanelOpen).toBe(true)
+    expect(state.activeNoteScope).toBe('global')
   })
 })
 

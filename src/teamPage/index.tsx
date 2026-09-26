@@ -3,25 +3,22 @@ import type { GeneratedPersonDraft } from '../group/personaGeneration'
 import { createDefaultStore } from '../group/store'
 import { getAllRoleTemplates } from '../group/roleTemplates'
 import { createTeamPageState, pickSelectedChatId } from './appState'
-import { createAllNotesView } from './allNotesView'
 import { createChatListActions } from './chatListActions'
 import { createChatSwitcher } from './chatSwitcher'
 import { createTeamPageDomRefs } from './domRefs'
 import { createExternalModelsView } from './externalModelsView'
 import { createFloatingWindowControls } from './floatingWindow'
 import { createIframeHost } from './iframeHost'
-import { createNotesView } from './notesView'
 import { createPeopleLibraryView } from './peopleLibraryView'
 import { createOrchestrationModalView } from './orchestrationModalView'
 import { createOrchestrationStatusView } from './orchestrationStatusView'
 import { createRoleRecoveryController } from './roleRecoveryController'
-import { createRolePanelView } from './rolePanelView'
 import { createTeamPageRuntimeClient, type StorePushMessage } from './runtimeClient'
 import { createTeamPagePrimaryCoordinator } from './teamPagePrimary'
 import { createErrorPresenter, createSuccessPresenter, teamPageLog } from './teamPageServices'
 import { createThemeController } from './themeController'
 import { createTeamUiController } from './teamUiController'
-import { emptyCard, roleAvatarLabel, roleToneClass } from './viewHelpers'
+import { emptyCard } from './viewHelpers'
 import { createIndexedDbImageAttachmentRepository } from '../shared/imageAttachmentRepository'
 import './ui/styles/globals.css'
 import { bindAppState, notifyAppState } from './ui/lib/appStore'
@@ -55,8 +52,8 @@ const runCommand = runtimeClient.runCommand
 
 // React 先同步挂载出全部骨架 DOM（未迁移区域由 LegacySlot 原样承接），
 // 之后的 createTeamPageDomRefs() 才能查询到全部 id。
-// switchChat / chatOperations 依赖 domRefs 之后才创建的 vanilla 模块
-// （showError / rolePanelView / iframeHost），这里用闭包把解引用推迟到
+// chatOperations 依赖 domRefs 之后才创建的 vanilla 模块
+// （showError / iframeHost），这里用闭包把解引用推迟到
 // 调用时（事件期）——不要改回 getter（P1 白屏教训：渲染期解构 getter 字段
 // 会 TDZ 崩掉首帧），也不要改成渲染期直接解构。
 const teamPageServices: TeamPageServices = {
@@ -78,6 +75,11 @@ const teamPageServices: TeamPageServices = {
       setReference = api.setReference
     },
   },
+  notesBridge: {
+    register: api => {
+      insertTextIntoActiveNote = api.insertTextIntoActiveNote
+    },
+  },
   messageActions: {
     insertMention: role => insertMention(role),
     setReference: message => setReference(message),
@@ -89,10 +91,11 @@ const teamPageServices: TeamPageServices = {
     renderOrchestrationStatus: () => renderOrchestrationStatusSlot(),
   },
 }
-// Composer（P2c 起 React 化）挂载后经 services.composerBridge 回填实现；
-// rolePanelView / messageActions 在事件期调用这些闭包。声明必须在
-// mountTeamPageApp 之前：flushSync 会同步冲刷 passive effect，Composer 的
-// mount effect 在模块求值期间就会调用 composerBridge.register 回填
+// Composer / NotesPanel（P2c、P3 起 React 化）挂载后分别经
+// services.composerBridge / notesBridge 回填实现；messageActions 在事件期
+// 调用这些闭包。声明必须在 mountTeamPageApp 之前：flushSync 会同步冲刷
+// passive effect，两个组件的 mount effect 在模块求值期间就会调用
+// register 回填
 let insertMention = (_role: GroupRole): void => {}
 let setReference = (_message: GroupMessage): void => {}
 let insertTextIntoActiveNote = (_text: string): void => {}
@@ -101,14 +104,10 @@ mountTeamPageApp(teamPageServices)
 
 const teamDomRefs = createTeamPageDomRefs()
 const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl } = teamDomRefs
-const { roleSummaryEl, roleListEl, roleTemplateSelectEl, templateListEl } = teamDomRefs
+const { roleTemplateSelectEl, templateListEl } = teamDomRefs
 const { errorEl } = teamDomRefs
 const { templateNameEl, templateDescriptionEl, templatePromptEl, templateAiDescriptionEl, generateTemplatePersonaEl, templatePersonaGenerationStatusEl, templateFormTitleEl, themeLightEl, themeDarkEl } = teamDomRefs
-const { openAllNotesEl, closeAllNotesEl, allNotesModalEl, allNotesListEl, allNotesActiveTitleEl, allNotesActiveMetaEl, allNotesEditorEl } = teamDomRefs
-const { allNoteBoldEl, allNoteItalicEl, allNoteStrikeEl, allNoteBulletListEl, allNoteOrderedListEl, allNoteUndoEl, allNoteRedoEl } = teamDomRefs
 const { openPeopleLibraryEl, openExternalModelsEl, openOrchestrationEl, closeOrchestrationEl, orchestrationModalEl, orchestrationAutoModalEl, orchestrationTaskEl, autoOrchestrationEl, openOrchestrationTemplateEl, orchestrationTemplateModalEl, closeOrchestrationTemplateEl, orchestrationTemplateContentEl, closeAutoOrchestrationEl, orchestrationAutoContentEl, orchestrationPeopleListEl, arrangeOrchestrationEl, orchestrationCanvasEl, orchestrationHintEl, orchestrationStageSettingsEl, orchestrationReviewSettingsEl, orchestrationMaxRoundsEl, saveOrchestrationEl, runOrchestrationEl, closeExternalModelsEl, externalModelsModalEl, externalModelsListEl, externalModelFormEl, externalModelIdEl, externalModelNameEl, externalModelFormatEl, externalModelBaseUrlEl, externalModelApiKeyEl, externalModelModelNameEl, resetExternalModelFormEl, closePeopleLibraryEl, peopleLibraryModalEl, personTemplateModalEl, addPersonModalEl, temporaryPersonModalEl } = teamDomRefs
-const { notesPanelEl, notesDragHandleEl, notesResizeHandleEl, toggleNotesPanelEl, closeNotesPanelEl, globalNoteTabEl, chatNoteTabEl, notesEditorEl } = teamDomRefs
-const { noteBoldEl, noteItalicEl, noteStrikeEl, noteBulletListEl, noteOrderedListEl, noteUndoEl, noteRedoEl } = teamDomRefs
 const { peopleLibrarySummaryEl, peopleLibraryListEl, peopleLibraryPaginationEl, peopleLibrarySearchEl, peopleLibraryCategoryFilterEl, peopleLibraryBuiltinTabEl, peopleLibraryCustomTabEl, addLibraryPeopleListEl, addPersonSearchEl, addPersonCategoryFilterEl, addPersonBuiltinTabEl, addPersonCustomTabEl } = teamDomRefs
 const { builtinTemplateDetailModalEl, builtinTemplateDetailTitleEl, builtinTemplateDetailMetaEl, builtinTemplateDetailPromptEl, closeBuiltinTemplateDetailEl, newTemplateEl, closePersonTemplateEl, closeAddPersonEl } = teamDomRefs
 const { openTemporaryPersonEl, closeTemporaryPersonEl, addRoleFormEl, addLibraryPeopleFormEl, addTemporaryPersonFormEl, peopleLibraryFormEl } = teamDomRefs
@@ -162,53 +161,10 @@ const floatingWindowControls = createFloatingWindowControls({
 })
 const setWindowMinimized = floatingWindowControls.setWindowMinimized
 const registerFloatingWindowControls = floatingWindowControls.registerFloatingWindowControls
-const allNotesView = createAllNotesView({
-  openAllNotesEl,
-  closeAllNotesEl,
-  allNotesModalEl,
-  allNotesListEl,
-  allNotesActiveTitleEl,
-  allNotesActiveMetaEl,
-  allNotesEditorEl,
-  noteToolbarButtons: {
-    bold: allNoteBoldEl,
-    italic: allNoteItalicEl,
-    strike: allNoteStrikeEl,
-    bulletList: allNoteBulletListEl,
-    orderedList: allNoteOrderedListEl,
-    undo: allNoteUndoEl,
-    redo: allNoteRedoEl,
-  },
-  getStore: () => store,
-  getCurrentChat,
-  runCommand,
-  showError,
-})
-const renderAllNotes = allNotesView.renderAllNotes
-const registerAllNotesEvents = allNotesView.registerAllNotesEvents
-const rolePanelView = createRolePanelView({
-  state: appState,
-  getStore: () => store,
-  rolePanelEl,
-  roleSummaryEl,
-  roleListEl,
-  iframeHost,
-  getCurrentChat,
-  getCurrentRoles,
-  emptyCard,
-  roleToneClass,
-  roleAvatarLabel,
-  insertMention: role => insertMention(role),
-  refreshCurrentChat: () => roleRecoveryController.refreshCurrentChat(),
-  focusRoleFrame: (chatId, roleId) => roleRecoveryController.focusRoleFrame(chatId, roleId),
-  runCommand,
-  showError,
-})
-const renderRolePanel = rolePanelView.renderRolePanel
+// 成员抽屉 / 笔记面板 / 全部笔记弹窗（P3 起 React 化）：外部翻转 appState
+// 或 uiBus 命令后经 notifyAppState / uiBus 通知，组件自行重渲
 const chatSwitcher = createChatSwitcher({
   state: appState,
-  renderSelectedChat,
-  renderRolePanel,
   runCommand,
   showError,
 })
@@ -243,33 +199,6 @@ const focusRoleFrame = roleRecoveryController.focusRoleFrame
 const resyncMessageReply = roleRecoveryController.resyncMessageReply
 const retryRoleReply = roleRecoveryController.retryRoleReply
 const stopRoleReply = roleRecoveryController.stopRoleReply
-const notesView = createNotesView({
-  state: appState,
-  notesPanelEl,
-  notesDragHandleEl,
-  notesResizeHandleEl,
-  toggleNotesPanelEl,
-  closeNotesPanelEl,
-  globalNoteTabEl,
-  chatNoteTabEl,
-  notesEditorEl,
-  noteToolbarButtons: {
-    bold: noteBoldEl,
-    italic: noteItalicEl,
-    strike: noteStrikeEl,
-    bulletList: noteBulletListEl,
-    orderedList: noteOrderedListEl,
-    undo: noteUndoEl,
-    redo: noteRedoEl,
-  },
-  getStore: () => store,
-  getCurrentChat,
-  runCommand,
-  showError,
-})
-const renderNotes = notesView.renderNotes
-const registerNotesEvents = notesView.registerNotesEvents
-insertTextIntoActiveNote = notesView.insertTextIntoActiveNote
 const peopleLibraryView = createPeopleLibraryView({
   state: appState,
   getStore: () => store,
@@ -419,7 +348,6 @@ const teamUiController = createTeamUiController({
   getCurrentRoles,
   getSelectedLoginSite: () => store.rolesById[appState.selectedRoleId ?? '']?.chatSite ?? store.settings.defaultChatSite,
   render,
-  renderRolePanel,
   renderAddPersonDialog,
   closePeopleModals,
   closeExternalModels,
@@ -525,20 +453,13 @@ function handlePrimaryModeChange(isPrimary: boolean): void {
 }
 
 function render(): void {
-  renderSelectedChat()
   renderTemplates()
   if (!externalModelsModalEl.hidden) renderExternalModels()
   if (!orchestrationModalEl.hidden) renderOrchestrationModal()
   renderAddPersonDialog()
-  if (!allNotesModalEl.hidden) renderAllNotes()
   // vanilla 驱动的 UI 态翻转（成员抽屉、角色站点菜单等）也要回流给 React：
   // notifyAppState 按 microtask 合并，applyStore 路径中的重复通知无额外开销
   notifyAppState()
-}
-
-function renderSelectedChat(): void {
-  renderRolePanel()
-  renderNotes()
 }
 
 function registerRuntimePush(): void {
@@ -614,10 +535,8 @@ async function boot(): Promise<void> {
   registerRuntimePush()
   themeController.registerThemeEvents()
   registerFloatingWindowControls()
-  registerAllNotesEvents()
   registerUi()
   registerOrchestrationEvents()
-  registerNotesEvents()
   render()
   await refreshStore(false)
 }

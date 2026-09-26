@@ -7,9 +7,9 @@ import { createChatSwitcher } from './chatSwitcher'
 import { bindAppState, getAppStateVersion } from './ui/lib/appStore'
 
 /*
- * 切群编排（原 chatListView.switchChat 行为，列表渲染部分已 React 化）：
- * 立即落本地选中态 + 重渲 vanilla 视图，rAF 去抖后发 GROUP_CHAT_SWITCH，
- * 并以 notifyAppState 回流 React。
+ * 切群编排（原 chatListView.switchChat 行为；列表/抽屉/笔记视图均已是
+ * React 组件，随 notifyAppState 自行重渲）：立即落本地选中态，
+ * rAF 去抖后发 GROUP_CHAT_SWITCH，并以 notifyAppState 回流 React。
  */
 describe('createChatSwitcher', () => {
   function setup() {
@@ -20,8 +20,6 @@ describe('createChatSwitcher', () => {
       state,
       deps: {
         state,
-        renderSelectedChat: vi.fn(),
-        renderRolePanel: vi.fn(),
         runCommand: vi.fn(async () => undefined),
         showError: vi.fn(),
       },
@@ -29,7 +27,7 @@ describe('createChatSwitcher', () => {
     }
   }
 
-  it('switches the local selection, re-renders vanilla views and sends GROUP_CHAT_SWITCH on the next frame', async () => {
+  it('switches the local selection, notifies React and sends GROUP_CHAT_SWITCH on the next frame', async () => {
     const { state, deps, versionBefore } = setup()
     const switcher = createChatSwitcher(deps)
 
@@ -39,7 +37,6 @@ describe('createChatSwitcher', () => {
     expect(state.selectedRoleId).toBeUndefined()
     expect(state.selectedReference).toBeUndefined()
     expect(state.peopleDrawerOpen).toBe(false)
-    expect(deps.renderSelectedChat).toHaveBeenCalledTimes(1)
     expect(deps.runCommand).not.toHaveBeenCalled()
 
     await waitFor(() => expect(deps.runCommand).toHaveBeenCalledWith('GROUP_CHAT_SWITCH', { chatId: 'chat-2' }))
@@ -57,16 +54,12 @@ describe('createChatSwitcher', () => {
     expect(deps.runCommand).toHaveBeenCalledWith('GROUP_CHAT_SWITCH', { chatId: 'chat-3' })
   })
 
-  it('only closes open menus and re-renders the role panel when switching to the current chat', () => {
-    const { state, deps } = setup()
-    state.roleSiteMenuRoleId = 'role-1'
+  it('only re-notifies without sending a command when switching to the current chat', () => {
+    const { deps } = setup()
     const switcher = createChatSwitcher(deps)
 
     switcher.switchChat('chat-1')
 
-    expect(state.roleSiteMenuRoleId).toBeUndefined()
-    expect(deps.renderRolePanel).toHaveBeenCalledTimes(1)
-    expect(deps.renderSelectedChat).not.toHaveBeenCalled()
     expect(deps.runCommand).not.toHaveBeenCalled()
   })
 

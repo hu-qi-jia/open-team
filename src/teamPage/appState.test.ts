@@ -58,8 +58,6 @@ describe('team page app state', () => {
       'let selectedReference',
       'let mentionIndex',
       'let peopleDrawerOpen',
-      'let roleSiteMenuRoleId',
-      'let roleActionMenuRoleId',
       'let addPersonSiteMenuId',
       'let pendingSwitchAnimationFrame',
       'let thinkingTimeoutTimers',

@@ -35,6 +35,9 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
     composerBridge: {
       register: vi.fn(),
     },
+    notesBridge: {
+      register: vi.fn(),
+    },
     messageActions: {
       insertMention: vi.fn(),
       setReference: vi.fn(),

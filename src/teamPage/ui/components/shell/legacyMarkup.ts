@@ -3,105 +3,19 @@
  * 头部/#messages 已由 React 接管，对应字符串删除）。
  *
  * 剩余区域尚未 React 化，由 <LegacySlot> 原样注入 DOM——vanilla 视图
- * （rolePanelView / notesView / 各弹窗 view）继续按 id 向其中写入。
+ * （各弹窗 view）继续按 id 向其中写入（role-panel、notes 面板与全部
+ * 笔记弹窗已于 P3 由 <RolePanel/> / <NotesPanel/> / <AllNotesModal/> 接管）。
  * 每个区域 React 化时，删除对应字符串与 slot。
  * 注意：改动这里必须同步 legacy.css 的选择器与 domRefs 的 id 清单。
  */
 
-/** aside.panel.role-panel 的内部：成员摘要、#role-list、#add-role-form。 */
-export const ROLE_PANEL_INNER_HTML = `
-  <div class="panel-header">
-    <div>
-      <h2>群聊成员与人员</h2>
-      <p id="role-summary" class="tiny">0 个人员</p>
-    </div>
-    <button id="open-gemini-login" class="icon-btn" type="button" aria-label="AI 站点登录">◇</button>
-  </div>
-  <div class="role-scroll">
-    <div class="section-title">
-      <h3>当前群聊人员</h3>
-      <button id="close-people-drawer" class="btn" type="button">收起</button>
-    </div>
-    <div id="role-list" class="role-list"></div>
-
-    <form id="add-role-form" class="editor-card role-form">
-      <h3>添加人员</h3>
-      <p class="tiny">从人员库批量选择，或临时添加只属于当前群聊的人员。</p>
-      <select id="role-template-select" hidden></select>
-      <button class="btn btn-primary" type="submit">添加人员</button>
-    </form>
-
-  </div>
-`
-
-/** aside#notes-panel 的内部：标签页、富文本工具栏、#notes-editor。 */
-export const NOTES_PANEL_INNER_HTML = `
-  <div id="notes-drag-handle" class="panel-header notes-panel-header" title="拖动笔记">
-    <div>
-      <h2>笔记</h2>
-      <p class="tiny">手动记录或收集 Mark 内容。</p>
-    </div>
-    <button id="close-notes-panel" class="icon-btn" type="button" aria-label="关闭笔记">×</button>
-  </div>
-  <div class="note-scope-tabs" role="tablist" aria-label="笔记范围">
-    <button id="chat-note-tab" class="note-scope-tab active" type="button" data-note-scope="chat">当前群聊</button>
-    <button id="global-note-tab" class="note-scope-tab" type="button" data-note-scope="global">全局笔记</button>
-  </div>
-  <div class="note-toolbar" aria-label="富文本工具栏">
-    <button id="note-bold" class="note-tool-btn" type="button" aria-label="加粗">B</button>
-    <button id="note-italic" class="note-tool-btn" type="button" aria-label="斜体"><em>I</em></button>
-    <button id="note-strike" class="note-tool-btn" type="button" aria-label="删除线"><s>S</s></button>
-    <button id="note-bullet-list" class="note-tool-btn" type="button" aria-label="项目列表">•</button>
-    <button id="note-ordered-list" class="note-tool-btn" type="button" aria-label="编号列表">1.</button>
-    <span class="note-toolbar-spacer"></span>
-    <button id="note-undo" class="note-tool-btn" type="button" aria-label="撤销">↶</button>
-    <button id="note-redo" class="note-tool-btn" type="button" aria-label="重做">↷</button>
-  </div>
-  <div id="notes-editor" class="notes-editor" aria-label="富文本笔记编辑器"></div>
-  <button id="notes-resize-handle" class="notes-resize-handle" type="button" aria-label="调整笔记大小" title="调整笔记大小"></button>
-`
-
 /**
  * body 级隐藏位与全部弹窗的包裹层内部：
  * #template-summary / #template-list / #window-launcher 之外的弹窗群
- * （全部笔记、群模板、人员库、外部模型、人员编辑、内置人员详情、
+ * （群模板、人员库、外部模型、人员编辑、内置人员详情、
  * 添加人员、临时添加、编排 ×3）。
  */
 export const MODALS_INNER_HTML = `
-    <div id="all-notes-modal" class="modal-backdrop" hidden>
-      <section class="modal all-notes-modal" role="dialog" aria-modal="true" aria-labelledby="all-notes-title">
-        <div class="modal-header">
-          <div>
-            <h2 id="all-notes-title">全部笔记</h2>
-            <p class="tiny">全局、群聊、已删除群聊</p>
-          </div>
-          <button id="close-all-notes" class="icon-btn modal-close" type="button" aria-label="关闭全部笔记">×</button>
-        </div>
-        <div class="all-notes-workspace">
-          <div id="all-notes-list" class="all-notes-list" aria-label="笔记范围"></div>
-          <section class="all-notes-editor-shell" aria-labelledby="all-notes-active-title">
-            <div class="all-notes-editor-header">
-              <div>
-                <h3 id="all-notes-active-title">全局笔记</h3>
-                <p id="all-notes-active-meta" class="tiny">手动记录</p>
-              </div>
-            </div>
-            <div class="note-toolbar all-note-toolbar">
-              <button id="all-note-bold" class="note-tool-btn" type="button" aria-label="加粗"><b>B</b></button>
-              <button id="all-note-italic" class="note-tool-btn" type="button" aria-label="斜体"><i>I</i></button>
-              <button id="all-note-strike" class="note-tool-btn" type="button" aria-label="删除线"><s>S</s></button>
-              <button id="all-note-bullet-list" class="note-tool-btn" type="button" aria-label="项目列表">•</button>
-              <button id="all-note-ordered-list" class="note-tool-btn" type="button" aria-label="编号列表">1.</button>
-              <span class="note-toolbar-spacer"></span>
-              <button id="all-note-undo" class="note-tool-btn" type="button" aria-label="撤销">↶</button>
-              <button id="all-note-redo" class="note-tool-btn" type="button" aria-label="重做">↷</button>
-            </div>
-            <div id="all-notes-editor" class="notes-editor all-notes-editor" aria-label="当前笔记富文本编辑器"></div>
-          </section>
-        </div>
-      </section>
-    </div>
-
     <div id="group-template-modal" class="modal-backdrop" hidden>
       <section class="modal group-template-modal" role="dialog" aria-modal="true" aria-labelledby="group-template-title">
         <div class="modal-header">

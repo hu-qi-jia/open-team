@@ -23,8 +23,6 @@ export interface TeamPageState {
   selectedReference?: MessageReference
   hostTabId?: number
   peopleDrawerOpen: boolean
-  roleSiteMenuRoleId?: string
-  roleActionMenuRoleId?: string
   addPersonSiteMenuId?: string
   notesPanelOpen: boolean
   activeNoteScope: 'global' | 'chat'

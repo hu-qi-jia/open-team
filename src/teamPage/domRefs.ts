@@ -3,8 +3,6 @@ export interface TeamPageDomRefs {
   closeWindowEl: HTMLButtonElement
   toggleWindowSizeEl: HTMLButtonElement
   toggleFullscreenEl: HTMLButtonElement
-  roleSummaryEl: HTMLElement
-  roleListEl: HTMLElement
   roleTemplateSelectEl: HTMLSelectElement
   templateListEl: HTMLElement
   errorEl: HTMLElement
@@ -17,20 +15,6 @@ export interface TeamPageDomRefs {
   templateFormTitleEl: HTMLElement
   themeLightEl: HTMLButtonElement
   themeDarkEl: HTMLButtonElement
-  openAllNotesEl: HTMLButtonElement
-  closeAllNotesEl: HTMLButtonElement
-  allNotesModalEl: HTMLElement
-  allNotesListEl: HTMLElement
-  allNotesActiveTitleEl: HTMLElement
-  allNotesActiveMetaEl: HTMLElement
-  allNotesEditorEl: HTMLElement
-  allNoteBoldEl: HTMLButtonElement
-  allNoteItalicEl: HTMLButtonElement
-  allNoteStrikeEl: HTMLButtonElement
-  allNoteBulletListEl: HTMLButtonElement
-  allNoteOrderedListEl: HTMLButtonElement
-  allNoteUndoEl: HTMLButtonElement
-  allNoteRedoEl: HTMLButtonElement
   openPeopleLibraryEl: HTMLButtonElement
   openExternalModelsEl: HTMLButtonElement
   openOrchestrationEl: HTMLButtonElement
@@ -70,21 +54,6 @@ export interface TeamPageDomRefs {
   personTemplateModalEl: HTMLElement
   addPersonModalEl: HTMLElement
   temporaryPersonModalEl: HTMLElement
-  notesPanelEl: HTMLElement
-  notesDragHandleEl: HTMLElement
-  notesResizeHandleEl: HTMLElement
-  toggleNotesPanelEl: HTMLButtonElement
-  closeNotesPanelEl: HTMLButtonElement
-  globalNoteTabEl: HTMLButtonElement
-  chatNoteTabEl: HTMLButtonElement
-  notesEditorEl: HTMLElement
-  noteBoldEl: HTMLButtonElement
-  noteItalicEl: HTMLButtonElement
-  noteStrikeEl: HTMLButtonElement
-  noteBulletListEl: HTMLButtonElement
-  noteOrderedListEl: HTMLButtonElement
-  noteUndoEl: HTMLButtonElement
-  noteRedoEl: HTMLButtonElement
   peopleLibrarySummaryEl: HTMLElement
   peopleLibraryListEl: HTMLElement
   peopleLibraryPaginationEl: HTMLElement
@@ -145,8 +114,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     closeWindowEl: requireElement<HTMLButtonElement>('#close-window'),
     toggleWindowSizeEl: requireElement<HTMLButtonElement>('#toggle-window-size'),
     toggleFullscreenEl: requireElement<HTMLButtonElement>('#toggle-fullscreen'),
-    roleSummaryEl: requireElement<HTMLElement>('#role-summary'),
-    roleListEl: requireElement<HTMLElement>('#role-list'),
     roleTemplateSelectEl: requireElement<HTMLSelectElement>('#role-template-select'),
     templateListEl: requireElement<HTMLElement>('#template-list'),
     errorEl: requireElement<HTMLElement>('#error'),
@@ -159,20 +126,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     templateFormTitleEl: requireElement<HTMLElement>('#template-form-title'),
     themeLightEl: requireElement<HTMLButtonElement>('#theme-light'),
     themeDarkEl: requireElement<HTMLButtonElement>('#theme-dark'),
-    openAllNotesEl: requireElement<HTMLButtonElement>('#open-all-notes'),
-    closeAllNotesEl: requireElement<HTMLButtonElement>('#close-all-notes'),
-    allNotesModalEl: requireElement<HTMLElement>('#all-notes-modal'),
-    allNotesListEl: requireElement<HTMLElement>('#all-notes-list'),
-    allNotesActiveTitleEl: requireElement<HTMLElement>('#all-notes-active-title'),
-    allNotesActiveMetaEl: requireElement<HTMLElement>('#all-notes-active-meta'),
-    allNotesEditorEl: requireElement<HTMLElement>('#all-notes-editor'),
-    allNoteBoldEl: requireElement<HTMLButtonElement>('#all-note-bold'),
-    allNoteItalicEl: requireElement<HTMLButtonElement>('#all-note-italic'),
-    allNoteStrikeEl: requireElement<HTMLButtonElement>('#all-note-strike'),
-    allNoteBulletListEl: requireElement<HTMLButtonElement>('#all-note-bullet-list'),
-    allNoteOrderedListEl: requireElement<HTMLButtonElement>('#all-note-ordered-list'),
-    allNoteUndoEl: requireElement<HTMLButtonElement>('#all-note-undo'),
-    allNoteRedoEl: requireElement<HTMLButtonElement>('#all-note-redo'),
     openPeopleLibraryEl: requireElement<HTMLButtonElement>('#open-people-library'),
     openExternalModelsEl: requireElement<HTMLButtonElement>('#open-external-models'),
     openOrchestrationEl: requireElement<HTMLButtonElement>('#open-orchestration'),
@@ -212,21 +165,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     personTemplateModalEl: requireElement<HTMLElement>('#person-template-modal'),
     addPersonModalEl: requireElement<HTMLElement>('#add-person-modal'),
     temporaryPersonModalEl: requireElement<HTMLElement>('#temporary-person-modal'),
-    notesPanelEl: requireElement<HTMLElement>('#notes-panel'),
-    notesDragHandleEl: requireElement<HTMLElement>('#notes-drag-handle'),
-    notesResizeHandleEl: requireElement<HTMLElement>('#notes-resize-handle'),
-    toggleNotesPanelEl: requireElement<HTMLButtonElement>('#toggle-notes-panel'),
-    closeNotesPanelEl: requireElement<HTMLButtonElement>('#close-notes-panel'),
-    globalNoteTabEl: requireElement<HTMLButtonElement>('#global-note-tab'),
-    chatNoteTabEl: requireElement<HTMLButtonElement>('#chat-note-tab'),
-    notesEditorEl: requireElement<HTMLElement>('#notes-editor'),
-    noteBoldEl: requireElement<HTMLButtonElement>('#note-bold'),
-    noteItalicEl: requireElement<HTMLButtonElement>('#note-italic'),
-    noteStrikeEl: requireElement<HTMLButtonElement>('#note-strike'),
-    noteBulletListEl: requireElement<HTMLButtonElement>('#note-bullet-list'),
-    noteOrderedListEl: requireElement<HTMLButtonElement>('#note-ordered-list'),
-    noteUndoEl: requireElement<HTMLButtonElement>('#note-undo'),
-    noteRedoEl: requireElement<HTMLButtonElement>('#note-redo'),
     peopleLibrarySummaryEl: requireElement<HTMLElement>('#people-library-summary'),
     peopleLibraryListEl: requireElement<HTMLElement>('#people-library-list'),
     peopleLibraryPaginationEl: requireElement<HTMLElement>('#people-library-pagination'),

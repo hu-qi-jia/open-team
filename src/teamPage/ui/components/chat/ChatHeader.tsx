@@ -4,16 +4,19 @@ import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import type { TeamPageState } from '../../../appState'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
+import { getAppState, notifyAppState } from '../../lib/appStore'
 import { showError } from '../../lib/toast'
 
 /*
  * 聊天头（原 chatHeaderView 整体 React 化）。区域分两种：
- * - 响应区：标题 / 副标题 / 状态 / 免@ / 成员抽屉开关 / 编排显隐——
- *   全部由 selector 驱动；成员抽屉的点击仍在 vanilla（teamUiController），
- *   其 render() 会经 notifyAppState 回流到本组件的 aria 状态。
- * - 静态控制区（memo-true）：主题切换 / 笔记开关 / 恢复会话——vanilla
- *   模块在启动时对它们绑事件并写属性（themeController 写 aria-pressed、
- *   notesView 写 aria-expanded），React 永不重渲染这一块，避免覆写。
+ * - 响应区：标题 / 副标题 / 状态 / 免@ / 成员抽屉开关 / 笔记开关 /
+ *   编排显隐——全部由 selector 驱动；成员抽屉的点击仍在 vanilla
+ *   （teamUiController），其 render() 会经 notifyAppState 回流到本组件
+ *   的 aria 状态。笔记开关（P3 起）直接翻转 appState.notesPanelOpen，
+ *   aria-expanded 与 <NotesPanel/> 同源。
+ * - 静态控制区（memo-true）：主题切换 / 恢复会话——vanilla 模块在启动时
+ *   对它们绑事件并写属性（themeController 写 aria-pressed），React 永不
+ *   重渲染这一块，避免覆写。
  * 免@ 为新增 React 事件（原按钮由 chatHeaderView 动态插入）。
  */
 export function ChatHeader() {
@@ -30,6 +33,7 @@ export function ChatHeader() {
   const messageCount = useStoreSelector(messageCountOf)
   const drawerOpen = useStoreSelector(state => state.peopleDrawerOpen)
   const chatId = useStoreSelector(state => state.selectedChatId)
+  const notesPanelOpen = useStoreSelector(state => state.notesPanelOpen)
 
   const manualMentionOn = requireManualMention === false
   const mentionRuleHint = ui('开启后，普通消息也会触发所有成员回复；关闭后，只有 @ 成员或 @所有人才触发回复')
@@ -38,6 +42,14 @@ export function ChatHeader() {
     if (!chatId) return
     services.runCommand('GROUP_CHAT_UPDATE', { chatId, requireManualMention: manualMentionOn ? true : false })
       .catch(error => showError(error instanceof Error ? error.message : String(error)))
+  }
+
+  function toggleNotesPanel(): void {
+    const state = getAppState()
+    // 有群聊时打开面板回默认 chat 范围（原 notesView.selectDefaultOpenScope）
+    if (!state.notesPanelOpen && state.selectedChatId && state.store.chatsById[state.selectedChatId]) state.activeNoteScope = 'chat'
+    state.notesPanelOpen = !state.notesPanelOpen
+    notifyAppState()
   }
 
   return (
@@ -85,6 +97,15 @@ export function ChatHeader() {
           aria-expanded={drawerOpen}
         >{ui(`成员 ${roleCount}`)}</button>
 
+        <button
+          id="toggle-notes-panel"
+          className="btn drawer-summary"
+          type="button"
+          aria-expanded={notesPanelOpen}
+          aria-controls="notes-panel"
+          onClick={toggleNotesPanel}
+        >{ui('笔记')}</button>
+
         <span id="chat-status" className={chatStatus !== undefined ? `status-pill status-${chatStatus}` : 'status-pill'}>
           {chatStatus !== undefined ? ui(chatStatusLabel(chatStatus)) : ui('空')}
         </span>
@@ -94,9 +115,10 @@ export function ChatHeader() {
 }
 
 /*
- * 主题切换 / 笔记开关 / 恢复会话：id 与原 team.html 一致，vanilla 模块
- * （themeController / notesView / teamUiController）按 id 绑事件并写属性，
+ * 主题切换 / 恢复会话：id 与原 team.html 一致，vanilla 模块
+ * （themeController / teamUiController）按 id 绑事件并写属性，
  * memo(..., () => true) 保证 React 重渲永不触碰这块 DOM。
+ * 笔记开关已移出（P3 起由上方响应区渲染，aria-expanded 随 store）。
  */
 const HeaderStaticControls = memo(function HeaderStaticControls() {
   return (
@@ -111,7 +133,6 @@ const HeaderStaticControls = memo(function HeaderStaticControls() {
           <span>深色</span>
         </button>
       </div>
-      <button id="toggle-notes-panel" className="btn drawer-summary" type="button" aria-expanded="false" aria-controls="notes-panel">笔记</button>
       <button id="restore-chat" className="btn" type="button">恢复会话</button>
     </>
   )

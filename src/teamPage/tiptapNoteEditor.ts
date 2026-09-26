@@ -1,7 +1,7 @@
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import type { RichNoteDocument } from '../group/types'
-import type { NoteEditorAdapter } from './notesView'
+import type { NoteEditorAdapter } from './ui/lib/noteEditor'
 
 export function createTiptapNoteEditor(options: { element: HTMLElement; content: RichNoteDocument; onUpdate(): void }): NoteEditorAdapter {
   const editor = new Editor({

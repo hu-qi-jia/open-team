@@ -1,0 +1,373 @@
+import { useEffect, useMemo, useState } from 'react'
+import type { GroupRole } from '../../../../group/types'
+import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
+import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
+import { useServices } from '../../context/ServicesContext'
+import { useStoreSelector } from '../../hooks/useStoreSelector'
+import { getAppState, getAppStateVersion, notifyAppState } from '../../lib/appStore'
+import { showError } from '../../lib/toast'
+import {
+  roleConnectionStatusText,
+  roleContextProgressText,
+  roleMentionTitle,
+  roleModelKey,
+  roleModelOption,
+  rolePatchForModelKey,
+  roleStatusLabel,
+  selectableModels,
+} from '../../lib/rolePanelItems'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../ui/alert-dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+
+/*
+ * 成员抽屉（原 rolePanelView 整体 React 化，P3）。aside.panel.role-panel
+ * 及内部 id（#role-summary / #role-list / #role-template-select /
+ * #add-role-form / #open-gemini-login / #close-people-drawer）全部保留：
+ * 抽屉开合、添加人员表单与 AI 登录按钮仍由 vanilla（teamUiController /
+ * peopleLibraryView，P4 收编）按 id 绑定。
+ * 与原实现的对译关系：
+ * - 站点菜单 → DropdownMenu（受控单开；原 .role-site-menu 的 document
+ *   关闭逻辑由 Radix 外点/Escape 接管，roleSiteMenuRoleId 状态删除）
+ * - 删除确认 window.confirm → AlertDialog（已知视觉偏差，同 P2a 群列表）
+ * - 提示词详情 → Dialog（原 .role-prompt-modal 手工挂 body 对译）
+ * - 卡片选中 → state.selectedRoleId + notifyAppState
+ * - 提及捷径：头像/名称点击与右键均插入 @（insertMention 经消息动作组）
+ * 数据全部由 useStoreSelector 从 appStore 派生；外部 vanilla 翻转
+ * peopleDrawerOpen 后经 notifyAppState 回流。
+ */
+export function RolePanel() {
+  const services = useServices()
+  const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
+  const version = useStoreSelector(getAppStateVersion)
+  const selectedChatId = useStoreSelector(state => state.selectedChatId)
+  const peopleDrawerOpen = useStoreSelector(state => state.peopleDrawerOpen)
+  const selectedRoleId = useStoreSelector(state => state.selectedRoleId)
+
+  const [openSiteMenuRoleId, setOpenSiteMenuRoleId] = useState<string | undefined>(undefined)
+  const [promptDetailRole, setPromptDetailRole] = useState<GroupRole | undefined>(undefined)
+  const [deleteRole, setDeleteRole] = useState<GroupRole | undefined>(undefined)
+
+  const view = useMemo(() => {
+    const state = getAppState()
+    const store = state.store
+    const chat = state.selectedChatId ? store.chatsById[state.selectedChatId] : undefined
+    const roles = chat
+      ? chat.roleIds.map(roleId => store.rolesById[roleId]).filter((role): role is GroupRole => Boolean(role))
+      : []
+    return {
+      store,
+      chat,
+      roles,
+      selectedRole: state.selectedRoleId ? store.rolesById[state.selectedRoleId] : undefined,
+    }
+  }, [version, selectedChatId])
+
+  const ui = (source: string) => translateUi(source, language)
+
+  // 切群后未关闭的站点菜单不应跨群残留（原 chatSwitcher 清 roleSiteMenuRoleId 对译）
+  useEffect(() => {
+    setOpenSiteMenuRoleId(undefined)
+  }, [selectedChatId])
+
+  function selectRole(role: GroupRole): void {
+    const state = getAppState()
+    state.selectedRoleId = role.id
+    setOpenSiteMenuRoleId(undefined)
+    notifyAppState()
+  }
+
+  function insertMention(role: GroupRole): void {
+    services.messageActions.insertMention(role)
+  }
+
+  function refreshRole(role: GroupRole): void {
+    services.iframeHost.recoverRole(role)
+    services.runCommand('GROUP_ROLE_RECOVER', { chatId: role.chatId, roleId: role.id })
+      .catch(error => showError(error instanceof Error ? error.message : String(error)))
+  }
+
+  function jumpToRoleFrame(role: GroupRole): void {
+    services.messageActions.focusRoleFrame(role.chatId, role.id)
+  }
+
+  async function switchRoleSite(role: GroupRole, modelKey: string): Promise<void> {
+    if (roleModelKey(role, getAppState().store) === modelKey) return
+    try {
+      await services.runCommand('GROUP_ROLE_UPDATE', { roleId: role.id, patch: rolePatchForModelKey(modelKey) })
+      const updatedRole = getAppState().store.rolesById[role.id]
+      if (!updatedRole) return
+      if (updatedRole.modelSource === 'external') return
+      services.iframeHost.recoverRole(updatedRole)
+      await services.runCommand('GROUP_ROLE_RECOVER', { chatId: updatedRole.chatId, roleId: updatedRole.id })
+    } catch (error) {
+      showError(error instanceof Error ? error.message : String(error))
+    }
+  }
+
+  function confirmDeleteRole(): void {
+    if (!deleteRole) return
+    services.runCommand('GROUP_ROLE_DELETE', { roleId: deleteRole.id })
+      .catch(error => showError(error instanceof Error ? error.message : String(error)))
+    setDeleteRole(undefined)
+  }
+
+  const summaryText = ui(`${view.roles.length} 人员${view.selectedRole ? ` · 当前：${view.selectedRole.name}` : ''}`)
+
+  return (
+    <aside className={`panel role-panel${peopleDrawerOpen ? ' open' : ''}`}>
+      <div className="panel-header">
+        <div>
+          <h2>{ui('群聊成员与人员')}</h2>
+          <p id="role-summary" className="tiny">{summaryText}</p>
+        </div>
+        {/* 原 renderRolePanelActions 将登录按钮包进 .role-panel-actions */}
+        <div className="role-panel-actions">
+          <button id="open-gemini-login" className="icon-btn" type="button" aria-label="AI 站点登录">◇</button>
+        </div>
+      </div>
+      <div className="role-scroll">
+        <div className="section-title">
+          <h3>{ui('当前群聊人员')}</h3>
+          <button id="close-people-drawer" className="btn" type="button">{ui('收起')}</button>
+        </div>
+        <div id="role-list" className="role-list">
+          {!view.chat ? (
+            <div className="empty-state">
+              <div className="empty-card">
+                <h3>{ui('未选择群聊')}</h3>
+                <p className="muted">{ui('选择群聊后可添加、查看、恢复和唤醒人员。')}</p>
+              </div>
+            </div>
+          ) : view.roles.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-card">
+                <h3>{ui('暂无人员')}</h3>
+                <p className="muted">{ui('点击添加人员，可从人员库批量加入或临时添加。')}</p>
+              </div>
+            </div>
+          ) : view.roles.map(role => (
+            <RoleCard
+              key={role.id}
+              role={role}
+              store={view.store}
+              active={role.id === selectedRoleId}
+              language={language}
+              ui={ui}
+              siteMenuOpen={openSiteMenuRoleId === role.id}
+              onSiteMenuOpenChange={open => setOpenSiteMenuRoleId(open ? role.id : undefined)}
+              onSelect={() => selectRole(role)}
+              onInsertMention={() => insertMention(role)}
+              onRefresh={() => refreshRole(role)}
+              onJump={() => jumpToRoleFrame(role)}
+              onShowPromptDetail={() => setPromptDetailRole(role)}
+              onRequestDelete={() => setDeleteRole(role)}
+              onSwitchSite={modelKey => switchRoleSite(role, modelKey)}
+            />
+          ))}
+        </div>
+
+        <form id="add-role-form" className="editor-card role-form">
+          <h3>{ui('添加人员')}</h3>
+          <p className="tiny">{ui('从人员库批量选择，或临时添加只属于当前群聊的人员。')}</p>
+          {/* 选项由 peopleLibraryView 命令式填充（P4 收编前保留） */}
+          <select id="role-template-select" hidden></select>
+          <button className="btn btn-primary" type="submit">{ui('添加人员')}</button>
+        </form>
+      </div>
+
+      <Dialog open={promptDetailRole !== undefined} onOpenChange={open => { if (!open) setPromptDetailRole(undefined) }}>
+        <DialogContent className="template-detail-modal" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle id="role-prompt-detail-title">{promptDetailRole?.name}</DialogTitle>
+            <DialogDescription className="tiny">
+              {promptDetailRole?.description || ui('未填写人员描述')}
+            </DialogDescription>
+          </DialogHeader>
+          <pre className="template-prompt-preview">{promptDetailRole?.systemPrompt?.trim() || ui('未填写提示词')}</pre>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteRole !== undefined} onOpenChange={open => { if (!open) setDeleteRole(undefined) }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{ui('删除成员')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteRole ? ui(`确定将「${deleteRole.name}」移出当前群聊吗？历史聊天记录会保留。`) : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{ui('取消')}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteRole}>{ui('删除成员')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </aside>
+  )
+}
+
+interface RoleCardProps {
+  role: GroupRole
+  store: ReturnType<typeof getAppState>['store']
+  active: boolean
+  language: ReturnType<typeof normalizeLanguage>
+  ui: (source: string) => string
+  siteMenuOpen: boolean
+  onSiteMenuOpenChange(open: boolean): void
+  onSelect(): void
+  onInsertMention(): void
+  onRefresh(): void
+  onJump(): void
+  onShowPromptDetail(): void
+  onRequestDelete(): void
+  onSwitchSite(modelKey: string): void
+}
+
+function RoleCard(props: RoleCardProps) {
+  const { role, store, active, language, ui } = props
+  const model = roleModelOption(role, store)
+  const mentionTitle = roleMentionTitle(role, store)
+  const mentionShortcutHandlers = {
+    title: mentionTitle,
+    onClick: (event: React.MouseEvent) => {
+      event.stopPropagation()
+      props.onInsertMention()
+    },
+    onContextMenu: (event: React.MouseEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+      props.onInsertMention()
+    },
+  }
+
+  return (
+    <section className={`role-card${active ? ' active' : ''}`} onClick={props.onSelect}>
+      <div className={`role-avatar ${roleToneClass(role.name)} mention-shortcut`} {...mentionShortcutHandlers}>
+        {roleAvatarLabel(role.name)}
+      </div>
+      <div className="role-card-main">
+        <div className="role-row">
+          <div className="role-name mention-shortcut" {...mentionShortcutHandlers}>{role.name}</div>
+          <span className={`status-pill status-${role.status}`}>{ui(roleStatusLabel(role.status))}</span>
+        </div>
+        <div className="role-description">{role.description || ui('未填写人员描述')}</div>
+        <div className="chat-row tiny role-meta">
+          <div className="role-site-control">
+            <DropdownMenu open={props.siteMenuOpen} onOpenChange={props.onSiteMenuOpenChange}>
+              <DropdownMenuTrigger
+                className={`site-pill ${model.className}`}
+                aria-expanded={props.siteMenuOpen}
+                onClick={event => event.stopPropagation()}
+              >{model.label}</DropdownMenuTrigger>
+              <DropdownMenuContent className="role-site-menu" onClick={event => event.stopPropagation()}>
+                {selectableModels(store).map(option => {
+                  const activeOption = roleModelKey(role, store) === option.key
+                  return (
+                    <DropdownMenuItem
+                      key={option.key}
+                      className={`role-site-option${activeOption ? ' active' : ''}`}
+                      onSelect={() => {
+                        props.onSiteMenuOpenChange(false)
+                        if (activeOption) return
+                        props.onSwitchSite(option.key)
+                      }}
+                    >{activeOption ? `✓ ${option.label}` : option.label}</DropdownMenuItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          <span className="role-meta-item">{roleContextProgressText(role, ui)}</span>
+          <span className="role-meta-item">{roleConnectionStatusText(role, ui)}</span>
+        </div>
+        {role.status === 'error' && (
+          <div className="reference-box">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
+        )}
+      </div>
+      <div className="role-card-actions">
+        <button
+          type="button"
+          className="role-prompt-detail"
+          data-role-prompt-detail={role.id}
+          aria-label={language === 'en' ? `View ${role.name}'s prompt` : `查看 ${role.name} 的提示词`}
+          title={ui('查看提示词')}
+          onClick={event => {
+            event.stopPropagation()
+            props.onShowPromptDetail()
+          }}
+        ><PromptDetailIcon /></button>
+        <button
+          type="button"
+          className="role-refresh"
+          data-role-refresh={role.id}
+          aria-label={language === 'en' ? `Refresh ${role.name}'s member window` : `刷新 ${role.name} 的成员窗口`}
+          title={role.modelSource === 'external' ? ui('API 成员无需刷新窗口') : ui('刷新成员窗口')}
+          disabled={role.modelSource === 'external'}
+          onClick={event => {
+            event.stopPropagation()
+            props.onRefresh()
+          }}
+        >↻</button>
+        <button
+          type="button"
+          className="role-jump"
+          aria-label={language === 'en' ? `Jump to ${role.name}'s source window` : `跳转到 ${role.name} 的原始窗口`}
+          title={ui('跳转到原始窗口')}
+          onClick={event => {
+            event.stopPropagation()
+            props.onJump()
+          }}
+        >↗</button>
+        <button
+          type="button"
+          className="role-delete"
+          data-role-delete={role.id}
+          aria-label={language === 'en' ? `Delete ${role.name}` : `删除 ${role.name}`}
+          title={ui('删除成员')}
+          onClick={event => {
+            event.stopPropagation()
+            props.onRequestDelete()
+          }}
+        ><TrashIcon /></button>
+      </div>
+    </section>
+  )
+}
+
+function TrashIcon(): React.ReactNode {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path d="M9 4h6l1 2h4v2H4V6h4l1-2Zm-2 6h10l-.7 9.1A2 2 0 0 1 14.3 21H9.7a2 2 0 0 1-2-1.9L7 10Zm3 2v6h1.6v-6H10Zm2.4 0v6H14v-6h-1.6Z" />
+    </svg>
+  )
+}
+
+function PromptDetailIcon(): React.ReactNode {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 3.8h6.4L17 7.4V20H7V3.8Z" />
+      <path d="M13.2 4v3.6h3.6" />
+      <path d="M9.6 11h4.8" />
+      <path d="M9.6 14h4.8" />
+      <path d="M9.6 17h2.8" />
+    </svg>
+  )
+}

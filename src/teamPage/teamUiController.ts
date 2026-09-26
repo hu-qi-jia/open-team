@@ -28,7 +28,6 @@ export interface TeamUiControllerDependencies {
   getCurrentRoles(): GroupRole[]
   getSelectedLoginSite(): ChatSite
   render(): void
-  renderRolePanel(): void
   renderAddPersonDialog(): void
   closePeopleModals(): void
   closeExternalModels(): void
@@ -77,13 +76,15 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
 
     document.addEventListener('click', event => {
       const target = event.target as Element | null
-      if (deps.state.peopleDrawerOpen && target && !deps.rolePanelEl.contains(target) && !deps.togglePeopleDrawerEl.contains(target)) {
+      // 抽屉外点关闭；Radix 站点菜单（DropdownMenu）内容传送至 body，
+      // 不算「抽屉外」（角色站点菜单的开合由 <RolePanel/> 自管，P3 起）
+      if (
+        deps.state.peopleDrawerOpen && target && !deps.rolePanelEl.contains(target)
+        && !deps.togglePeopleDrawerEl.contains(target)
+        && !target.closest('[data-radix-popper-content-wrapper]')
+      ) {
         deps.state.peopleDrawerOpen = false
         deps.render()
-      }
-      if (deps.state.roleSiteMenuRoleId && !target?.closest('.role-site-menu, .site-pill')) {
-        deps.state.roleSiteMenuRoleId = undefined
-        deps.renderRolePanel()
       }
       if (deps.state.addPersonSiteMenuId && !target?.closest('.role-site-menu, .site-pill')) {
         deps.state.addPersonSiteMenuId = undefined
@@ -95,10 +96,7 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
       if (event.key !== 'Escape') return
       deps.closePeopleModals()
       deps.closeExternalModels()
-      deps.state.roleSiteMenuRoleId = undefined
-      deps.state.roleActionMenuRoleId = undefined
       closeGroupTemplateModal(groupTemplateModalEl, groupTemplateSearchEl, groupTemplateCategoriesEl, groupTemplateListEl, confirmGroupTemplateCreateEl)
-      deps.renderRolePanel()
     })
 
     closeGroupTemplateModalEl.addEventListener('click', () => {

@@ -2,16 +2,15 @@ import { Toaster } from '@/teamPage/ui/components/ui/sonner'
 import { ChatHeader } from './components/chat/ChatHeader'
 import { Messages } from './components/chat/Messages'
 import { Composer } from './components/composer/Composer'
+import { AllNotesModal } from './components/notes/AllNotesModal'
+import { NotesPanel } from './components/notes/NotesPanel'
+import { RolePanel } from './components/panel/RolePanel'
 import { FloatingWindowChrome } from './components/shell/FloatingWindowChrome'
 import { IframeLayer } from './components/shell/IframeLayer'
 import { LanguageSync } from './components/shell/LanguageSync'
 import { Rail } from './components/shell/Rail'
 import { LegacySlot } from './components/shell/LegacySlot'
-import {
-  MODALS_INNER_HTML,
-  NOTES_PANEL_INNER_HTML,
-  ROLE_PANEL_INNER_HTML,
-} from './components/shell/legacyMarkup'
+import { MODALS_INNER_HTML } from './components/shell/legacyMarkup'
 import { Sidebar } from './components/shell/Sidebar'
 
 /*
@@ -24,10 +23,11 @@ import { Sidebar } from './components/shell/Sidebar'
  *   参与 body 布局，fragment 顺序即 DOM 顺序。
  * - `.app-shell` 自带 transform 定位，modals / notes / iframe-host 必须留在
  *   #app 之外（transform 会创建包含块，fixed 后代会被劫持）。
- * - LegacySlot 区域（role-panel / notes 内部 / 弹窗群）尚未 React 化，
- *   由 vanilla 视图按 id 写入，slot 永不重渲。
- * - workspace 内的 ChatHeader / Messages / Composer 是真组件
- *   （P2a / P2b / P2c 落地）。
+ * - LegacySlot 区域（弹窗群）尚未 React 化，由 vanilla 视图按 id 写入，slot
+ *   永不重渲（role-panel 已于 P3 由 <RolePanel/>、notes 面板与全部笔记
+ *   弹窗由 <NotesPanel/> / <AllNotesModal/> 接管）。
+ * - workspace 内的 ChatHeader / Messages / Composer 与 aside RolePanel 是
+ *   真组件（P2a / P2b / P2c / P3 落地）。
  */
 export function App() {
   return (
@@ -41,21 +41,16 @@ export function App() {
           <Messages />
           <Composer />
         </main>
-        <LegacySlot as="aside" className="panel role-panel" html={ROLE_PANEL_INNER_HTML} />
+        <RolePanel />
       </div>
 
-      <LegacySlot
-        as="aside"
-        id="notes-panel"
-        className="panel notes-panel"
-        aria-label="笔记面板"
-        html={NOTES_PANEL_INNER_HTML}
-      />
+      <NotesPanel />
 
       <span id="template-summary" hidden></span>
       <div id="template-list" hidden></div>
       <button id="window-launcher" className="launcher" type="button" aria-label="打开 OpenTeam" hidden>⌁</button>
 
+      <AllNotesModal />
       <LegacySlot html={MODALS_INNER_HTML} />
 
       <IframeLayer />

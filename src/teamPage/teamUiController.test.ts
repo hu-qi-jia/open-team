@@ -187,7 +187,6 @@ function makeDeps(overrides: Partial<TeamUiControllerDependencies>): TeamUiContr
     getCurrentRoles: () => [],
     getSelectedLoginSite: () => 'gemini',
     render: vi.fn(),
-    renderRolePanel: vi.fn(),
     renderAddPersonDialog: vi.fn(),
     closePeopleModals: vi.fn(),
     closeExternalModels: vi.fn(),

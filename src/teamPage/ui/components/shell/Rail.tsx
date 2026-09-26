@@ -1,14 +1,17 @@
+import { useServices } from '../../context/ServicesContext'
 import { useT } from '../../hooks/useT'
 import { SettingsMenu } from './SettingsMenu'
 
 /*
- * 左侧导航栏。中间三个按钮（#open-all-notes / #open-people-library /
- * #open-external-models）仍由 vanilla 视图注册事件（allNotesView /
- * peopleLibraryView / externalModelsView 的 registerXEvents 按 id 查找），
- * id 与 SVG 必须与原 team.html 逐字一致；底部设置钮已由 <SettingsMenu/> 接管。
+ * 左侧导航栏。#open-all-notes（P3 起）点击经 uiBus 触发 <AllNotesModal/>
+ * 打开；#open-people-library / #open-external-models 仍由 vanilla 视图注册
+ * 事件（peopleLibraryView / externalModelsView 的 registerXEvents 按 id
+ * 查找），id 与 SVG 必须与原 team.html 逐字一致；底部设置钮已由
+ * <SettingsMenu/> 接管。
  */
 export function Rail() {
   const t = useT()
+  const services = useServices()
   return (
     <nav className="rail" aria-label={t('OpenTeam 导航')}>
       <div></div>
@@ -18,7 +21,7 @@ export function Rail() {
             <path d="M6.5 7.2A6.4 6.4 0 0 1 12 4.8c4 0 7.2 2.6 7.2 5.8s-3.2 5.8-7.2 5.8c-.7 0-1.4-.08-2.1-.25L5.2 18.7l1.15-4.05A5.3 5.3 0 0 1 4.8 10.6c0-1.25.62-2.42 1.7-3.4Z" />
           </svg>
         </button>
-        <button id="open-all-notes" className="rail-btn" type="button" aria-label={t('查看全部笔记')} data-tooltip={t('全部笔记')}>
+        <button id="open-all-notes" className="rail-btn" type="button" aria-label={t('查看全部笔记')} data-tooltip={t('全部笔记')} onClick={() => services.uiBus.emit('open-all-notes')}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
             <rect x="5" y="5" width="5" height="5" rx="1" />
             <rect x="14" y="5" width="5" height="5" rx="1" />

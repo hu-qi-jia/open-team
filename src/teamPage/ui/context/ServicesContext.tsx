@@ -46,6 +46,16 @@ export interface TeamPageServices {
     }): void
   }
   /**
+   * 笔记桥（P3）：NotesPanel 挂载后注册命令式 API（插入文本到当前笔记），
+   * 供 messageActions.insertTextIntoActiveNote（划词「插入笔记」）复用。
+   * 只允许在事件期调用；注册本身发生在 NotesPanel 的 mount effect。
+   */
+  notesBridge: {
+    register(api: {
+      insertTextIntoActiveNote(text: string): void
+    }): void
+  },
+  /**
    * 消息动作组（P2b）：消息流组件的事件期出口。全部方法只允许在事件
    * 处理器 / effect 中调用（index.tsx 以闭包延迟解引用 vanilla 能力，
    * 渲染期调用会在装配完成前踩到占位实现）。
@@ -55,7 +65,7 @@ export interface TeamPageServices {
     insertMention(role: GroupRole): void
     /** 设置引用回复（composerView.setReference） */
     setReference(message: GroupMessage): void
-    /** 划词插入当前笔记（notesView.insertTextIntoActiveNote） */
+    /** 划词插入当前笔记（NotesPanel.notesBridge 注册的 insertTextIntoActiveNote） */
     insertTextIntoActiveNote(text: string): void
     /** 重新同步完整回复（roleRecoveryController.resyncMessageReply） */
     resyncMessageReply(message: GroupMessage): Promise<void>
