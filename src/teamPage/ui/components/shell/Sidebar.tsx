@@ -1,11 +1,11 @@
 import { useT } from '../../hooks/useT'
+import { ChatList } from '../chat/ChatList'
 import { QuickCreateChatForm, QuickCreateChatProvider, QuickCreateChatTrigger } from './QuickCreateChat'
 import { StoreSummary } from './StoreSummary'
 
 /*
- * 群列表侧栏壳：品牌区（StoreSummary 摘要行）+ 快速建群 + #chat-list。
- * #chat-list 仍是 vanilla chatListView 的输出容器（P2a React 化），
- * id/class 与 domRefs 契约一致。
+ * 群列表侧栏壳：品牌区（StoreSummary 摘要行）+ 快速建群 + ChatList（P2a 起
+ * 群列表本体 React 化，含 #chat-list 容器 id）。
  */
 export function Sidebar() {
   const t = useT()
@@ -28,7 +28,7 @@ export function Sidebar() {
           </div>
         </div>
         <QuickCreateChatForm />
-        <div id="chat-list" className="chat-list"></div>
+        <ChatList />
       </aside>
     </QuickCreateChatProvider>
   )

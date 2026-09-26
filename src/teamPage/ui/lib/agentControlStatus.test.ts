@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { createDefaultStore } from '../group/store'
-import { agentControlStatusText } from './agentControlStatusView'
+import { createDefaultStore } from '../../../group/store'
+import { agentControlStatusText } from './agentControlStatus'
 
-describe('agent control status view', () => {
+// 自 agentControlStatusView.test.ts 原样迁入（P2a：纯函数移入 ui/lib）。
+describe('agent control status', () => {
   it('prompts users to install the CLI or start the daemon when enabled but disconnected', () => {
     const store = createDefaultStore()
     store.settings.agentControlEnabled = true

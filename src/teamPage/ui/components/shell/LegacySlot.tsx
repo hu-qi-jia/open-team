@@ -1,7 +1,7 @@
 import { memo, type HTMLAttributes } from 'react'
 
 export interface LegacySlotProps extends HTMLAttributes<HTMLElement> {
-  as?: 'div' | 'main' | 'aside' | 'span' | 'section'
+  as?: 'div' | 'main' | 'aside' | 'span' | 'section' | 'form'
   html: string
 }
 

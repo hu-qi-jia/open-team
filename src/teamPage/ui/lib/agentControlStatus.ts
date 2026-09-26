@@ -1,6 +1,10 @@
-import type { OpenTeamStore } from '../group/types'
-import type { OpenTeamControlConnectionState, OpenTeamControlConnectionStatus } from '../shared/localControlProtocol'
+import type { OpenTeamStore } from '../../../group/types'
+import type { OpenTeamControlConnectionState, OpenTeamControlConnectionStatus } from '../../../shared/localControlProtocol'
 
+/*
+ * 本机智能体控制的状态推导（自 agentControlStatusView 原样迁入）：
+ * 纯函数，供 SettingsMenu 等 React 组件以 selector 消费。
+ */
 export function agentControlStatusState(store: OpenTeamStore, status: OpenTeamControlConnectionStatus): OpenTeamControlConnectionState {
   if (!store.settings.agentControlEnabled) return 'disabled'
   if (status.port === store.settings.agentControlPort && status.state !== 'disabled') return status.state

@@ -28,7 +28,6 @@ export interface TeamUiControllerDependencies {
   getCurrentRoles(): GroupRole[]
   getSelectedLoginSite(): ChatSite
   render(): void
-  renderChatList(): void
   renderRolePanel(): void
   renderAddPersonDialog(): void
   closePeopleModals(): void
@@ -83,10 +82,6 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
         deps.state.peopleDrawerOpen = false
         deps.render()
       }
-      if (deps.state.chatMenuChatId && !target?.closest('.chat-action-menu, .chat-menu-btn')) {
-        deps.state.chatMenuChatId = undefined
-        deps.renderChatList()
-      }
       if (deps.state.roleSiteMenuRoleId && !target?.closest('.role-site-menu, .site-pill')) {
         deps.state.roleSiteMenuRoleId = undefined
         deps.renderRolePanel()
@@ -101,11 +96,9 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
       if (event.key !== 'Escape') return
       deps.closePeopleModals()
       deps.closeExternalModels()
-      deps.state.chatMenuChatId = undefined
       deps.state.roleSiteMenuRoleId = undefined
       deps.state.roleActionMenuRoleId = undefined
       closeGroupTemplateModal(groupTemplateModalEl, groupTemplateSearchEl, groupTemplateCategoriesEl, groupTemplateListEl, confirmGroupTemplateCreateEl)
-      deps.renderChatList()
       deps.renderRolePanel()
     })
 

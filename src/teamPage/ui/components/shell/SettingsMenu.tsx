@@ -1,5 +1,5 @@
 import { normalizeLanguage, type TeamLanguage } from '../../../../shared/i18n'
-import { agentControlStatusState, agentControlStatusText } from '../../../agentControlStatusView'
+import { agentControlStatusState, agentControlStatusText } from '../../lib/agentControlStatus'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { useT } from '../../hooks/useT'

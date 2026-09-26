@@ -3,10 +3,6 @@ export interface TeamPageDomRefs {
   closeWindowEl: HTMLButtonElement
   toggleWindowSizeEl: HTMLButtonElement
   toggleFullscreenEl: HTMLButtonElement
-  chatListEl: HTMLElement
-  chatTitleEl: HTMLElement
-  chatSubtitleEl: HTMLElement
-  chatStatusEl: HTMLElement
   messagesEl: HTMLElement
   roleSummaryEl: HTMLElement
   roleListEl: HTMLElement
@@ -157,10 +153,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     closeWindowEl: requireElement<HTMLButtonElement>('#close-window'),
     toggleWindowSizeEl: requireElement<HTMLButtonElement>('#toggle-window-size'),
     toggleFullscreenEl: requireElement<HTMLButtonElement>('#toggle-fullscreen'),
-    chatListEl: requireElement<HTMLElement>('#chat-list'),
-    chatTitleEl: requireElement<HTMLElement>('#chat-title'),
-    chatSubtitleEl: requireElement<HTMLElement>('#chat-subtitle'),
-    chatStatusEl: requireElement<HTMLElement>('#chat-status'),
     messagesEl: requireElement<HTMLElement>('#messages'),
     roleSummaryEl: requireElement<HTMLElement>('#role-summary'),
     roleListEl: requireElement<HTMLElement>('#role-list'),

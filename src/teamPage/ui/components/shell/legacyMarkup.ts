@@ -1,61 +1,25 @@
 /*
- * 原 public/team.html 的静态标记（verbatim 搬运，P1 时点快照）。
+ * 原 public/team.html 的静态标记（verbatim 搬运，P1 时点快照；P2a 起工作区
+ * 头部/#messages 已由 React 接管，对应字符串删除）。
  *
- * 这些区域尚未 React 化，由 <LegacySlot> 原样注入 DOM——vanilla 视图
- * （messagesView / composerView / rolePanelView / notesView / 各弹窗 view）
- * 继续按 id 向其中写入。每个区域 React 化时，删除对应字符串与 slot。
+ * 剩余区域尚未 React 化，由 <LegacySlot> 原样注入 DOM——vanilla 视图
+ * （rolePanelView / notesView / composerView / 各弹窗 view）继续按 id 向其中写入。
+ * 每个区域 React 化时，删除对应字符串与 slot。
  * 注意：改动这里必须同步 legacy.css 的选择器与 domRefs 的 id 清单。
  */
 
-/** main.panel.workspace 的内部：聊天头、#messages、#composer。 */
-export const WORKSPACE_INNER_HTML = `
-  <header class="chat-header">
-    <div class="chat-title-block">
-      <h2 id="chat-title" class="chat-title">未选择群聊</h2>
-      <p id="chat-subtitle" class="chat-subtitle">创建或选择一个群聊开始协作</p>
+/** form#composer 的静态骨架（P2c 迁移前 composerView 仍绑定其中 id）。 */
+export const COMPOSER_INNER_HTML = `
+  <div id="reference-draft" class="reference-draft" hidden></div>
+  <div id="mention-panel" class="mention-panel" hidden></div>
+  <textarea id="message-input" placeholder="输入消息，@成员可指定回复；不 @ 仅记录到群聊。"></textarea>
+  <div class="composer-actions">
+    <div>
+      <div id="target-preview" class="muted tiny">选择群聊后可发送</div>
+      <div id="busy-preview" class="tiny"></div>
     </div>
-    <div class="chat-row">
-      <div id="theme-switch" class="theme-switch" role="group" aria-label="界面模式">
-        <button id="theme-light" class="theme-option" type="button" aria-pressed="false" title="浅色模式">
-          <span aria-hidden="true">☼</span>
-          <span>浅色</span>
-        </button>
-        <button id="theme-dark" class="theme-option" type="button" aria-pressed="true" title="深色模式">
-          <span aria-hidden="true">☾</span>
-          <span>深色</span>
-        </button>
-      </div>
-      <button id="open-orchestration" class="btn drawer-summary" type="button">
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
-          <path d="M5 7.5h4.5v4H5z" />
-          <path d="M14.5 4.5H19v4h-4.5z" />
-          <path d="M14.5 15.5H19v4h-4.5z" />
-          <path d="M9.5 9.5h2.8c1.2 0 2.2-1 2.2-2.2v-.8" />
-          <path d="M9.5 9.5h2.8c1.2 0 2.2 1 2.2 2.2v5.8" />
-        </svg>
-        <span>编排</span>
-      </button>
-      <button id="toggle-people-drawer" class="btn drawer-summary" type="button" aria-expanded="false">成员 0</button>
-      <button id="toggle-notes-panel" class="btn drawer-summary" type="button" aria-expanded="false" aria-controls="notes-panel">笔记</button>
-      <span id="chat-status" class="status-pill">空</span>
-      <button id="restore-chat" class="btn" type="button">恢复会话</button>
-    </div>
-  </header>
-
-  <section id="messages" class="messages" aria-live="polite"></section>
-
-  <form id="composer" class="composer">
-    <div id="reference-draft" class="reference-draft" hidden></div>
-    <div id="mention-panel" class="mention-panel" hidden></div>
-    <textarea id="message-input" placeholder="输入消息，@成员可指定回复；不 @ 仅记录到群聊。"></textarea>
-    <div class="composer-actions">
-      <div>
-        <div id="target-preview" class="muted tiny">选择群聊后可发送</div>
-        <div id="busy-preview" class="tiny"></div>
-      </div>
-      <button id="send-message" class="btn btn-primary" type="submit" disabled>发送</button>
-    </div>
-  </form>
+    <button id="send-message" class="btn btn-primary" type="submit" disabled>发送</button>
+  </div>
 `
 
 /** aside.panel.role-panel 的内部：成员摘要、#role-list、#add-role-form。 */

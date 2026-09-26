@@ -24,6 +24,13 @@ export interface TeamPageServices {
   imageAttachmentRepository: ImageAttachmentRepository
   uiBus: UiBus
   log: OpenTeamLogger
+  /** 切群编排（chatSwitcher）：本地选中态 + vanilla 重渲 + rAF 去抖发命令 */
+  switchChat(chatId: string): void
+  /** 群聊破坏性操作（chatListActions）：需要触碰 messageNodeCache / applyStore */
+  chatOperations: {
+    clearMessages(chatId: string): Promise<void>
+    deleteChat(chatId: string): Promise<void>
+  }
 }
 
 const ServicesContext = createContext<TeamPageServices | undefined>(undefined)

@@ -24,7 +24,6 @@ export interface TeamPageState {
   hostTabId?: number
   mentionIndex: number
   peopleDrawerOpen: boolean
-  chatMenuChatId?: string
   roleSiteMenuRoleId?: string
   roleActionMenuRoleId?: string
   addPersonSiteMenuId?: string

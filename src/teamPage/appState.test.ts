@@ -60,7 +60,6 @@ describe('team page app state', () => {
       'let selectedReference',
       'let mentionIndex',
       'let peopleDrawerOpen',
-      'let chatMenuChatId',
       'let roleSiteMenuRoleId',
       'let roleActionMenuRoleId',
       'let addPersonSiteMenuId',

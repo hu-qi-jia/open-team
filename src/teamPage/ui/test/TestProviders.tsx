@@ -26,6 +26,11 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
     imageAttachmentRepository: {} as ImageAttachmentRepository,
     uiBus: createUiBus(),
     log: logStub,
+    switchChat: vi.fn(),
+    chatOperations: {
+      clearMessages: vi.fn(async () => undefined),
+      deleteChat: vi.fn(async () => undefined),
+    },
     ...overrides,
   }
 }
@@ -33,14 +38,16 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
 export interface RenderWithServicesOptions extends RenderOptions {
   services?: TeamPageServices
   state?: TeamPageState
+  /** 显式指定 store 语言（默认强制 zh-CN；需要英文断言的用例传 'en'） */
+  language?: 'en' | 'zh-CN'
 }
 
 export function renderWithServices(ui: ReactElement, options: RenderWithServicesOptions = {}) {
-  const { services = createFakeServices(), state = createTeamPageState(), ...renderOptions } = options
+  const { services = createFakeServices(), state = createTeamPageState(), language = 'zh-CN', ...renderOptions } = options
   // jsdom 的 navigator.language 是 en-US，defaultLanguageForEnvironment 会把
   // 默认 store 语言定为 en；组件断言以中文源文案书写，这里统一回中文，
   // 语言切换行为由 SettingsMenu 的专用用例显式覆盖。
-  state.store.settings.language = 'zh-CN'
+  state.store.settings.language = language
   bindAppState(state)
   const utils = render(
     <ServicesProvider services={services}>{ui}</ServicesProvider>,

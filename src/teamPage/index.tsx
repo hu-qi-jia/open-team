@@ -4,8 +4,8 @@ import { createDefaultStore } from '../group/store'
 import { getAllRoleTemplates } from '../group/roleTemplates'
 import { createTeamPageState, pickSelectedChatId } from './appState'
 import { createAllNotesView } from './allNotesView'
-import { createChatHeaderView } from './chatHeaderView'
-import { createChatListView } from './chatListView'
+import { createChatListActions } from './chatListActions'
+import { createChatSwitcher } from './chatSwitcher'
 import { createComposerView } from './composerView'
 import { createTeamPageDomRefs } from './domRefs'
 import { createExternalModelsView } from './externalModelsView'
@@ -23,7 +23,7 @@ import { createTeamPagePrimaryCoordinator } from './teamPagePrimary'
 import { createErrorPresenter, createSuccessPresenter, teamPageLog } from './teamPageServices'
 import { createThemeController } from './themeController'
 import { createTeamUiController } from './teamUiController'
-import { emptyCard, getChatRecentSummary as getStoreChatRecentSummary, messageTitle, roleAvatarLabel, roleToneClass } from './viewHelpers'
+import { emptyCard, messageTitle, roleAvatarLabel, roleToneClass } from './viewHelpers'
 import { createIndexedDbImageAttachmentRepository } from '../shared/imageAttachmentRepository'
 import './ui/styles/globals.css'
 import { bindAppState, notifyAppState } from './ui/lib/appStore'
@@ -57,6 +57,10 @@ const runCommand = runtimeClient.runCommand
 
 // React 先同步挂载出全部骨架 DOM（未迁移区域由 LegacySlot 原样承接），
 // 之后的 createTeamPageDomRefs() 才能查询到全部 id。
+// switchChat / chatOperations 依赖 domRefs 之后才创建的 vanilla 模块
+// （showError / rolePanelView / iframeHost），这里用闭包把解引用推迟到
+// 调用时（事件期）——不要改回 getter（P1 白屏教训：渲染期解构 getter 字段
+// 会 TDZ 崩掉首帧），也不要改成渲染期直接解构。
 const teamPageServices: TeamPageServices = {
   imageAttachmentRepository,
   uiBus,
@@ -64,11 +68,16 @@ const teamPageServices: TeamPageServices = {
   runCommand,
   sendRuntimeMessage,
   get iframeHost() { return iframeHost },
+  switchChat: chatId => chatSwitcher.switchChat(chatId),
+  chatOperations: {
+    clearMessages: chatId => chatListActions.clearChatMessages(chatId),
+    deleteChat: chatId => chatListActions.deleteChat(chatId),
+  },
 }
 mountTeamPageApp(teamPageServices)
 
 const teamDomRefs = createTeamPageDomRefs()
-const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl, chatListEl, chatTitleEl, chatSubtitleEl, chatStatusEl, messagesEl } = teamDomRefs
+const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl, messagesEl } = teamDomRefs
 const { roleSummaryEl, roleListEl, roleTemplateSelectEl, templateListEl, targetPreviewEl, busyPreviewEl, composerFormEl, sendButtonEl } = teamDomRefs
 const { messageInputEl, referenceDraftEl, mentionPanelEl, errorEl } = teamDomRefs
 const { templateNameEl, templateDescriptionEl, templatePromptEl, templateAiDescriptionEl, generateTemplatePersonaEl, templatePersonaGenerationStatusEl, templateFormTitleEl, themeLightEl, themeDarkEl } = teamDomRefs
@@ -172,39 +181,24 @@ const rolePanelView = createRolePanelView({
   showError,
 })
 const renderRolePanel = rolePanelView.renderRolePanel
-const chatHeaderView = createChatHeaderView({
+const chatSwitcher = createChatSwitcher({
   state: appState,
-  chatTitleEl,
-  chatSubtitleEl,
-  chatStatusEl,
-  togglePeopleDrawerEl,
-  openOrchestrationEl,
-  getLanguage: () => store.settings.language,
-  getCurrentChat,
-  getCurrentRoles,
-  getCurrentMessages,
+  renderSelectedChat,
+  renderRolePanel,
   runCommand,
+  showError,
 })
-const renderChatHeader = chatHeaderView.renderChatHeader
-const chatListView = createChatListView({
+const switchChat = chatSwitcher.switchChat
+const chatListActions = createChatListActions({
   state: appState,
   getStore: () => store,
   applyStore,
-  chatListEl,
   iframeHost,
-  getChatRecentSummary: chat => getStoreChatRecentSummary(chat, store),
-  roleToneClass,
-  roleAvatarLabel,
-  emptyCard,
-  renderSelectedChat,
-  renderRolePanel,
-  sendRuntimeMessage,
   runCommand,
+  sendRuntimeMessage,
   log,
   showError,
 })
-const renderChatList = chatListView.renderChatList
-const switchChat = chatListView.switchChat
 const roleRecoveryController = createRoleRecoveryController({
   state: appState,
   getStore: () => store,
@@ -449,7 +443,6 @@ const teamUiController = createTeamUiController({
   getCurrentRoles,
   getSelectedLoginSite: () => store.rolesById[appState.selectedRoleId ?? '']?.chatSite ?? store.settings.defaultChatSite,
   render,
-  renderChatList,
   renderRolePanel,
   renderAddPersonDialog,
   closePeopleModals,
@@ -561,11 +554,12 @@ function render(): void {
   if (!orchestrationModalEl.hidden) renderOrchestrationModal()
   renderAddPersonDialog()
   if (!allNotesModalEl.hidden) renderAllNotes()
+  // vanilla 驱动的 UI 态翻转（成员抽屉、角色站点菜单等）也要回流给 React：
+  // notifyAppState 按 microtask 合并，applyStore 路径中的重复通知无额外开销
+  notifyAppState()
 }
 
 function renderSelectedChat(): void {
-  renderChatList()
-  renderChatHeader()
   renderMessages()
   renderComposerState()
   renderRolePanel()
