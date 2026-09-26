@@ -37,17 +37,32 @@ bindAppState(appState)
 const uiBus = createUiBus()
 
 let store: OpenTeamStore = appState.store
+const log = teamPageLog
+
+// runtimeClient 只依赖模块内提升的函数声明（applyStore / refreshStore）与 log，
+// 创建期零副作用，因此先于 React 挂载创建。services 直接持有实例值而非 getter：
+// 组件在渲染期解构 services 字段是惯用写法，若这里沿用「挂载后再声明 + getter」，
+// 首帧解构即触发 TDZ ReferenceError → flushSync 抛出 → 整页只剩背景
+// （P1 验收白屏的根因）。唯一保留 getter 的是 iframeHost——它依赖 domRefs
+// 产出的容器，而 domRefs 必须等 React 渲染出骨架 DOM 才能创建；全工程无组件
+// 在渲染期访问 iframeHost，仅事件期经 services 转交（mountOrder 边界测试锁此约定）。
+const runtimeClient = createTeamPageRuntimeClient({
+  getHostTabId: () => appState.hostTabId,
+  applyStore,
+  refreshStore,
+  log,
+})
+const sendRuntimeMessage = runtimeClient.sendRuntimeMessage
+const runCommand = runtimeClient.runCommand
 
 // React 先同步挂载出全部骨架 DOM（未迁移区域由 LegacySlot 原样承接），
-// 之后的 createTeamPageDomRefs() 才能查询到全部 id。services 对后置声明的
-// runCommand / sendRuntimeMessage / iframeHost / log 用 getter 延迟解引用——
-// 组件只在事件期访问这些字段，挂载期不存在 TDZ。
+// 之后的 createTeamPageDomRefs() 才能查询到全部 id。
 const teamPageServices: TeamPageServices = {
   imageAttachmentRepository,
   uiBus,
-  get log() { return log },
-  get runCommand() { return runCommand },
-  get sendRuntimeMessage() { return sendRuntimeMessage },
+  log,
+  runCommand,
+  sendRuntimeMessage,
   get iframeHost() { return iframeHost },
 }
 mountTeamPageApp(teamPageServices)
@@ -67,7 +82,6 @@ const { builtinTemplateDetailModalEl, builtinTemplateDetailTitleEl, builtinTempl
 const { openTemporaryPersonEl, closeTemporaryPersonEl, addRoleFormEl, addLibraryPeopleFormEl, addTemporaryPersonFormEl, peopleLibraryFormEl } = teamDomRefs
 const { templateSiteGeminiEl, templateSiteChatGptEl, templateSiteClaudeEl, templateSiteDeepSeekEl, templateSiteGrokEl, templateSiteExternalEl, templateExternalModelFieldEl, templateExternalModelSelectEl, templateChatGptGptsFieldEl, templateChatGptGptsUrlEl, templateGrokProjectFieldEl, templateGrokProjectUrlEl, temporaryPersonNameEl, temporaryPersonDescriptionEl, temporaryPersonPromptEl } = teamDomRefs
 const { togglePeopleDrawerEl, rolePanelEl, windowLauncherEl, windowResizeHandleEl } = teamDomRefs
-const log = teamPageLog
 const showError = createErrorPresenter(errorEl)
 const showSuccess = createSuccessPresenter(errorEl)
 const themeController = createThemeController({
@@ -90,14 +104,6 @@ const primaryCoordinator = createTeamPagePrimaryCoordinator({
   log,
 })
 
-const runtimeClient = createTeamPageRuntimeClient({
-  getHostTabId: () => appState.hostTabId,
-  applyStore,
-  refreshStore,
-  log,
-})
-const sendRuntimeMessage = runtimeClient.sendRuntimeMessage
-const runCommand = runtimeClient.runCommand
 async function generatePersona(description: string): Promise<GeneratedPersonDraft> {
   const response = await sendRuntimeMessage('ROLE_TEMPLATE_PERSONA_GENERATE', { description }) as Awaited<ReturnType<typeof sendRuntimeMessage>> & { persona?: GeneratedPersonDraft }
   if (response.ok === false) throw new Error(response.error || 'AI 生成人设失败')

@@ -27,7 +27,9 @@ import {
  */
 export function SettingsMenu() {
   const t = useT()
-  const { runCommand } = useServices()
+  // 不在渲染期解构服务方法：services 字段保持事件期访问，组件不依赖
+  // index.tsx 的装配顺序（见 ServicesContext 的约定说明）。
+  const services = useServices()
 
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
   const agentControlEnabled = useStoreSelector(state => state.store.settings.agentControlEnabled)
@@ -40,7 +42,7 @@ export function SettingsMenu() {
     if (effectiveLanguage === next) return
     setPendingLanguage(next)
     applyTeamLanguage(next)
-    runCommand('GROUP_SETTINGS_UPDATE', { language: next })
+    services.runCommand('GROUP_SETTINGS_UPDATE', { language: next })
       .then(() => clearPendingLanguage(next))
       .catch(error => {
         clearPendingLanguage(next)
@@ -50,7 +52,7 @@ export function SettingsMenu() {
   }
 
   function toggleAgentControl(): void {
-    runCommand('GROUP_SETTINGS_UPDATE', { agentControlEnabled: !agentControlEnabled })
+    services.runCommand('GROUP_SETTINGS_UPDATE', { agentControlEnabled: !agentControlEnabled })
       .catch(error => showError(error instanceof Error ? error.message : String(error)))
   }
 

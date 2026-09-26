@@ -64,7 +64,9 @@ export function QuickCreateChatTrigger() {
 
 export function QuickCreateChatForm() {
   const t = useT()
-  const { runCommand } = useServices()
+  // 不在渲染期解构服务方法：hooks 先于 if (!open) 执行，表单关闭时也会渲染到这里，
+  // services 字段保持事件期访问（见 ServicesContext 的约定说明）。
+  const services = useServices()
   const { open, closePopover } = useQuickCreateChat()
   const [name, setName] = useState('')
   const [mode, setMode] = useState<RoomMode>('collaborative')
@@ -79,7 +81,7 @@ export function QuickCreateChatForm() {
   function submit(event: React.FormEvent): void {
     event.preventDefault()
     const trimmed = name.trim()
-    runCommand('GROUP_CHAT_CREATE', { name: trimmed || t('新群聊'), mode, roles: [] })
+    services.runCommand('GROUP_CHAT_CREATE', { name: trimmed || t('新群聊'), mode, roles: [] })
       .catch(error => showError(error instanceof Error ? error.message : String(error)))
     setName('')
     closePopover()

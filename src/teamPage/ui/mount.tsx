@@ -15,11 +15,18 @@ export function mountTeamPageApp(services: TeamPageServices): void {
   const container = document.getElementById('root')
   if (!container) throw new Error('Missing element: #root')
   const root = createRoot(container)
-  flushSync(() => {
-    root.render(
-      <ServicesProvider services={services}>
-        <App />
-      </ServicesProvider>,
-    )
-  })
+  try {
+    flushSync(() => {
+      root.render(
+        <ServicesProvider services={services}>
+          <App />
+        </ServicesProvider>,
+      )
+    })
+  } catch (error) {
+    // 首帧崩溃不允许无声白屏：此时 vanilla 侧的错误 presenter 尚未创建
+    // （依赖 domRefs），直接把错误写进 #root 再原样抛出（保留控制台堆栈）。
+    container.textContent = `OpenTeam 页面加载失败：${error instanceof Error ? error.message : String(error)}`
+    throw error
+  }
 }

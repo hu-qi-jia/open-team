@@ -11,6 +11,11 @@ type IframeHostInstance = ReturnType<typeof createIframeHost>
  * 组件树内唯一的服务入口：所有 chrome.* / 命令式模块访问都经这里注入，
  * 组件自身保持纯函数化——RTL 测试只需提供假 services，无需 mock chrome。
  * value 在 index.tsx 装配完成后即恒定，不参与渲染。
+ *
+ * 访问纪律：服务方法（runCommand / sendRuntimeMessage 等）只在事件处理器与
+ * effect 中调用，不在渲染期解构——index.tsx 的 services 对 iframeHost 用
+ * getter 延迟解引用（其创建依赖 domRefs），渲染期解构 getter 字段会因
+ * TDZ 直接崩掉首帧（P1 白屏根因）。mountOrder 边界测试锁住装配顺序。
  */
 export interface TeamPageServices {
   runCommand: TeamPageRuntimeClient['runCommand']
