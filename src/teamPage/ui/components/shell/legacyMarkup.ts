@@ -3,24 +3,10 @@
  * 头部/#messages 已由 React 接管，对应字符串删除）。
  *
  * 剩余区域尚未 React 化，由 <LegacySlot> 原样注入 DOM——vanilla 视图
- * （rolePanelView / notesView / composerView / 各弹窗 view）继续按 id 向其中写入。
+ * （rolePanelView / notesView / 各弹窗 view）继续按 id 向其中写入。
  * 每个区域 React 化时，删除对应字符串与 slot。
  * 注意：改动这里必须同步 legacy.css 的选择器与 domRefs 的 id 清单。
  */
-
-/** form#composer 的静态骨架（P2c 迁移前 composerView 仍绑定其中 id）。 */
-export const COMPOSER_INNER_HTML = `
-  <div id="reference-draft" class="reference-draft" hidden></div>
-  <div id="mention-panel" class="mention-panel" hidden></div>
-  <textarea id="message-input" placeholder="输入消息，@成员可指定回复；不 @ 仅记录到群聊。"></textarea>
-  <div class="composer-actions">
-    <div>
-      <div id="target-preview" class="muted tiny">选择群聊后可发送</div>
-      <div id="busy-preview" class="tiny"></div>
-    </div>
-    <button id="send-message" class="btn btn-primary" type="submit" disabled>发送</button>
-  </div>
-`
 
 /** aside.panel.role-panel 的内部：成员摘要、#role-list、#add-role-form。 */
 export const ROLE_PANEL_INNER_HTML = `

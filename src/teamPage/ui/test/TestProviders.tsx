@@ -31,6 +31,10 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
       clearMessages: vi.fn(async () => undefined),
       deleteChat: vi.fn(async () => undefined),
     },
+    reconnectRolesForSend: vi.fn(async () => undefined),
+    composerBridge: {
+      register: vi.fn(),
+    },
     messageActions: {
       insertMention: vi.fn(),
       setReference: vi.fn(),

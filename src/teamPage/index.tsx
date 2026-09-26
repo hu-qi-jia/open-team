@@ -6,7 +6,6 @@ import { createTeamPageState, pickSelectedChatId } from './appState'
 import { createAllNotesView } from './allNotesView'
 import { createChatListActions } from './chatListActions'
 import { createChatSwitcher } from './chatSwitcher'
-import { createComposerView } from './composerView'
 import { createTeamPageDomRefs } from './domRefs'
 import { createExternalModelsView } from './externalModelsView'
 import { createFloatingWindowControls } from './floatingWindow'
@@ -72,6 +71,13 @@ const teamPageServices: TeamPageServices = {
     clearMessages: chatId => chatListActions.clearChatMessages(chatId),
     deleteChat: chatId => chatListActions.deleteChat(chatId),
   },
+  reconnectRolesForSend: (chat, roles) => reconnectRolesForSend(chat, roles),
+  composerBridge: {
+    register: api => {
+      insertMention = api.insertMention
+      setReference = api.setReference
+    },
+  },
   messageActions: {
     insertMention: role => insertMention(role),
     setReference: message => setReference(message),
@@ -83,12 +89,20 @@ const teamPageServices: TeamPageServices = {
     renderOrchestrationStatus: () => renderOrchestrationStatusSlot(),
   },
 }
+// Composer（P2c 起 React 化）挂载后经 services.composerBridge 回填实现；
+// rolePanelView / messageActions 在事件期调用这些闭包。声明必须在
+// mountTeamPageApp 之前：flushSync 会同步冲刷 passive effect，Composer 的
+// mount effect 在模块求值期间就会调用 composerBridge.register 回填
+let insertMention = (_role: GroupRole): void => {}
+let setReference = (_message: GroupMessage): void => {}
+let insertTextIntoActiveNote = (_text: string): void => {}
+
 mountTeamPageApp(teamPageServices)
 
 const teamDomRefs = createTeamPageDomRefs()
 const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl } = teamDomRefs
-const { roleSummaryEl, roleListEl, roleTemplateSelectEl, templateListEl, targetPreviewEl, busyPreviewEl, composerFormEl, sendButtonEl } = teamDomRefs
-const { messageInputEl, referenceDraftEl, mentionPanelEl, errorEl } = teamDomRefs
+const { roleSummaryEl, roleListEl, roleTemplateSelectEl, templateListEl } = teamDomRefs
+const { errorEl } = teamDomRefs
 const { templateNameEl, templateDescriptionEl, templatePromptEl, templateAiDescriptionEl, generateTemplatePersonaEl, templatePersonaGenerationStatusEl, templateFormTitleEl, themeLightEl, themeDarkEl } = teamDomRefs
 const { openAllNotesEl, closeAllNotesEl, allNotesModalEl, allNotesListEl, allNotesActiveTitleEl, allNotesActiveMetaEl, allNotesEditorEl } = teamDomRefs
 const { allNoteBoldEl, allNoteItalicEl, allNoteStrikeEl, allNoteBulletListEl, allNoteOrderedListEl, allNoteUndoEl, allNoteRedoEl } = teamDomRefs
@@ -134,9 +148,6 @@ async function testExternalModel(modelId: string): Promise<void> {
   if (response.ok === false) throw new Error(response.error || '外部模型测试失败')
 }
 
-let renderComposerState = (): void => {}
-let insertMention = (_role: GroupRole): void => {}
-let insertTextIntoActiveNote = (_text: string): void => {}
 // 编排状态浮层工厂：依赖 post-mount 创建的 roleRecoveryController，只能
 // 闭包延迟；OrchestrationStatusSlot 的 mount effect 早于模块尾执行
 // （flushSync 会同步冲刷 effect），因此必须先给占位实现（同上三个 let）
@@ -218,7 +229,8 @@ const roleRecoveryController = createRoleRecoveryController({
   getCurrentRoles,
   refreshStore,
   switchChat,
-  renderComposerState: () => renderComposerState(),
+  // React 输入区自行订阅 store 版本；这里只需触发一次 React 通知
+  renderComposerState: () => notifyAppState(),
   setWindowMinimized,
   iframeHost,
   runCommand,
@@ -231,28 +243,6 @@ const focusRoleFrame = roleRecoveryController.focusRoleFrame
 const resyncMessageReply = roleRecoveryController.resyncMessageReply
 const retryRoleReply = roleRecoveryController.retryRoleReply
 const stopRoleReply = roleRecoveryController.stopRoleReply
-const composerView = createComposerView({
-  state: appState,
-  composerFormEl,
-  targetPreviewEl,
-  busyPreviewEl,
-  sendButtonEl,
-  messageInputEl,
-  referenceDraftEl,
-  mentionPanelEl,
-  getStore: () => store,
-  getCurrentChat,
-  getCurrentRoles,
-  roleToneClass,
-  roleAvatarLabel,
-  reconnectRolesForSend,
-  runCommand,
-  showError,
-})
-renderComposerState = composerView.renderComposerState
-insertMention = composerView.insertMention
-const registerComposerEvents = composerView.registerComposerEvents
-const setReference = composerView.setReference
 const notesView = createNotesView({
   state: appState,
   notesPanelEl,
@@ -433,7 +423,6 @@ const teamUiController = createTeamUiController({
   renderAddPersonDialog,
   closePeopleModals,
   closeExternalModels,
-  registerComposerEvents,
   registerPeopleLibraryEvents,
   registerExternalModelsEvents,
   runCommand,
@@ -548,7 +537,6 @@ function render(): void {
 }
 
 function renderSelectedChat(): void {
-  renderComposerState()
   renderRolePanel()
   renderNotes()
 }

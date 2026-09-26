@@ -191,7 +191,6 @@ function makeDeps(overrides: Partial<TeamUiControllerDependencies>): TeamUiContr
     renderAddPersonDialog: vi.fn(),
     closePeopleModals: vi.fn(),
     closeExternalModels: vi.fn(),
-    registerComposerEvents: vi.fn(),
     registerPeopleLibraryEvents: vi.fn(),
     registerExternalModelsEvents: vi.fn(),
     runCommand: vi.fn(async () => undefined),

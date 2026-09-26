@@ -32,7 +32,6 @@ export interface TeamUiControllerDependencies {
   renderAddPersonDialog(): void
   closePeopleModals(): void
   closeExternalModels(): void
-  registerComposerEvents(): void
   registerPeopleLibraryEvents(): void
   registerExternalModelsEvents(): void
   runCommand(type: string, payload?: Record<string, unknown>): Promise<void>
@@ -136,8 +135,6 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
       const rolesToRecover = roles.filter(role => !assignedRoleIds.has(role.id))
       Promise.all(rolesToRecover.map(role => deps.runCommand('GROUP_ROLE_RECOVER', { chatId: chat.id, roleId: role.id }))).catch(error => deps.showError(error instanceof Error ? error.message : String(error)))
     })
-
-    deps.registerComposerEvents()
 
     requireElement<HTMLButtonElement>('#open-gemini-login').addEventListener('click', () => {
       chrome.tabs.create({ url: getDefaultChatSiteUrl(deps.getSelectedLoginSite()) }).catch(error => deps.showError(error instanceof Error ? error.message : String(error)))

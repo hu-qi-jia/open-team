@@ -3,18 +3,10 @@ export interface TeamPageDomRefs {
   closeWindowEl: HTMLButtonElement
   toggleWindowSizeEl: HTMLButtonElement
   toggleFullscreenEl: HTMLButtonElement
-  messagesEl: HTMLElement
   roleSummaryEl: HTMLElement
   roleListEl: HTMLElement
   roleTemplateSelectEl: HTMLSelectElement
   templateListEl: HTMLElement
-  targetPreviewEl: HTMLElement
-  busyPreviewEl: HTMLElement
-  composerFormEl: HTMLFormElement
-  sendButtonEl: HTMLButtonElement
-  messageInputEl: HTMLTextAreaElement
-  referenceDraftEl: HTMLElement
-  mentionPanelEl: HTMLElement
   errorEl: HTMLElement
   templateNameEl: HTMLInputElement
   templateDescriptionEl: HTMLTextAreaElement
@@ -153,18 +145,10 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     closeWindowEl: requireElement<HTMLButtonElement>('#close-window'),
     toggleWindowSizeEl: requireElement<HTMLButtonElement>('#toggle-window-size'),
     toggleFullscreenEl: requireElement<HTMLButtonElement>('#toggle-fullscreen'),
-    messagesEl: requireElement<HTMLElement>('#messages'),
     roleSummaryEl: requireElement<HTMLElement>('#role-summary'),
     roleListEl: requireElement<HTMLElement>('#role-list'),
     roleTemplateSelectEl: requireElement<HTMLSelectElement>('#role-template-select'),
     templateListEl: requireElement<HTMLElement>('#template-list'),
-    targetPreviewEl: requireElement<HTMLElement>('#target-preview'),
-    busyPreviewEl: requireElement<HTMLElement>('#busy-preview'),
-    composerFormEl: requireElement<HTMLFormElement>('#composer'),
-    sendButtonEl: requireElement<HTMLButtonElement>('#send-message'),
-    messageInputEl: requireElement<HTMLTextAreaElement>('#message-input'),
-    referenceDraftEl: requireElement<HTMLElement>('#reference-draft'),
-    mentionPanelEl: requireElement<HTMLElement>('#mention-panel'),
     errorEl: requireElement<HTMLElement>('#error'),
     templateNameEl: requireElement<HTMLInputElement>('#template-name'),
     templateDescriptionEl: requireElement<HTMLTextAreaElement>('#template-description'),

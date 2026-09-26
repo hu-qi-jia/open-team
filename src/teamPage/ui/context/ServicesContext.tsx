@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { createIframeHost } from '../../iframeHost'
 import type { TeamPageRuntimeClient } from '../../runtimeClient'
-import type { GroupMessage, GroupRole } from '../../../group/types'
+import type { GroupChat, GroupMessage, GroupRole } from '../../../group/types'
 import type { ImageAttachmentRepository } from '../../../shared/imageAttachmentRepository'
 import type { OpenTeamLogger } from '../../../shared/logger'
 import type { UiBus } from '../lib/uiBus'
@@ -31,6 +31,19 @@ export interface TeamPageServices {
   chatOperations: {
     clearMessages(chatId: string): Promise<void>
     deleteChat(chatId: string): Promise<void>
+  }
+  /** 发送前自动恢复人员连接（roleRecoveryController.reconnectRolesForSend） */
+  reconnectRolesForSend(chat: GroupChat, roles: GroupRole[]): Promise<void>
+  /**
+   * 输入区桥（P2c）：Composer 挂载后注册命令式 API（插入提及 / 设置引用），
+   * 供 messageActions 与未迁移的 vanilla 视图（rolePanelView）复用。
+   * 只允许在事件期调用；注册本身发生在 Composer 的 mount effect。
+   */
+  composerBridge: {
+    register(api: {
+      insertMention(role: GroupRole): void
+      setReference(message: GroupMessage): void
+    }): void
   }
   /**
    * 消息动作组（P2b）：消息流组件的事件期出口。全部方法只允许在事件

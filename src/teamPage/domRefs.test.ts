@@ -18,13 +18,6 @@ describe('team page dom refs', () => {
       <section id="role-list"></section>
       <select id="role-template-select"></select>
       <section id="template-list"></section>
-      <div id="target-preview"></div>
-      <div id="busy-preview"></div>
-      <form id="composer"></form>
-      <button id="send-message"></button>
-      <textarea id="message-input"></textarea>
-      <div id="reference-draft"></div>
-      <div id="mention-panel"></div>
       <div id="error"></div>
       <input id="template-name" />
       <textarea id="template-description"></textarea>
@@ -165,7 +158,6 @@ describe('team page dom refs', () => {
     expect(refs.peopleLibraryCategoryFilterEl.id).toBe('people-library-category-filter')
     expect(refs.addPersonCategoryFilterEl.id).toBe('add-person-category-filter')
     expect(refs.windowResizeHandleEl.id).toBe('window-resize-handle')
-    expect(refs.messageInputEl.tagName).toBe('TEXTAREA')
     expect(refs.rolePanelEl.className).toBe('role-panel')
     expect(() => requireElement('#missing')).toThrow('Missing element: #missing')
   })

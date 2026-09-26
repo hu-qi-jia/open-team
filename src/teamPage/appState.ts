@@ -22,7 +22,6 @@ export interface TeamPageState {
   selectedTemplateId?: string
   selectedReference?: MessageReference
   hostTabId?: number
-  mentionIndex: number
   peopleDrawerOpen: boolean
   roleSiteMenuRoleId?: string
   roleActionMenuRoleId?: string
@@ -53,7 +52,6 @@ export function createTeamPageState(): TeamPageState {
   return {
     store: createDefaultStore(),
     controlStatus: { state: 'disabled', port: OPENTEAM_CONTROL_DEFAULT_PORT },
-    mentionIndex: 0,
     peopleDrawerOpen: false,
     thinkingTimeoutTimers: [],
     loggedThinkingTimeoutRoleIds: new Set<string>(),

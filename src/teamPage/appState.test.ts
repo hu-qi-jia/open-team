@@ -10,7 +10,6 @@ describe('team page app state', () => {
     expect(state.store.version).toBeGreaterThan(0)
     expect(state.selectedChatId).toBeUndefined()
     expect(state.selectedReference).toBeUndefined()
-    expect(state.mentionIndex).toBe(0)
     expect(state.peopleDrawerOpen).toBe(false)
     expect(state.messageNodeCache.size).toBe(0)
     expect(state.temporaryPersonDrafts).toEqual([])

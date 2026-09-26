@@ -1,13 +1,13 @@
 import { Toaster } from '@/teamPage/ui/components/ui/sonner'
 import { ChatHeader } from './components/chat/ChatHeader'
 import { Messages } from './components/chat/Messages'
+import { Composer } from './components/composer/Composer'
 import { FloatingWindowChrome } from './components/shell/FloatingWindowChrome'
 import { IframeLayer } from './components/shell/IframeLayer'
 import { LanguageSync } from './components/shell/LanguageSync'
 import { Rail } from './components/shell/Rail'
 import { LegacySlot } from './components/shell/LegacySlot'
 import {
-  COMPOSER_INNER_HTML,
   MODALS_INNER_HTML,
   NOTES_PANEL_INNER_HTML,
   ROLE_PANEL_INNER_HTML,
@@ -24,10 +24,10 @@ import { Sidebar } from './components/shell/Sidebar'
  *   参与 body 布局，fragment 顺序即 DOM 顺序。
  * - `.app-shell` 自带 transform 定位，modals / notes / iframe-host 必须留在
  *   #app 之外（transform 会创建包含块，fixed 后代会被劫持）。
- * - LegacySlot 区域（#composer / role-panel / notes 内部 / 弹窗群）
- *   尚未 React 化，由 vanilla 视图按 id 写入，slot 永不重渲。
- * - workspace 内的 ChatHeader / Messages 是真组件（P2a / P2b 落地）；
- *   #composer 保留原静态骨架（composerView P2c 前仍绑定其中 id）。
+ * - LegacySlot 区域（role-panel / notes 内部 / 弹窗群）尚未 React 化，
+ *   由 vanilla 视图按 id 写入，slot 永不重渲。
+ * - workspace 内的 ChatHeader / Messages / Composer 是真组件
+ *   （P2a / P2b / P2c 落地）。
  */
 export function App() {
   return (
@@ -39,8 +39,7 @@ export function App() {
         <main className="panel workspace">
           <ChatHeader />
           <Messages />
-          {/* composer 的静态骨架（#target-preview 等）P2c 迁移前仍由 composerView 绑定，不能空 */}
-          <LegacySlot as="form" id="composer" className="composer" html={COMPOSER_INNER_HTML} />
+          <Composer />
         </main>
         <LegacySlot as="aside" className="panel role-panel" html={ROLE_PANEL_INNER_HTML} />
       </div>
