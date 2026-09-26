@@ -1,8 +1,10 @@
 /*
- * legacy → React 的反向 UI 命令通道。
+ * legacy ↔ React 的 UI 命令通道。
  *
- * 迁移期 vanilla 视图（messagesView 空群引导等）仍需要触发 React 侧弹窗；
- * React 的 <Dialogs> 挂载时订阅 uiBus，视图 React 化后原函数指针改指 uiBus.emit。
+ * React → vanilla：快速建群弹层的「从模板中创建」触发 teamUiController 的
+ *   群模板弹窗（React 侧只在 index.tsx 装配处订阅一次）。
+ * vanilla → React：迁移期 vanilla 视图（messagesView 空群引导等）触发 React
+ *   侧弹窗；对应视图 React 化后原函数指针改指 uiBus.emit。
  * 两个命令式模块（floatingWindow / roleRecoveryController）之间直连，不经此总线。
  */
 
@@ -12,6 +14,8 @@ export type UiCommand =
   | 'open-orchestration'
   | 'open-all-notes'
   | 'open-temporary-person'
+  | 'open-group-template-create'
+  | 'close-create-chat-popover'
 
 export interface UiBus {
   on(command: UiCommand, handler: () => void): () => void

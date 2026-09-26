@@ -11,7 +11,6 @@ import { createTeamPageDomRefs } from './domRefs'
 import { createExternalModelsView } from './externalModelsView'
 import { createFloatingWindowControls } from './floatingWindow'
 import { createIframeHost } from './iframeHost'
-import { createLanguageSettingsController } from './languageController'
 import { createMessagesView } from './messagesView'
 import { createNotesView } from './notesView'
 import { createPeopleLibraryView } from './peopleLibraryView'
@@ -25,7 +24,6 @@ import { createErrorPresenter, createSuccessPresenter, teamPageLog } from './tea
 import { createThemeController } from './themeController'
 import { createTeamUiController } from './teamUiController'
 import { emptyCard, getChatRecentSummary as getStoreChatRecentSummary, messageTitle, roleAvatarLabel, roleToneClass } from './viewHelpers'
-import { agentControlStatusState, agentControlStatusText } from './agentControlStatusView'
 import { createIndexedDbImageAttachmentRepository } from '../shared/imageAttachmentRepository'
 import './ui/styles/globals.css'
 import { bindAppState, notifyAppState } from './ui/lib/appStore'
@@ -40,11 +38,25 @@ const uiBus = createUiBus()
 
 let store: OpenTeamStore = appState.store
 
+// React 先同步挂载出全部骨架 DOM（未迁移区域由 LegacySlot 原样承接），
+// 之后的 createTeamPageDomRefs() 才能查询到全部 id。services 对后置声明的
+// runCommand / sendRuntimeMessage / iframeHost / log 用 getter 延迟解引用——
+// 组件只在事件期访问这些字段，挂载期不存在 TDZ。
+const teamPageServices: TeamPageServices = {
+  imageAttachmentRepository,
+  uiBus,
+  get log() { return log },
+  get runCommand() { return runCommand },
+  get sendRuntimeMessage() { return sendRuntimeMessage },
+  get iframeHost() { return iframeHost },
+}
+mountTeamPageApp(teamPageServices)
+
 const teamDomRefs = createTeamPageDomRefs()
-const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl, storeSummaryEl, chatListEl, chatTitleEl, chatSubtitleEl, chatStatusEl, messagesEl } = teamDomRefs
+const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl, chatListEl, chatTitleEl, chatSubtitleEl, chatStatusEl, messagesEl } = teamDomRefs
 const { roleSummaryEl, roleListEl, roleTemplateSelectEl, templateListEl, targetPreviewEl, busyPreviewEl, composerFormEl, sendButtonEl } = teamDomRefs
-const { messageInputEl, referenceDraftEl, mentionPanelEl, errorEl, newChatNameEl, createChatFormEl, quickCreateChatEl } = teamDomRefs
-const { templateNameEl, templateDescriptionEl, templatePromptEl, templateAiDescriptionEl, generateTemplatePersonaEl, templatePersonaGenerationStatusEl, templateFormTitleEl, settingsButtonEl, settingsMenuEl, languageEnEl, languageZhEl, agentControlToggleEl, agentControlStatusEl, themeLightEl, themeDarkEl } = teamDomRefs
+const { messageInputEl, referenceDraftEl, mentionPanelEl, errorEl } = teamDomRefs
+const { templateNameEl, templateDescriptionEl, templatePromptEl, templateAiDescriptionEl, generateTemplatePersonaEl, templatePersonaGenerationStatusEl, templateFormTitleEl, themeLightEl, themeDarkEl } = teamDomRefs
 const { openAllNotesEl, closeAllNotesEl, allNotesModalEl, allNotesListEl, allNotesActiveTitleEl, allNotesActiveMetaEl, allNotesEditorEl } = teamDomRefs
 const { allNoteBoldEl, allNoteItalicEl, allNoteStrikeEl, allNoteBulletListEl, allNoteOrderedListEl, allNoteUndoEl, allNoteRedoEl } = teamDomRefs
 const { openPeopleLibraryEl, openExternalModelsEl, openOrchestrationEl, closeOrchestrationEl, orchestrationModalEl, orchestrationAutoModalEl, orchestrationTaskEl, autoOrchestrationEl, openOrchestrationTemplateEl, orchestrationTemplateModalEl, closeOrchestrationTemplateEl, orchestrationTemplateContentEl, closeAutoOrchestrationEl, orchestrationAutoContentEl, orchestrationPeopleListEl, arrangeOrchestrationEl, orchestrationCanvasEl, orchestrationHintEl, orchestrationStageSettingsEl, orchestrationReviewSettingsEl, orchestrationMaxRoundsEl, saveOrchestrationEl, runOrchestrationEl, closeExternalModelsEl, externalModelsModalEl, externalModelsListEl, externalModelFormEl, externalModelIdEl, externalModelNameEl, externalModelFormatEl, externalModelBaseUrlEl, externalModelApiKeyEl, externalModelModelNameEl, resetExternalModelFormEl, closePeopleLibraryEl, peopleLibraryModalEl, personTemplateModalEl, addPersonModalEl, temporaryPersonModalEl } = teamDomRefs
@@ -86,14 +98,6 @@ const runtimeClient = createTeamPageRuntimeClient({
 })
 const sendRuntimeMessage = runtimeClient.sendRuntimeMessage
 const runCommand = runtimeClient.runCommand
-const languageSettingsController = createLanguageSettingsController({
-  englishButton: languageEnEl,
-  chineseButton: languageZhEl,
-  getLanguage: () => store.settings.language,
-  runCommand,
-  showError,
-})
-languageSettingsController.render()
 async function generatePersona(description: string): Promise<GeneratedPersonDraft> {
   const response = await sendRuntimeMessage('ROLE_TEMPLATE_PERSONA_GENERATE', { description }) as Awaited<ReturnType<typeof sendRuntimeMessage>> & { persona?: GeneratedPersonDraft }
   if (response.ok === false) throw new Error(response.error || 'AI 生成人设失败')
@@ -180,10 +184,8 @@ const chatListView = createChatListView({
   state: appState,
   getStore: () => store,
   applyStore,
-  storeSummaryEl,
   chatListEl,
   iframeHost,
-  getTemplates,
   getChatRecentSummary: chat => getStoreChatRecentSummary(chat, store),
   roleToneClass,
   roleAvatarLabel,
@@ -268,8 +270,6 @@ insertTextIntoActiveNote = notesView.insertTextIntoActiveNote
 const peopleLibraryView = createPeopleLibraryView({
   state: appState,
   getStore: () => store,
-  settingsButtonEl,
-  settingsMenuEl,
   openPeopleLibraryEl,
   closePeopleLibraryEl,
   peopleLibraryModalEl,
@@ -336,8 +336,6 @@ const peopleLibraryView = createPeopleLibraryView({
 })
 const externalModelsView = createExternalModelsView({
   getStore: () => store,
-  settingsButtonEl,
-  settingsMenuEl,
   openExternalModelsEl,
   closeExternalModelsEl,
   externalModelsModalEl,
@@ -436,11 +434,7 @@ const messagesView = createMessagesView({
 const renderMessages = messagesView.renderMessages
 const teamUiController = createTeamUiController({
   state: appState,
-  settingsButtonEl,
-  settingsMenuEl,
-  quickCreateChatEl,
-  createChatFormEl,
-  newChatNameEl,
+  closeCreateChatPopover: () => uiBus.emit('close-create-chat-popover'),
   togglePeopleDrawerEl,
   rolePanelEl,
   iframeHost,
@@ -463,16 +457,10 @@ const teamUiController = createTeamUiController({
 })
 const registerUi = teamUiController.registerUi
 
-// React 侧挂载（P0 仅 Toaster 空壳；P1 起此调用需移到 createTeamPageDomRefs 之前，渲染 LegacySlot 骨架）。
-const teamPageServices: TeamPageServices = {
-  runCommand,
-  sendRuntimeMessage,
-  iframeHost,
-  imageAttachmentRepository,
-  uiBus,
-  log,
-}
-mountTeamPageApp(teamPageServices)
+// React 侧快速建群表单的「从模板中创建」→ vanilla 打开群模板弹窗
+// （弹窗本体仍由 teamUiController 驱动，P4 React 化时整体迁移）；
+// 模板确认后的收表单动作经 deps.closeCreateChatPopover 反向回到 React。
+uiBus.on('open-group-template-create', () => teamUiController.openGroupTemplate())
 
 async function resolveHostTabId(): Promise<void> {
   const tab = await chrome.tabs.getCurrent()
@@ -563,28 +551,10 @@ function handlePrimaryModeChange(isPrimary: boolean): void {
 function render(): void {
   renderSelectedChat()
   renderTemplates()
-  renderAgentControlSettings()
   if (!externalModelsModalEl.hidden) renderExternalModels()
   if (!orchestrationModalEl.hidden) renderOrchestrationModal()
   renderAddPersonDialog()
   if (!allNotesModalEl.hidden) renderAllNotes()
-  languageSettingsController.render()
-}
-
-function renderAgentControlSettings(): void {
-  const enabled = store.settings.agentControlEnabled
-  agentControlToggleEl.setAttribute('aria-pressed', String(enabled))
-  agentControlToggleEl.textContent = `本机智能体控制：${enabled ? '开启' : '关闭'}`
-  agentControlStatusEl.dataset.controlState = agentControlStatusState(store, appState.controlStatus)
-  agentControlStatusEl.textContent = agentControlStatusText(store, appState.controlStatus)
-}
-
-function registerAgentControlSettings(): void {
-  agentControlToggleEl.addEventListener('click', () => {
-    runCommand('GROUP_SETTINGS_UPDATE', {
-      agentControlEnabled: !store.settings.agentControlEnabled,
-    }).catch(error => showError(error instanceof Error ? error.message : String(error)))
-  })
 }
 
 function renderSelectedChat(): void {
@@ -605,8 +575,6 @@ function registerRuntimePush(): void {
     }
     if (message.type === 'GROUP_CONTROL_STATUS_UPDATED') {
       appState.controlStatus = message.controlStatus
-      renderAgentControlSettings()
-      languageSettingsController.render()
       notifyAppState()
       return false
     }
@@ -672,8 +640,6 @@ async function boot(): Promise<void> {
   themeController.registerThemeEvents()
   registerFloatingWindowControls()
   registerAllNotesEvents()
-  languageSettingsController.registerEvents()
-  registerAgentControlSettings()
   registerUi()
   registerOrchestrationEvents()
   registerNotesEvents()

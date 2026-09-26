@@ -16,8 +16,6 @@ const VISIBLE_CHAT_SITES = ['gemini', 'chatgpt', 'claude', 'deepseek', 'grok'] a
 export interface PeopleLibraryViewDependencies {
   state: TeamPageState
   getStore(): OpenTeamStore
-  settingsButtonEl: HTMLButtonElement
-  settingsMenuEl: HTMLElement
   openPeopleLibraryEl: HTMLButtonElement
   closePeopleLibraryEl: HTMLButtonElement
   peopleLibraryModalEl: HTMLElement
@@ -224,8 +222,6 @@ export function createPeopleLibraryView(deps: PeopleLibraryViewDependencies): Pe
 
   function registerPeopleLibraryEvents(): void {
     deps.openPeopleLibraryEl.addEventListener('click', () => {
-      deps.settingsMenuEl.hidden = true
-      deps.settingsButtonEl.setAttribute('aria-expanded', 'false')
       deps.peopleLibraryModalEl.hidden = false
       deps.state.peopleLibraryPage = 0
       deps.state.peopleLibraryTemplateType = 'custom'

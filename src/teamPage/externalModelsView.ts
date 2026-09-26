@@ -3,8 +3,6 @@ import { normalizeLanguage, translateUi } from '../shared/i18n'
 
 export interface ExternalModelsViewDependencies {
   getStore(): OpenTeamStore
-  settingsButtonEl: HTMLButtonElement
-  settingsMenuEl: HTMLElement
   openExternalModelsEl: HTMLButtonElement
   closeExternalModelsEl: HTMLButtonElement
   externalModelsModalEl: HTMLElement
@@ -155,8 +153,6 @@ export function createExternalModelsView(deps: ExternalModelsViewDependencies): 
   }
 
   function openExternalModels(): void {
-    deps.settingsMenuEl.hidden = true
-    deps.settingsButtonEl.setAttribute('aria-expanded', 'false')
     deps.externalModelsModalEl.hidden = false
     resetForm()
     renderExternalModels()

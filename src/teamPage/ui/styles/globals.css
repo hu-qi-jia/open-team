@@ -131,4 +131,10 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* React 挂载点不参与布局：App 的 fragment 子元素（#app、#notes-panel、
+     弹窗群、#iframe-host）要直接成为 body 的布局兄弟，才能满足 legacy.css
+     的 `.app-shell.minimized + .notes-panel` 相邻兄弟约束。 */
+  #root {
+    display: contents;
+  }
 }

@@ -83,8 +83,6 @@ function setupPeopleLibraryView(options: { store: OpenTeamStore; templates: Role
   const view = createPeopleLibraryView({
     state,
     getStore: () => options.store,
-    settingsButtonEl: document.createElement('button'),
-    settingsMenuEl: document.createElement('div'),
     openPeopleLibraryEl: document.createElement('button'),
     closePeopleLibraryEl: document.createElement('button'),
     peopleLibraryModalEl: document.createElement('div'),

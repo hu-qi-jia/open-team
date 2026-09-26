@@ -3,7 +3,6 @@ export interface TeamPageDomRefs {
   closeWindowEl: HTMLButtonElement
   toggleWindowSizeEl: HTMLButtonElement
   toggleFullscreenEl: HTMLButtonElement
-  storeSummaryEl: HTMLElement
   chatListEl: HTMLElement
   chatTitleEl: HTMLElement
   chatSubtitleEl: HTMLElement
@@ -21,9 +20,6 @@ export interface TeamPageDomRefs {
   referenceDraftEl: HTMLElement
   mentionPanelEl: HTMLElement
   errorEl: HTMLElement
-  newChatNameEl: HTMLInputElement
-  createChatFormEl: HTMLFormElement
-  quickCreateChatEl: HTMLButtonElement
   templateNameEl: HTMLInputElement
   templateDescriptionEl: HTMLTextAreaElement
   templatePromptEl: HTMLTextAreaElement
@@ -31,12 +27,6 @@ export interface TeamPageDomRefs {
   generateTemplatePersonaEl: HTMLButtonElement
   templatePersonaGenerationStatusEl: HTMLElement
   templateFormTitleEl: HTMLElement
-  settingsButtonEl: HTMLButtonElement
-  settingsMenuEl: HTMLElement
-  languageEnEl: HTMLButtonElement
-  languageZhEl: HTMLButtonElement
-  agentControlToggleEl: HTMLButtonElement
-  agentControlStatusEl: HTMLElement
   themeLightEl: HTMLButtonElement
   themeDarkEl: HTMLButtonElement
   openAllNotesEl: HTMLButtonElement
@@ -167,7 +157,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     closeWindowEl: requireElement<HTMLButtonElement>('#close-window'),
     toggleWindowSizeEl: requireElement<HTMLButtonElement>('#toggle-window-size'),
     toggleFullscreenEl: requireElement<HTMLButtonElement>('#toggle-fullscreen'),
-    storeSummaryEl: requireElement<HTMLElement>('#store-summary'),
     chatListEl: requireElement<HTMLElement>('#chat-list'),
     chatTitleEl: requireElement<HTMLElement>('#chat-title'),
     chatSubtitleEl: requireElement<HTMLElement>('#chat-subtitle'),
@@ -185,9 +174,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     referenceDraftEl: requireElement<HTMLElement>('#reference-draft'),
     mentionPanelEl: requireElement<HTMLElement>('#mention-panel'),
     errorEl: requireElement<HTMLElement>('#error'),
-    newChatNameEl: requireElement<HTMLInputElement>('#new-chat-name'),
-    createChatFormEl: requireElement<HTMLFormElement>('#create-chat-form'),
-    quickCreateChatEl: requireElement<HTMLButtonElement>('#quick-create-chat'),
     templateNameEl: requireElement<HTMLInputElement>('#template-name'),
     templateDescriptionEl: requireElement<HTMLTextAreaElement>('#template-description'),
     templatePromptEl: requireElement<HTMLTextAreaElement>('#template-prompt'),
@@ -195,12 +181,6 @@ export function createTeamPageDomRefs(): TeamPageDomRefs {
     generateTemplatePersonaEl: requireElement<HTMLButtonElement>('#generate-template-persona'),
     templatePersonaGenerationStatusEl: requireElement<HTMLElement>('#template-persona-generation-status'),
     templateFormTitleEl: requireElement<HTMLElement>('#template-form-title'),
-    settingsButtonEl: requireElement<HTMLButtonElement>('#settings-button'),
-    settingsMenuEl: requireElement<HTMLElement>('#settings-menu'),
-    languageEnEl: requireElement<HTMLButtonElement>('#language-en'),
-    languageZhEl: requireElement<HTMLButtonElement>('#language-zh'),
-    agentControlToggleEl: requireElement<HTMLButtonElement>('#agent-control-toggle'),
-    agentControlStatusEl: requireElement<HTMLElement>('#agent-control-status'),
     themeLightEl: requireElement<HTMLButtonElement>('#theme-light'),
     themeDarkEl: requireElement<HTMLButtonElement>('#theme-dark'),
     openAllNotesEl: requireElement<HTMLButtonElement>('#open-all-notes'),

@@ -41,8 +41,6 @@ describe('external models view', () => {
 
     const view = createExternalModelsView({
       getStore: () => store,
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
       openExternalModelsEl: document.querySelector<HTMLButtonElement>('#open-external-models')!,
       closeExternalModelsEl: document.querySelector<HTMLButtonElement>('#close-external-models')!,
       externalModelsModalEl: document.querySelector<HTMLElement>('#external-models-modal')!,
@@ -107,8 +105,6 @@ describe('external models view', () => {
 
     const view = createExternalModelsView({
       getStore: () => store,
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
       openExternalModelsEl: document.querySelector<HTMLButtonElement>('#open-external-models')!,
       closeExternalModelsEl: document.querySelector<HTMLButtonElement>('#close-external-models')!,
       externalModelsModalEl: document.querySelector<HTMLElement>('#external-models-modal')!,

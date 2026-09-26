@@ -1,5 +1,5 @@
 import { createDefaultStore, loadStore, saveStore } from '../group/store'
-import type { GroupChat, GroupRole, OpenTeamStore, RoleTemplate } from '../group/types'
+import type { GroupChat, GroupRole, OpenTeamStore } from '../group/types'
 import { normalizeLanguage, translateUi } from '../shared/i18n'
 import type { TeamPageState } from './appState'
 import { formatChatExportMarkdown, safeChatExportFilename } from './chatExport'
@@ -15,10 +15,8 @@ export interface ChatListViewDependencies {
   state: TeamPageState
   getStore(): OpenTeamStore
   applyStore(store: OpenTeamStore): void
-  storeSummaryEl: HTMLElement
   chatListEl: HTMLElement
   iframeHost: ChatListIframeHost
-  getTemplates(): RoleTemplate[]
   getChatRecentSummary(chat: GroupChat): string
   roleToneClass(value: string): string
   roleAvatarLabel(value: string): string
@@ -42,7 +40,6 @@ export function createChatListView(deps: ChatListViewDependencies): ChatListView
   function renderChatList() {
     const store = deps.getStore()
     const chats = store.chatOrder.map(chatId => store.chatsById[chatId]).filter((chat): chat is GroupChat => Boolean(chat))
-    deps.storeSummaryEl.textContent = ui(`${chats.length} 个群聊 · ${deps.getTemplates().length} 个人员库人员`)
     deps.chatListEl.replaceChildren()
 
     if (chats.length === 0) {

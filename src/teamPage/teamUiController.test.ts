@@ -4,7 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { BUILTIN_GROUP_TEMPLATES } from '../group/builtinGroupTemplates'
 import type { GroupChat, GroupRole } from '../group/types'
 import { createTeamPageState } from './appState'
-import { createTeamUiController } from './teamUiController'
+import { createTeamUiController, type TeamUiControllerDependencies } from './teamUiController'
+
+/*
+ * P1 后本控制器只管「people/external 弹窗注册、成员抽屉、群模板弹窗、
+ * restore-chat、站点登录」等 vanilla 职责；设置菜单与快速建群表单已
+ * React 化（SettingsMenu / QuickCreateChat 的 RTL 测试覆盖）。
+ */
 
 describe('createTeamUiController', () => {
   beforeEach(() => {
@@ -27,33 +33,12 @@ describe('createTeamUiController', () => {
       assignmentAttempts: 1,
     })))
 
-    createTeamUiController({
-      state: createTeamPageState(),
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
-      quickCreateChatEl: document.querySelector<HTMLButtonElement>('#quick-create-chat')!,
-      createChatFormEl: document.querySelector<HTMLFormElement>('#create-chat-form')!,
-      newChatNameEl: document.querySelector<HTMLInputElement>('#new-chat-name')!,
-      togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
-      rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
-      iframeHost: { restoreChat },
-      getLanguage: () => 'zh-CN',
+    createTeamUiController(makeDeps({
       getCurrentChat: () => chat,
       getCurrentRoles: () => roles,
-      getSelectedLoginSite: () => 'gemini',
-      render: vi.fn(),
-      renderChatList: vi.fn(),
-      renderRolePanel: vi.fn(),
-      renderAddPersonDialog: vi.fn(),
-      closePeopleModals: vi.fn(),
-      closeExternalModels: vi.fn(),
-      registerComposerEvents: vi.fn(),
-      registerPeopleLibraryEvents: vi.fn(),
-      registerExternalModelsEvents: vi.fn(),
+      iframeHost: { restoreChat },
       runCommand,
-      showError: vi.fn(),
-      log: { debug: vi.fn(), info: vi.fn() },
-    }).registerUi()
+    })).registerUi()
 
     document.querySelector<HTMLButtonElement>('#restore-chat')!.click()
 
@@ -61,86 +46,33 @@ describe('createTeamUiController', () => {
     expect(runCommand).not.toHaveBeenCalledWith('GROUP_ROLE_RECOVER', expect.anything())
   })
 
-  it('creates a new chat from a selected group template', () => {
-    const runCommand = vi.fn(async () => undefined)
+  it('creates a new chat from a selected group template and closes the React quick-create form', () => {
+    const deps = makeDeps({})
 
-    createTeamUiController({
-      state: createTeamPageState(),
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
-      quickCreateChatEl: document.querySelector<HTMLButtonElement>('#quick-create-chat')!,
-      createChatFormEl: document.querySelector<HTMLFormElement>('#create-chat-form')!,
-      newChatNameEl: document.querySelector<HTMLInputElement>('#new-chat-name')!,
-      togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
-      rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
-      iframeHost: { restoreChat: vi.fn(() => []) },
-      getLanguage: () => 'zh-CN',
-      getCurrentChat: () => undefined,
-      getCurrentRoles: () => [],
-      getSelectedLoginSite: () => 'gemini',
-      render: vi.fn(),
-      renderChatList: vi.fn(),
-      renderRolePanel: vi.fn(),
-      renderAddPersonDialog: vi.fn(),
-      closePeopleModals: vi.fn(),
-      closeExternalModels: vi.fn(),
-      registerComposerEvents: vi.fn(),
-      registerPeopleLibraryEvents: vi.fn(),
-      registerExternalModelsEvents: vi.fn(),
-      runCommand,
-      showError: vi.fn(),
-      log: { debug: vi.fn(), info: vi.fn() },
-    }).registerUi()
-
-    document.querySelector<HTMLButtonElement>('#quick-create-chat')!.click()
-    document.querySelector<HTMLButtonElement>('#open-group-template-create')!.click()
+    const controller = createTeamUiController(deps)
+    controller.registerUi()
+    controller.openGroupTemplate()
     const firstTemplateButton = document.querySelector<HTMLButtonElement>('.group-template-option')!
     firstTemplateButton.click()
     document.querySelector<HTMLButtonElement>('#confirm-group-template-create')!.click()
 
     const template = BUILTIN_GROUP_TEMPLATES[0]
-    expect(runCommand).toHaveBeenCalledWith('GROUP_CHAT_CREATE', {
+    expect(deps.runCommand).toHaveBeenCalledWith('GROUP_CHAT_CREATE', {
       name: template.defaultChatName,
       mode: template.defaultMode,
       roles: template.roles,
       welcomeMessage: expect.stringContaining(`欢迎来到「${template.name}」`),
     })
     expect(document.querySelector<HTMLElement>('#group-template-modal')!.hidden).toBe(true)
-    expect(document.querySelector<HTMLFormElement>('#create-chat-form')!.hidden).toBe(true)
+    expect(deps.closeCreateChatPopover).toHaveBeenCalledTimes(1)
   })
 
   it('renders and creates group templates in English mode', () => {
-    const runCommand = vi.fn(async () => undefined)
+    const deps = makeDeps({ getLanguage: () => 'en' })
 
-    createTeamUiController({
-      state: createTeamPageState(),
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
-      quickCreateChatEl: document.querySelector<HTMLButtonElement>('#quick-create-chat')!,
-      createChatFormEl: document.querySelector<HTMLFormElement>('#create-chat-form')!,
-      newChatNameEl: document.querySelector<HTMLInputElement>('#new-chat-name')!,
-      togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
-      rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
-      iframeHost: { restoreChat: vi.fn(() => []) },
-      getLanguage: () => 'en',
-      getCurrentChat: () => undefined,
-      getCurrentRoles: () => [],
-      getSelectedLoginSite: () => 'gemini',
-      render: vi.fn(),
-      renderChatList: vi.fn(),
-      renderRolePanel: vi.fn(),
-      renderAddPersonDialog: vi.fn(),
-      closePeopleModals: vi.fn(),
-      closeExternalModels: vi.fn(),
-      registerComposerEvents: vi.fn(),
-      registerPeopleLibraryEvents: vi.fn(),
-      registerExternalModelsEvents: vi.fn(),
-      runCommand,
-      showError: vi.fn(),
-      log: { debug: vi.fn(), info: vi.fn() },
-    }).registerUi()
-
-    document.querySelector<HTMLButtonElement>('#open-group-template-create')!.click()
+    const controller = createTeamUiController(deps)
+    controller.registerUi()
+    controller.openGroupTemplate()
     const firstTemplateButton = document.querySelector<HTMLButtonElement>('.group-template-option')!
     expect(firstTemplateButton.textContent).toContain('Study Master Group')
     expect(firstTemplateButton.textContent).toContain('StudyPlanner')
@@ -149,7 +81,7 @@ describe('createTeamUiController', () => {
     firstTemplateButton.click()
     document.querySelector<HTMLButtonElement>('#confirm-group-template-create')!.click()
 
-    expect(runCommand).toHaveBeenCalledWith('GROUP_CHAT_CREATE', expect.objectContaining({
+    expect(deps.runCommand).toHaveBeenCalledWith('GROUP_CHAT_CREATE', expect.objectContaining({
       name: 'Study Master Group',
       roles: expect.arrayContaining([expect.objectContaining({ name: 'StudyPlanner' })]),
       welcomeMessage: expect.stringContaining('Welcome to "Study Master Group"'),
@@ -157,35 +89,11 @@ describe('createTeamUiController', () => {
   })
 
   it('filters group templates by category and search in the picker', () => {
-    createTeamUiController({
-      state: createTeamPageState(),
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
-      quickCreateChatEl: document.querySelector<HTMLButtonElement>('#quick-create-chat')!,
-      createChatFormEl: document.querySelector<HTMLFormElement>('#create-chat-form')!,
-      newChatNameEl: document.querySelector<HTMLInputElement>('#new-chat-name')!,
-      togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
-      rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
-      iframeHost: { restoreChat: vi.fn(() => []) },
-      getLanguage: () => 'zh-CN',
-      getCurrentChat: () => undefined,
-      getCurrentRoles: () => [],
-      getSelectedLoginSite: () => 'gemini',
-      render: vi.fn(),
-      renderChatList: vi.fn(),
-      renderRolePanel: vi.fn(),
-      renderAddPersonDialog: vi.fn(),
-      closePeopleModals: vi.fn(),
-      closeExternalModels: vi.fn(),
-      registerComposerEvents: vi.fn(),
-      registerPeopleLibraryEvents: vi.fn(),
-      registerExternalModelsEvents: vi.fn(),
-      runCommand: vi.fn(async () => undefined),
-      showError: vi.fn(),
-      log: { debug: vi.fn(), info: vi.fn() },
-    }).registerUi()
+    const deps = makeDeps({})
 
-    document.querySelector<HTMLButtonElement>('#open-group-template-create')!.click()
+    const controller = createTeamUiController(deps)
+    controller.registerUi()
+    controller.openGroupTemplate()
 
     const categoryButton = [...document.querySelectorAll<HTMLButtonElement>('.group-template-category-filter')]
       .find(button => button.textContent === '技术研发')
@@ -209,35 +117,11 @@ describe('createTeamUiController', () => {
   })
 
   it('keeps risk badges beside the template name and role count under the name', () => {
-    createTeamUiController({
-      state: createTeamPageState(),
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
-      quickCreateChatEl: document.querySelector<HTMLButtonElement>('#quick-create-chat')!,
-      createChatFormEl: document.querySelector<HTMLFormElement>('#create-chat-form')!,
-      newChatNameEl: document.querySelector<HTMLInputElement>('#new-chat-name')!,
-      togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
-      rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
-      iframeHost: { restoreChat: vi.fn(() => []) },
-      getLanguage: () => 'zh-CN',
-      getCurrentChat: () => undefined,
-      getCurrentRoles: () => [],
-      getSelectedLoginSite: () => 'gemini',
-      render: vi.fn(),
-      renderChatList: vi.fn(),
-      renderRolePanel: vi.fn(),
-      renderAddPersonDialog: vi.fn(),
-      closePeopleModals: vi.fn(),
-      closeExternalModels: vi.fn(),
-      registerComposerEvents: vi.fn(),
-      registerPeopleLibraryEvents: vi.fn(),
-      registerExternalModelsEvents: vi.fn(),
-      runCommand: vi.fn(async () => undefined),
-      showError: vi.fn(),
-      log: { debug: vi.fn(), info: vi.fn() },
-    }).registerUi()
+    const deps = makeDeps({})
 
-    document.querySelector<HTMLButtonElement>('#open-group-template-create')!.click()
+    const controller = createTeamUiController(deps)
+    controller.registerUi()
+    controller.openGroupTemplate()
     const professionalCard = [...document.querySelectorAll<HTMLButtonElement>('.group-template-option')]
       .find(card => card.querySelector('strong')?.textContent === '小公司财务群')
 
@@ -249,35 +133,11 @@ describe('createTeamUiController', () => {
   })
 
   it('renders a truncated preview of long group template summaries with the full text available on hover', () => {
-    createTeamUiController({
-      state: createTeamPageState(),
-      settingsButtonEl: document.querySelector<HTMLButtonElement>('#settings-button')!,
-      settingsMenuEl: document.querySelector<HTMLElement>('#settings-menu')!,
-      quickCreateChatEl: document.querySelector<HTMLButtonElement>('#quick-create-chat')!,
-      createChatFormEl: document.querySelector<HTMLFormElement>('#create-chat-form')!,
-      newChatNameEl: document.querySelector<HTMLInputElement>('#new-chat-name')!,
-      togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
-      rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
-      iframeHost: { restoreChat: vi.fn(() => []) },
-      getLanguage: () => 'zh-CN',
-      getCurrentChat: () => undefined,
-      getCurrentRoles: () => [],
-      getSelectedLoginSite: () => 'gemini',
-      render: vi.fn(),
-      renderChatList: vi.fn(),
-      renderRolePanel: vi.fn(),
-      renderAddPersonDialog: vi.fn(),
-      closePeopleModals: vi.fn(),
-      closeExternalModels: vi.fn(),
-      registerComposerEvents: vi.fn(),
-      registerPeopleLibraryEvents: vi.fn(),
-      registerExternalModelsEvents: vi.fn(),
-      runCommand: vi.fn(async () => undefined),
-      showError: vi.fn(),
-      log: { debug: vi.fn(), info: vi.fn() },
-    }).registerUi()
+    const deps = makeDeps({})
 
-    document.querySelector<HTMLButtonElement>('#open-group-template-create')!.click()
+    const controller = createTeamUiController(deps)
+    controller.registerUi()
+    controller.openGroupTemplate()
     const card = document.querySelector<HTMLButtonElement>('.group-template-option')!
     const summary = card.querySelector<HTMLElement>('.group-template-summary')!
     const template = BUILTIN_GROUP_TEMPLATES[0]
@@ -315,16 +175,35 @@ function makeRole(chatId: string, id: string): GroupRole {
   }
 }
 
+function makeDeps(overrides: Partial<TeamUiControllerDependencies>): TeamUiControllerDependencies {
+  return {
+    state: createTeamPageState(),
+    closeCreateChatPopover: vi.fn(),
+    togglePeopleDrawerEl: document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!,
+    rolePanelEl: document.querySelector<HTMLElement>('#role-panel')!,
+    iframeHost: { restoreChat: vi.fn(() => []) },
+    getLanguage: () => 'zh-CN',
+    getCurrentChat: () => undefined,
+    getCurrentRoles: () => [],
+    getSelectedLoginSite: () => 'gemini',
+    render: vi.fn(),
+    renderChatList: vi.fn(),
+    renderRolePanel: vi.fn(),
+    renderAddPersonDialog: vi.fn(),
+    closePeopleModals: vi.fn(),
+    closeExternalModels: vi.fn(),
+    registerComposerEvents: vi.fn(),
+    registerPeopleLibraryEvents: vi.fn(),
+    registerExternalModelsEvents: vi.fn(),
+    runCommand: vi.fn(async () => undefined),
+    showError: vi.fn(),
+    log: { debug: vi.fn(), info: vi.fn() },
+    ...overrides,
+  }
+}
+
 function teamUiBody(): string {
   return `
-  <button id="settings-button"></button>
-  <div id="settings-menu" hidden></div>
-  <button id="quick-create-chat"></button>
-  <form id="create-chat-form" hidden>
-    <input id="new-chat-name" />
-    <input name="new-chat-mode" value="independent" checked />
-    <button id="open-group-template-create" type="button"></button>
-  </form>
   <div id="group-template-modal" hidden>
     <button id="close-group-template-modal"></button>
     <input id="group-template-search" />
@@ -336,7 +215,6 @@ function teamUiBody(): string {
   <aside id="role-panel"></aside>
   <button id="close-people-drawer"></button>
   <button id="close-window"></button>
-  <button id="cancel-create-chat"></button>
   <button id="restore-chat"></button>
   <button id="open-gemini-login"></button>
 `

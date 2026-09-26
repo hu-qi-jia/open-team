@@ -7,7 +7,7 @@ import {
   getBuiltinGroupTemplateCategories,
   type BuiltinGroupTemplate,
 } from '../group/builtinGroupTemplates'
-import type { ChatSite, GroupChat, GroupRole, RoomMode } from '../group/types'
+import type { ChatSite, GroupChat, GroupRole } from '../group/types'
 import { localizeCategory, localizeGroupTemplate, normalizeLanguage, translateUi, type TeamLanguage } from '../shared/i18n'
 import type { TeamPageState } from './appState'
 import { requireElement } from './domRefs'
@@ -19,11 +19,7 @@ interface TeamUiIframeHost {
 
 export interface TeamUiControllerDependencies {
   state: TeamPageState
-  settingsButtonEl: HTMLButtonElement
-  settingsMenuEl: HTMLElement
-  quickCreateChatEl: HTMLButtonElement
-  createChatFormEl: HTMLFormElement
-  newChatNameEl: HTMLInputElement
+  closeCreateChatPopover(): void
   togglePeopleDrawerEl: HTMLButtonElement
   rolePanelEl: HTMLElement
   iframeHost: TeamUiIframeHost
@@ -50,6 +46,7 @@ export interface TeamUiControllerDependencies {
 
 export interface TeamUiController {
   registerUi(): void
+  openGroupTemplate(): void
 }
 
 const GROUP_TEMPLATE_INLINE_SUMMARY_LIMIT = 72
@@ -60,25 +57,12 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
   let groupTemplateSearchQuery = ''
 
   function registerUi(): void {
-    const openGroupTemplateCreateEl = requireElement<HTMLButtonElement>('#open-group-template-create')
     const groupTemplateModalEl = requireElement<HTMLElement>('#group-template-modal')
     const groupTemplateSearchEl = requireElement<HTMLInputElement>('#group-template-search')
     const groupTemplateCategoriesEl = requireElement<HTMLElement>('#group-template-categories')
     const groupTemplateListEl = requireElement<HTMLElement>('#group-template-list')
     const confirmGroupTemplateCreateEl = requireElement<HTMLButtonElement>('#confirm-group-template-create')
     const closeGroupTemplateModalEl = requireElement<HTMLButtonElement>('#close-group-template-modal')
-
-    deps.quickCreateChatEl.addEventListener('click', () => {
-      setChatCreatePopoverVisible(deps.createChatFormEl.hidden)
-    })
-
-    deps.settingsButtonEl.addEventListener('click', event => {
-      event.stopPropagation()
-      const visible = deps.settingsMenuEl.hidden
-      deps.settingsMenuEl.hidden = !visible
-      deps.settingsButtonEl.setAttribute('aria-expanded', String(visible))
-      deps.log.debug('ui:settings-menu:open')
-    })
 
     deps.registerPeopleLibraryEvents()
     deps.registerExternalModelsEvents()
@@ -95,10 +79,6 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
 
     document.addEventListener('click', event => {
       const target = event.target as Element | null
-      if (!deps.settingsMenuEl.hidden && !deps.settingsMenuEl.contains(event.target as Node) && event.target !== deps.settingsButtonEl) {
-        deps.settingsMenuEl.hidden = true
-        deps.settingsButtonEl.setAttribute('aria-expanded', 'false')
-      }
       if (deps.state.peopleDrawerOpen && target && !deps.rolePanelEl.contains(target) && !deps.togglePeopleDrawerEl.contains(target)) {
         deps.state.peopleDrawerOpen = false
         deps.render()
@@ -119,8 +99,6 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
 
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape') return
-      deps.settingsMenuEl.hidden = true
-      deps.settingsButtonEl.setAttribute('aria-expanded', 'false')
       deps.closePeopleModals()
       deps.closeExternalModels()
       deps.state.chatMenuChatId = undefined
@@ -129,14 +107,6 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
       closeGroupTemplateModal(groupTemplateModalEl, groupTemplateSearchEl, groupTemplateCategoriesEl, groupTemplateListEl, confirmGroupTemplateCreateEl)
       deps.renderChatList()
       deps.renderRolePanel()
-    })
-
-    requireElement<HTMLButtonElement>('#cancel-create-chat').addEventListener('click', () => {
-      setChatCreatePopoverVisible(false)
-    })
-
-    openGroupTemplateCreateEl.addEventListener('click', () => {
-      openGroupTemplateModal(groupTemplateModalEl, groupTemplateSearchEl, groupTemplateCategoriesEl, groupTemplateListEl, confirmGroupTemplateCreateEl)
     })
 
     closeGroupTemplateModalEl.addEventListener('click', () => {
@@ -153,24 +123,14 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
       const template = selectedGroupTemplateId ? getBuiltinGroupTemplate(selectedGroupTemplateId) : undefined
       if (!template) return
       const localizedTemplate = localizeGroupTemplate(template, language())
-      deps.newChatNameEl.value = ''
       closeGroupTemplateModal(groupTemplateModalEl, groupTemplateSearchEl, groupTemplateCategoriesEl, groupTemplateListEl, confirmGroupTemplateCreateEl)
-      setChatCreatePopoverVisible(false)
+      deps.closeCreateChatPopover()
       deps.runCommand('GROUP_CHAT_CREATE', {
         name: localizedTemplate.defaultChatName,
         mode: localizedTemplate.defaultMode,
         roles: localizedTemplate.roles,
         welcomeMessage: buildBuiltinGroupTemplateWelcomeMessage(localizedTemplate, language()),
       }).catch(error => deps.showError(error instanceof Error ? error.message : String(error)))
-    })
-
-    deps.createChatFormEl.addEventListener('submit', event => {
-      event.preventDefault()
-      const name = deps.newChatNameEl.value.trim() || ui('新群聊')
-      const mode = readNewChatMode()
-      deps.newChatNameEl.value = ''
-      setChatCreatePopoverVisible(false)
-      deps.runCommand('GROUP_CHAT_CREATE', { name, mode, roles: [] }).catch(error => deps.showError(error instanceof Error ? error.message : String(error)))
     })
 
     requireElement<HTMLButtonElement>('#restore-chat').addEventListener('click', () => {
@@ -189,6 +149,17 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
     requireElement<HTMLButtonElement>('#open-gemini-login').addEventListener('click', () => {
       chrome.tabs.create({ url: getDefaultChatSiteUrl(deps.getSelectedLoginSite()) }).catch(error => deps.showError(error instanceof Error ? error.message : String(error)))
     })
+  }
+
+  // React 快速建群表单「从模板中创建」的入口（uiBus 装配处转发）。
+  function openGroupTemplate(): void {
+    openGroupTemplateModal(
+      requireElement<HTMLElement>('#group-template-modal'),
+      requireElement<HTMLInputElement>('#group-template-search'),
+      requireElement<HTMLElement>('#group-template-categories'),
+      requireElement<HTMLElement>('#group-template-list'),
+      requireElement<HTMLButtonElement>('#confirm-group-template-create'),
+    )
   }
 
   function openGroupTemplateModal(
@@ -427,16 +398,5 @@ export function createTeamUiController(deps: TeamUiControllerDependencies): Team
     return translateUi(source, language())
   }
 
-  function readNewChatMode(): RoomMode {
-    const selected = document.querySelector<HTMLInputElement>('input[name="new-chat-mode"]:checked')
-    return selected?.value === 'collaborative' ? 'collaborative' : 'independent'
-  }
-
-  function setChatCreatePopoverVisible(visible: boolean): void {
-    deps.createChatFormEl.hidden = !visible
-    deps.quickCreateChatEl.setAttribute('aria-expanded', String(visible))
-    if (visible) deps.newChatNameEl.focus()
-  }
-
-  return { registerUi }
+  return { registerUi, openGroupTemplate }
 }
