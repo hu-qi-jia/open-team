@@ -138,3 +138,81 @@
     display: contents;
   }
 }
+
+/*
+ * V1 视觉翻转：legacy.css 的整套变量（--bg/--panel/--brand/…）原本指向
+ * 深青色调色板，与 shadcn zinc tokens 完全脱节。这里在 legacy 之上的
+ * components 层把每个 legacy 变量整体重映射到 zinc tokens——所有仍由
+ * legacy 样式驱动的表面（浮窗铬件、编排浮窗、X6 画布、未被重写的规则）
+ * 一步切入 shadcn 默认主题，后续 V2–V5 逐表面重写时继承同一 token 源。
+ * 层序保证覆盖：components 晚于 legacy，同特异性选择器后者胜。
+ */
+@layer components {
+  :root,
+  :root[data-theme="dark"] {
+    --bg: var(--background);
+    --panel: var(--card);
+    --panel-strong: var(--popover);
+    --panel-soft: var(--secondary);
+    --line: var(--border);
+    --line-strong: var(--ring);
+    --text: var(--foreground);
+    --muted: var(--muted-foreground);
+    --subtle: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+    --brand: var(--primary);
+    --brand-deep: var(--primary);
+    --danger: var(--destructive);
+    --warning: var(--chart-3);
+    --success: var(--chart-2);
+    --bubble: var(--card);
+    --shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --glow: 0 0 0 1px var(--border);
+    --orchestration-node-bg: var(--card);
+    --orchestration-node-text: var(--card-foreground);
+    --orchestration-node-stroke: var(--border);
+    --orchestration-node-selected: var(--ring);
+    --orchestration-node-shadow: drop-shadow(0 8px 18px rgb(0 0 0 / 0.35));
+    --orchestration-node-selected-shadow: drop-shadow(0 0 10px color-mix(in oklab, var(--ring) 40%, transparent));
+    --orchestration-port-bg: var(--background);
+    --orchestration-edge: var(--ring);
+    --orchestration-edge-label-bg: var(--popover);
+    --orchestration-edge-label-text: var(--popover-foreground);
+    --orchestration-edge-label-stroke: var(--border);
+  }
+
+  :root[data-theme="light"] {
+    --bg: var(--background);
+    --panel: var(--card);
+    --panel-strong: var(--popover);
+    --panel-soft: var(--muted);
+    --line: var(--border);
+    --line-strong: var(--ring);
+    --text: var(--foreground);
+    --muted: var(--muted-foreground);
+    --subtle: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+    --brand: var(--primary);
+    --brand-deep: var(--background);
+    --danger: var(--destructive);
+    --warning: var(--chart-4);
+    --success: var(--chart-2);
+    --bubble: var(--card);
+    --shadow: 0 25px 50px -12px rgb(0 0 0 / 0.12);
+    --glow: 0 0 0 1px var(--border);
+    --orchestration-node-bg: var(--card);
+    --orchestration-node-text: var(--card-foreground);
+    --orchestration-node-stroke: var(--border);
+    --orchestration-node-selected: var(--ring);
+    --orchestration-node-shadow: drop-shadow(0 8px 18px rgb(0 0 0 / 0.12));
+    --orchestration-node-selected-shadow: drop-shadow(0 0 10px color-mix(in oklab, var(--ring) 30%, transparent));
+    --orchestration-port-bg: var(--background);
+    --orchestration-edge: var(--ring);
+    --orchestration-edge-label-bg: var(--popover);
+    --orchestration-edge-label-text: var(--popover-foreground);
+    --orchestration-edge-label-stroke: var(--border);
+  }
+
+  /* legacy 的 body 青色渐变背景不经变量，直接压平为 zinc 底色 */
+  body {
+    background: var(--background);
+  }
+}

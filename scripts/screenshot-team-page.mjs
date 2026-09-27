@@ -18,6 +18,7 @@ await mkdir(outDir, { recursive: true })
 
 const name = process.argv[2] || 'team-page'
 const seed = process.argv.includes('--seed')
+const light = process.argv.includes('--light')
 
 const userDataDir = await mkdtemp(path.join(tmpdir(), 'openteam-shot-'))
 const browser = await puppeteer.launch({
@@ -130,6 +131,15 @@ try {
 
   await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: false })
   console.log(`saved screenshots/${name}.png`)
+
+  if (light) {
+    // themeController 驱动 <html data-theme>：点亮色按钮后补一张亮色截图
+    await page.click('#theme-light')
+    await new Promise(resolve => setTimeout(resolve, 600))
+    await page.screenshot({ path: path.join(outDir, `${name}-light.png`), fullPage: false })
+    console.log(`saved screenshots/${name}-light.png`)
+    await page.click('#theme-dark')
+  }
 } finally {
   await browser.close()
 }
