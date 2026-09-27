@@ -3131,7 +3131,6 @@ select:focus {
 
 .group-template-modal {
   display: grid;
-  width: min(1500px, calc(100vw - 32px));
   min-height: min(820px, calc(100vh - 24px));
   max-height: calc(100vh - 24px);
   grid-template-rows: auto auto minmax(0, 1fr) auto;

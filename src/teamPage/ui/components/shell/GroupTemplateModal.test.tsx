@@ -41,12 +41,11 @@ describe('GroupTemplateModal', () => {
     const services = createFakeServices()
     renderWithServices(<GroupTemplateModal />, { services })
 
-    expect(document.getElementById('group-template-modal')?.hidden).toBe(true)
+    expect(document.getElementById('group-template-modal')).toBeNull()
 
     openGroupTemplate(services)
 
-    const modal = document.getElementById('group-template-modal')!
-    expect(modal.hidden).toBe(false)
+    expect(document.getElementById('group-template-modal')).not.toBeNull()
     expect(searchInput()?.value).toBe('')
     expect(optionNames()).toContain('学霸学习群')
     expect(confirmButton()?.disabled).toBe(true)
@@ -74,7 +73,7 @@ describe('GroupTemplateModal', () => {
       roles: template.roles,
       welcomeMessage: expect.stringContaining(`欢迎来到「${template.name}」`),
     })
-    expect(document.getElementById('group-template-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.getElementById('group-template-modal')).toBeNull())
     expect(closePopover).toHaveBeenCalledTimes(1)
   })
 
@@ -219,10 +218,10 @@ describe('GroupTemplateModal', () => {
     expect(confirmButton()?.disabled).toBe(false)
 
     await user.click(document.querySelector<HTMLButtonElement>('#close-group-template-modal')!)
-    expect(document.getElementById('group-template-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.getElementById('group-template-modal')).toBeNull())
 
     openGroupTemplate(services)
-    expect(document.getElementById('group-template-modal')?.hidden).toBe(false)
+    expect(document.getElementById('group-template-modal')).not.toBeNull()
     // 选中已被关闭动作重置
     expect(confirmButton()?.disabled).toBe(true)
     expect(document.querySelector('.group-template-option.active')).toBeNull()
@@ -230,6 +229,11 @@ describe('GroupTemplateModal', () => {
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     })
-    expect(document.getElementById('group-template-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.getElementById('group-template-modal')).toBeNull())
+
+    // 外点不关闭（原行为：仅关闭按钮 + Escape 可关；Radix onInteractOutside preventDefault 保真）
+    openGroupTemplate(services)
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
+    expect(document.getElementById('group-template-modal')).not.toBeNull()
   })
 })

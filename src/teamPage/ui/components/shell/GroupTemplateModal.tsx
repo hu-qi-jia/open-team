@@ -11,10 +11,17 @@ import { localizeCategory, localizeGroupTemplate, normalizeLanguage, translateUi
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 
 /*
  * 群模板弹窗（teamUiController 群模板段整体 React 化，P4d；标记与
  * team.html 末版快照逐字对译，样式仍在 legacy.css 的 .group-template-*）。
+ * W1 起外壳换 Radix Dialog——#group-template-modal id 移到 DialogContent，
+ * Escape 经 onOpenChange 走 closeGroupTemplate；原行为「不响应背板点击」
+ * 以 onInteractOutside preventDefault 保真（焦点移出同理不关闭）；
+ * 首开聚焦搜索框改走 onOpenAutoFocus（Radix 挂载内容晚于 open 翻转，
+ * open effect 里 ref 尚为空）。
  * 与原实现对译关系：
  * - 打开入口：快速建群表单「从模板中创建」经 uiBus 'open-group-template-create'
  *   （原 index.tsx 装配处的转发订阅移入本组件）；打开即重置搜索/分类/选中并
@@ -49,18 +56,8 @@ export function GroupTemplateModal() {
   }), [services])
 
   // 打开瞬间聚焦搜索框（原 openGroupTemplateModal 尾部 searchEl.focus()）
-  useEffect(() => {
-    if (open) searchRef.current?.focus()
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') closeGroupTemplate()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  })
+  // 改由下方 onOpenAutoFocus 承担；Escape 走 Radix 默认（onOpenChange →
+  // closeGroupTemplate），背板/焦点外移不关闭由 onInteractOutside 保真
 
   function closeGroupTemplate(): void {
     // 原 closeGroupTemplateModal 同步清空全部状态，下次打开即初始视图
@@ -112,15 +109,25 @@ export function GroupTemplateModal() {
   }
 
   return (
-    <div id="group-template-modal" className="modal-backdrop" hidden={!open}>
-      <section className="modal group-template-modal" role="dialog" aria-modal="true" aria-labelledby="group-template-title">
-        <div className="modal-header">
+    <Dialog open={open} onOpenChange={next => { if (!next) closeGroupTemplate() }}>
+      <DialogContent
+        id="group-template-modal"
+        aria-labelledby="group-template-title"
+        showCloseButton={false}
+        className="group-template-modal w-[min(1500px,calc(100vw-32px))] max-w-none sm:max-w-none bg-popover"
+        onInteractOutside={event => event.preventDefault()}
+        onOpenAutoFocus={event => {
+          event.preventDefault()
+          document.getElementById('group-template-search')?.focus()
+        }}
+      >
+        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
           <div>
-            <h2 id="group-template-title">{ui('从模板中创建')}</h2>
-            <p className="tiny">{ui('选择一个现成小组，创建后会自动加入模板人员。')}</p>
+            <DialogTitle id="group-template-title">{ui('从模板中创建')}</DialogTitle>
+            <DialogDescription className="tiny">{ui('选择一个现成小组，创建后会自动加入模板人员。')}</DialogDescription>
           </div>
-          <button id="close-group-template-modal" className="icon-btn modal-close" type="button" aria-label={ui('关闭群聊模板')} onClick={closeGroupTemplate}>×</button>
-        </div>
+          <Button id="close-group-template-modal" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭群聊模板')} onClick={closeGroupTemplate}>×</Button>
+        </DialogHeader>
         <div className="group-template-toolbar">
           <label className="group-template-search-field" htmlFor="group-template-search">
             <span>{ui('搜索模板')}</span>
@@ -172,8 +179,8 @@ export function GroupTemplateModal() {
             {ui(selectedTemplate?.riskLevel === 'professional' ? '了解限制并创建' : '确认创建')}
           </button>
         </div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
