@@ -11,5 +11,5 @@ export function StoreSummary() {
   const t = useT()
   const chatCount = useStoreSelector(state => state.store.chatOrder.length)
   const templateCount = useStoreSelector(state => getAllRoleTemplates(state.store).length)
-  return <p id="store-summary" className="tiny">{t(`${chatCount} 个群聊 · ${templateCount} 个人员库人员`)}</p>
+  return <p id="store-summary" className="tiny truncate text-[11px] text-muted-foreground">{t(`${chatCount} 个群聊 · ${templateCount} 个人员库人员`)}</p>
 }

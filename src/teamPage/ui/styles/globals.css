@@ -215,4 +215,31 @@
   body {
     background: var(--background);
   }
+
+  /*
+   * V2 壳层铬件 zinc 化：仅覆盖视觉（边框/底色/圆角/阴影），结构规则
+   * （grid 三列、fixed 定位、minimized/fullscreen 几何）仍在 legacy——
+   * floatingWindow 继续直写 #app 的内联样式与状态类，互不干涉。
+   */
+  .app-shell {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    backdrop-filter: none;
+  }
+
+  /* 浮窗铬件的 toast 式 tooltip：zinc 化（原为青色硬编码） */
+  .rail-btn[data-tooltip]::after,
+  .icon-btn[data-tooltip]::after {
+    background: var(--popover);
+    color: var(--popover-foreground);
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
+  }
+  .rail-btn[data-tooltip]::before,
+  .icon-btn[data-tooltip]::before {
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+  }
 }

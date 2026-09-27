@@ -1,4 +1,5 @@
 import { normalizeLanguage, type TeamLanguage } from '../../../../shared/i18n'
+import { Settings as SettingsIcon } from 'lucide-react'
 import { agentControlStatusState, agentControlStatusText } from '../../lib/agentControlStatus'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
@@ -58,7 +59,14 @@ export function SettingsMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger id="settings-button" className="rail-btn" aria-label={t('设置')} title={t('设置')}>⚙</DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        id="settings-button"
+        className="rail-btn flex size-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        aria-label={t('设置')}
+        title={t('设置')}
+      >
+        <SettingsIcon className="size-[18px]" aria-hidden="true" />
+      </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-56">
         <DropdownMenuLabel>{t('语言')}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={effectiveLanguage} onValueChange={value => updateLanguage(value as TeamLanguage)}>

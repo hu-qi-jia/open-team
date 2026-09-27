@@ -79,18 +79,23 @@ export function ChatList() {
   }
 
   return (
-    <div id="chat-list" className="chat-list">
+    <div id="chat-list" className="chat-list min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1.5">
       {items.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-card">
-            <h3>{ui('还没有群聊')}</h3>
-            <p className="muted">{ui('在上方创建一个群聊，然后从人员库添加人员。')}</p>
+        <div className="empty-state px-2 py-8">
+          <div className="empty-card rounded-lg border border-dashed border-border p-4 text-center">
+            <h3 className="text-sm font-medium">{ui('还没有群聊')}</h3>
+            <p className="muted mt-1 text-xs text-muted-foreground">{ui('在上方创建一个群聊，然后从人员库添加人员。')}</p>
           </div>
         </div>
       ) : items.map(chat => (
         <section
           key={chat.id}
-          className={`chat-item${chat.active ? ' active' : ''}${chat.hasActivity ? ' has-activity' : ''}`}
+          className={[
+            'chat-item group relative flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-none px-2 py-2 text-left outline-none transition-colors',
+            'focus-visible:ring-2 focus-visible:ring-ring',
+            chat.active ? 'active bg-accent text-accent-foreground' : 'hover:bg-accent/60',
+            chat.hasActivity ? 'has-activity' : '',
+          ].join(' ')}
           tabIndex={0}
           role="button"
           aria-label={switchAriaLabel(language, chat.name)}
@@ -103,18 +108,18 @@ export function ChatList() {
             switchTo(chat.id)
           }}
         >
-          <div className={`chat-avatar ${chat.tone}`}>{chat.initial}</div>
-          <div className="chat-item-body">
+          <div className={`chat-avatar ${chat.tone} flex size-9 shrink-0 items-center justify-center rounded-md bg-none bg-secondary text-xs font-medium text-secondary-foreground`}>{chat.initial}</div>
+          <div className="chat-item-body min-w-0 flex-1">
             <div className="chat-row chat-item-title">
-              <button type="button" className="chat-name">{chat.name}</button>
+              <button type="button" className="chat-name truncate text-sm font-medium leading-tight">{chat.name}</button>
             </div>
-            <div className="summary-line">{chat.summary}</div>
+            <div className="summary-line truncate text-xs text-muted-foreground">{chat.summary}</div>
           </div>
-          <div className="chat-item-side">
-            <span className="chat-time">{chat.timeText}</span>
+          <div className="chat-item-side flex shrink-0 flex-col items-end gap-1">
+            <span className="chat-time text-[11px] tabular-nums text-muted-foreground/80">{chat.timeText}</span>
             <DropdownMenu>
               <DropdownMenuTrigger
-                className="icon-btn chat-menu-btn"
+                className="icon-btn chat-menu-btn flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
                 aria-label={menuAriaLabel(language, chat.name)}
               >⋯</DropdownMenuTrigger>
               <DropdownMenuContent side="bottom" align="end">

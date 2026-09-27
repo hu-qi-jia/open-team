@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Plus } from 'lucide-react'
 import type { RoomMode } from '../../../../group/types'
 import { useServices } from '../../context/ServicesContext'
 import { useT } from '../../hooks/useT'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
 
 interface QuickCreateChatContextValue {
   open: boolean
@@ -52,13 +55,15 @@ export function QuickCreateChatTrigger() {
   return (
     <button
       id="quick-create-chat"
-      className="icon-btn"
+      className="icon-btn flex size-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       type="button"
       aria-label={t('新建群聊')}
       aria-controls="chat-create-popover"
       aria-expanded={open}
       onClick={openPopover}
-    >＋</button>
+    >
+      <Plus className="size-4" aria-hidden="true" />
+    </button>
   )
 }
 
@@ -93,13 +98,13 @@ export function QuickCreateChatForm() {
   }
 
   return (
-    <form id="create-chat-form" className="chat-create" onSubmit={submit}>
+    <form id="create-chat-form" className="chat-create mx-3 mb-2 space-y-3 rounded-lg border border-border bg-popover p-3 shadow-sm" onSubmit={submit}>
       <div id="chat-create-popover">
-        <h3>{t('新建群聊')}</h3>
+        <h3 className="text-sm font-semibold">{t('新建群聊')}</h3>
       </div>
-      <div className="field">
-        <label htmlFor="new-chat-name">{t('群聊名称')}</label>
-        <input
+      <div className="field space-y-1.5">
+        <label htmlFor="new-chat-name" className="text-xs font-medium text-muted-foreground">{t('群聊名称')}</label>
+        <Input
           id="new-chat-name"
           ref={nameInputRef}
           type="text"
@@ -109,42 +114,44 @@ export function QuickCreateChatForm() {
           onChange={event => setName(event.target.value)}
         />
       </div>
-      <div className="field">
-        <label>{t('群聊模式')}</label>
-        <div className="mode-options">
-          <label className="mode-option" htmlFor="new-chat-mode-collaborative">
+      <div className="field space-y-1.5">
+        <label className="text-xs font-medium text-muted-foreground">{t('群聊模式')}</label>
+        <div className="mode-options grid grid-cols-1 gap-1.5">
+          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-collaborative:checked]]:border-ring has-[[#new-chat-mode-collaborative:checked]]:bg-accent" htmlFor="new-chat-mode-collaborative">
             <input
               id="new-chat-mode-collaborative"
+              className="mt-0.5 accent-[var(--primary)]"
               type="radio"
               name="new-chat-mode"
               value="collaborative"
               checked={mode === 'collaborative'}
               onChange={() => setMode('collaborative')}
             />
-            <span>
-              <span className="mode-name">{t('协作群聊')}</span>
-              <span className="mode-help">{t('人员参考群聊上下文，适合接力讨论。')}</span>
+            <span className="grid gap-0.5">
+              <span className="mode-name text-xs font-medium">{t('协作群聊')}</span>
+              <span className="mode-help text-xs text-muted-foreground">{t('人员参考群聊上下文，适合接力讨论。')}</span>
             </span>
           </label>
-          <label className="mode-option" htmlFor="new-chat-mode-independent">
+          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-independent:checked]]:border-ring has-[[#new-chat-mode-independent:checked]]:bg-accent" htmlFor="new-chat-mode-independent">
             <input
               id="new-chat-mode-independent"
+              className="mt-0.5 accent-[var(--primary)]"
               type="radio"
               name="new-chat-mode"
               value="independent"
               checked={mode === 'independent'}
               onChange={() => setMode('independent')}
             />
-            <span>
-              <span className="mode-name">{t('独立专家')}</span>
-              <span className="mode-help">{t('人员独立回答，适合并行评审。')}</span>
+            <span className="grid gap-0.5">
+              <span className="mode-name text-xs font-medium">{t('独立专家')}</span>
+              <span className="mode-help text-xs text-muted-foreground">{t('人员独立回答，适合并行评审。')}</span>
             </span>
           </label>
         </div>
       </div>
-      <div className="two-col">
-        <button id="cancel-create-chat" className="btn" type="button" onClick={cancel}>{t('取消')}</button>
-        <button className="btn btn-primary" type="submit">{t('创建')}</button>
+      <div className="two-col grid grid-cols-2 gap-2">
+        <Button id="cancel-create-chat" type="button" variant="outline" onClick={cancel}>{t('取消')}</Button>
+        <Button type="submit">{t('创建')}</Button>
       </div>
       <div className="chat-create-template-row">
         <TemplateCreateButton />
@@ -157,11 +164,15 @@ function TemplateCreateButton() {
   const t = useT()
   const { uiBus } = useServices()
   return (
-    <button
+    <Button
       id="open-group-template-create"
-      className="btn btn-ghost chat-create-template-btn"
+      variant="ghost"
+      className="chat-create-template-btn w-full text-muted-foreground"
       type="button"
       onClick={() => uiBus.emit('open-group-template-create')}
-    >{t('从模板中创建')}</button>
+    >
+      <Plus className="size-3.5" aria-hidden="true" />
+      {t('从模板中创建')}
+    </Button>
   )
 }
