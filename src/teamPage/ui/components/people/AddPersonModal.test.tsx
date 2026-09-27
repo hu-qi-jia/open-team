@@ -107,7 +107,7 @@ describe('team page add person modal', () => {
       ],
     })
     // 成功后关闭并清空勾选
-    expect(document.querySelector<HTMLElement>('#add-person-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#add-person-modal')).toBeNull())
     expect(state.addPersonSelectedKeys.size).toBe(0)
   })
 
@@ -261,7 +261,7 @@ describe('team page add person modal', () => {
 
     expect(showError).toHaveBeenCalledWith('请选择或填写要添加的人员')
     expect(services.runCommand).not.toHaveBeenCalled()
-    expect(document.querySelector<HTMLElement>('#add-person-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#add-person-modal')).not.toBeNull()
   })
 
   it('ignores the open command without a current chat', async () => {
@@ -271,7 +271,7 @@ describe('team page add person modal', () => {
 
     await openAddPerson(services)
 
-    expect(document.querySelector<HTMLElement>('#add-person-modal')?.hidden).toBe(true)
+    expect(document.querySelector('#add-person-modal')).toBeNull()
   })
 
   it('adds a temporary draft through the stacked dialog and submits it as a temporary role', async () => {
@@ -307,6 +307,6 @@ describe('team page add person modal', () => {
     })
     // 成功后清空临时草稿并关闭
     expect(state.temporaryPersonDrafts).toHaveLength(0)
-    expect(document.querySelector<HTMLElement>('#add-person-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#add-person-modal')).toBeNull())
   })
 })

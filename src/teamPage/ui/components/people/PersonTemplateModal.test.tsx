@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act } from '@testing-library/react'
+import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
@@ -81,7 +81,7 @@ describe('team page person template modal', () => {
       grokProjectUrl: undefined,
     })
     // 保存成功后关闭并清空编辑目标
-    expect(document.querySelector<HTMLElement>('#person-template-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#person-template-modal')).toBeNull())
     expect(state.selectedTemplateId).toBeUndefined()
   })
 
@@ -251,7 +251,7 @@ describe('team page person template modal', () => {
 
     expect(showError).toHaveBeenCalledWith('人员名称不能为空')
     expect(services.runCommand).not.toHaveBeenCalled()
-    expect(document.querySelector<HTMLElement>('#person-template-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#person-template-modal')).not.toBeNull()
   })
 
   it('prefills and updates an existing person through ROLE_TEMPLATE_UPDATE', async () => {

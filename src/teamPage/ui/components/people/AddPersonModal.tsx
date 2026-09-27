@@ -19,11 +19,15 @@ import {
 } from '../../lib/peopleLibrary'
 import { selectableModels } from '../../lib/rolePanelItems'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { CategoryFilter, EmptyState, TypeTabs } from './primitives'
 
 /*
  * 添加人员弹窗（原 peopleLibraryView 的 add-person-modal + 站点 pill
- * 逻辑 React 化，P4）。#add-person-modal 与内部 id 逐字保留。对译关系：
+ * 逻辑 React 化，P4；W1 起外壳换 Radix Dialog——#add-person-modal id
+ * 移到 DialogContent，Escape/遮罩点击关闭经 onOpenChange 走 close 清
+ * 勾选集合）。内部 id 逐字保留。对译关系：
  * - 开启入口：uiBus 'open-add-person'（消息流空态、成员抽屉表单）——
  *   无当前群聊时忽略（原 getCurrentChat 守卫）；打开即重置搜索/类型/
  *   分类与勾选集合（原 openAddPersonDialog）；
@@ -78,15 +82,6 @@ export function AddPersonModal() {
     setCategory('全部')
     setOpen(true)
   }), [services])
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') close()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  })
 
   function close(): void {
     setOpen(false)
@@ -168,25 +163,23 @@ export function AddPersonModal() {
   )
 
   return (
-    <div
-      id="add-person-modal"
-      className="modal-backdrop"
-      hidden={!open}
-      onClick={event => {
-        if (event.target === event.currentTarget) close()
-      }}
-    >
-      <section className="modal" role="dialog" aria-modal="true" aria-labelledby="add-person-title">
-        <div className="modal-header">
+    <Dialog open={open} onOpenChange={next => { if (!next) close() }}>
+      <DialogContent
+        id="add-person-modal"
+        aria-labelledby="add-person-title"
+        showCloseButton={false}
+        className="max-h-[min(760px,calc(100vh-48px))] w-[min(820px,calc(100vw-48px))] max-w-none sm:max-w-none overflow-auto bg-popover"
+      >
+        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
           <div>
-            <h2 id="add-person-title">{ui('添加人员')}</h2>
-            <p className="tiny">{ui('从人员库或临时草稿中选择人员，并为每个人指定站点。')}</p>
+            <DialogTitle id="add-person-title">{ui('添加人员')}</DialogTitle>
+            <DialogDescription className="tiny">{ui('从人员库或临时草稿中选择人员，并为每个人指定站点。')}</DialogDescription>
           </div>
-          <div className="modal-header-actions">
+          <div className="modal-header-actions flex items-center gap-2">
             <button id="open-temporary-person" className="btn btn-ghost" type="button" onClick={() => services.uiBus.emit('open-temporary-person')}>{ui('临时添加')}</button>
-            <button id="close-add-person" className="icon-btn modal-close" type="button" aria-label={ui('关闭添加人员')} onClick={close}>×</button>
+            <Button id="close-add-person" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭添加人员')} onClick={close}>×</Button>
           </div>
-        </div>
+        </DialogHeader>
         <div className="modal-grid single-column">
           <form id="add-library-people-form" className="modal-form modal-card modal-grid-wide" onSubmit={submit}>
             <h3>{ui('选择人员')}</h3>
@@ -238,8 +231,8 @@ export function AddPersonModal() {
             <button className="btn btn-primary" type="submit">{ui('加入选中人员')}</button>
           </form>
         </div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

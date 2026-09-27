@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { GeneratedPersonDraft } from '../../../../group/personaGeneration'
 import type { ChatSite, OpenTeamStore, RoleTemplate } from '../../../../group/types'
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
@@ -7,6 +7,8 @@ import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { getAppState, getAppStateVersion, notifyAppState } from '../../lib/appStore'
 import { externalModels, personaGenerationErrorMessage, validatePersonDraft, visibleChatSite, type TemplateDraft } from '../../lib/peopleLibrary'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 
 const SITE_RADIOS: Array<{ site: ChatSite | 'external'; id: string; label: string }> = [
   { site: 'gemini', id: 'template-site-gemini', label: 'Gemini' },
@@ -21,7 +23,10 @@ type SiteRadioValue = (typeof SITE_RADIOS)[number]['site']
 
 /*
  * 人员编辑弹窗（原 peopleLibraryView 的 person-template-modal + 表单逻辑
- * React 化，P4）。#person-template-modal 与表单 id 逐字保留。对译关系：
+ * React 化，P4；W1 起外壳换 Radix Dialog——#person-template-modal id
+ * 移到 DialogContent，Escape/遮罩点击关闭经 onOpenChange 走 close 清
+ * selectedTemplateId，打开聚焦移入 onOpenAutoFocus）。表单 id 逐字保留。
+ * 对译关系：
  * - 开启入口：uiBus 'open-person-template-edit'（编辑目标经
  *   appState.selectedTemplateId 传递，新建时为空），打开即按目标初始化
  *   （原 openTemplateEditor → renderTemplateEditor）并聚焦名称框；
@@ -48,7 +53,6 @@ export function PersonTemplateModal() {
   const [gptsUrl, setGptsUrl] = useState('')
   const [grokUrl, setGrokUrl] = useState('')
   const [externalModelId, setExternalModelId] = useState('')
-  const prevOpenRef = useRef(false)
 
   const ui = (source: string) => translateUi(source, language)
 
@@ -89,26 +93,10 @@ export function PersonTemplateModal() {
     setOpen(true)
   }), [services])
 
-  // 打开瞬间聚焦名称框（原 templateNameEl.focus()；受控渲染完成后执行）
-  useEffect(() => {
-    if (open && !prevOpenRef.current) document.getElementById('template-name')?.focus()
-    prevOpenRef.current = open
-  })
-
   // 被编辑模板在打开期间被删除 → 自动关闭
   useEffect(() => {
     if (open && getAppState().selectedTemplateId && !target) setOpen(false)
   }, [open, target])
-
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') close()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  })
-
 
   function close(): void {
     setOpen(false)
@@ -179,22 +167,26 @@ export function PersonTemplateModal() {
   const externalDisabled = models.length === 0
 
   return (
-    <div
-      id="person-template-modal"
-      className="modal-backdrop"
-      hidden={!open}
-      onClick={event => {
-        if (event.target === event.currentTarget) close()
-      }}
-    >
-      <section className="modal template-editor-modal" role="dialog" aria-modal="true" aria-labelledby="template-form-title">
-        <div className="modal-header">
+    <Dialog open={open} onOpenChange={next => { if (!next) close() }}>
+      <DialogContent
+        id="person-template-modal"
+        aria-labelledby="template-form-title"
+        showCloseButton={false}
+        className="template-editor-modal max-h-[min(760px,calc(100vh-48px))] w-[min(520px,calc(100vw-48px))] max-w-none sm:max-w-none overflow-auto bg-popover"
+        onOpenAutoFocus={event => {
+          // 原打开即聚焦名称框（templateNameEl.focus()）；放进 Radix
+          // 焦点调度内执行，保证不被内容挂载聚焦覆盖
+          event.preventDefault()
+          document.getElementById('template-name')?.focus()
+        }}
+      >
+        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
           <div>
-            <h2 id="template-form-title">{target ? ui(`编辑人员：${target.name}`) : ui('新建人员')}</h2>
-            <p className="tiny">{ui('维护人员名称、人设和默认站点。')}</p>
+            <DialogTitle id="template-form-title">{target ? ui(`编辑人员：${target.name}`) : ui('新建人员')}</DialogTitle>
+            <DialogDescription className="tiny">{ui('维护人员名称、人设和默认站点。')}</DialogDescription>
           </div>
-          <button id="close-person-template" className="icon-btn modal-close" type="button" aria-label={ui('关闭人员编辑')} onClick={close}>×</button>
-        </div>
+          <Button id="close-person-template" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭人员编辑')} onClick={close}>×</Button>
+        </DialogHeader>
         <form id="people-library-form" className="modal-form" onSubmit={event => { void submit(event) }}>
           <div className="ai-persona-panel">
             <div className="field">
@@ -294,7 +286,7 @@ export function PersonTemplateModal() {
             <button className="btn btn-primary" type="submit">{ui('保存人员')}</button>
           </div>
         </form>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

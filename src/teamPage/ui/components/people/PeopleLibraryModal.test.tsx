@@ -243,7 +243,7 @@ describe('team page people library modal', () => {
     await openLibrary(services)
     await user.click(document.querySelector<HTMLButtonElement>('#new-template')!)
 
-    expect(document.querySelector<HTMLElement>('#person-template-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#person-template-modal')).not.toBeNull()
     expect(document.querySelector('#template-form-title')?.textContent).toContain('新建人员')
     expect(state.selectedTemplateId).toBeUndefined()
   })
