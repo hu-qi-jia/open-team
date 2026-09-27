@@ -37,6 +37,8 @@ describe('team page notes panel boundary', () => {
 describe('team page notes panel', () => {
   afterEach(() => {
     vi.useRealTimers()
+    // 用例可能向 body 注入 #app（含 minimized 初值），清掉避免跨用例污染
+    document.body.innerHTML = ''
   })
 
   it('opens with the chat note tab active and closes from the close button', async () => {
@@ -247,6 +249,12 @@ describe('team page notes panel', () => {
     expect(panel.classList.contains('dragging')).toBe(false)
   })
 
+  it('#app minimized 时不渲染笔记面板', () => {
+    document.body.innerHTML = '<div id="app" class="app-shell minimized"></div>'
+    renderPanel()
+    expect(document.getElementById('notes-panel')).toBeNull()
+  })
+
   it('lets the note window be resized without exceeding the viewport', async () => {
     const { state } = renderPanel()
 
@@ -296,6 +304,11 @@ interface RenderPanelOptions {
 }
 
 function renderPanel(options: RenderPanelOptions = {}) {
+  // useAppShellChrome 系列要求 #app 已挂载（效果阶段对其挂 MutationObserver），
+  // 缺省先摆一枚未最小化的壳；需要最小化初值的用例自行先注入再进来。
+  if (!document.getElementById('app')) {
+    document.body.innerHTML = '<div id="app" class="app-shell"></div>'
+  }
   const state = makeState(options)
   const creations: Array<{ element: HTMLElement; content: RichNoteDocument }> = []
   let onUpdate: (() => void) | undefined

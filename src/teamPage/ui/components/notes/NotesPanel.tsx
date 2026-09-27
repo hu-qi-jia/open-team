@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useServices } from '../../context/ServicesContext'
+import { useAppShellChromeState } from '../../hooks/useAppShellChrome'
 import { useFloatingPanelGeometry } from '../../hooks/useFloatingPanelGeometry'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { useT } from '../../hooks/useT'
@@ -133,6 +134,11 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
       insertTextIntoActiveNote: text => insertTextIntoActiveNote(text),
     })
   }, [services])
+
+  // 原 `.app-shell.minimized + .notes-panel` 隐藏规则（Task 7 已删）的 React
+  // 等价物：浮窗最小化时整面板不渲染，解除「面板必须紧跟壳元素」的相邻兄弟约束。
+  const chrome = useAppShellChromeState()
+  if (chrome.minimized) return null
 
   function selectDefaultOpenScope(): void {
     if (view.chat) getAppState().activeNoteScope = 'chat'
