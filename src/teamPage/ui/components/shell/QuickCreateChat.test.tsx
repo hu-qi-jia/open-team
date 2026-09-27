@@ -6,17 +6,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { QuickCreateChatForm, QuickCreateChatProvider, QuickCreateChatTrigger } from './QuickCreateChat'
 import { renderWithServices } from '../../test/TestProviders'
+import { SidebarProvider } from '../ui/sidebar'
 
 afterEach(() => {
   cleanup()
 })
 
 function renderQuickCreate() {
+  // 触发钮消费 useSidebar（图标条形态/tooltip 门控），须位于 SidebarProvider 内。
   return renderWithServices(
-    <QuickCreateChatProvider>
-      <QuickCreateChatTrigger />
-      <QuickCreateChatForm />
-    </QuickCreateChatProvider>,
+    <SidebarProvider>
+      <QuickCreateChatProvider>
+        <QuickCreateChatTrigger />
+        <QuickCreateChatForm />
+      </QuickCreateChatProvider>
+    </SidebarProvider>,
     {},
   )
 }

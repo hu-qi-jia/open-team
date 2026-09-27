@@ -4,7 +4,6 @@ import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import type { TeamPageState } from '../../../appState'
 import { useServices } from '../../context/ServicesContext'
 import { useAppSizeTier } from '../../hooks/useAppShellChrome'
-import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { getAppState, notifyAppState } from '../../lib/appStore'
 import { showError } from '../../lib/toast'
@@ -12,6 +11,7 @@ import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Separator } from '../ui/separator'
+import { useSidebar } from '../ui/sidebar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 
 /*
@@ -22,8 +22,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/
  * 档位收纳规则（useAppSizeTier 读 #app[data-app-size]）：
  * - wide：恢复会话 / 编排（协作模式）/ 免@（协作模式）/ 成员 / 笔记 全部平铺；
  * - medium：恢复会话 / 编排 / 免@ 收进「更多操作」菜单（笔记保留）；
- * - compact：上述之外笔记也收进菜单，并新增唤出侧栏钮（PanelLeft，
- *   写 useSidebarPrefs.userOpen，AppShellFrame 侧栏消费同一份共享 store）。
+ * - compact：上述之外笔记也收进菜单，并新增唤出侧栏钮（PanelLeft，走
+ *   sidebar 原语官方 API useSidebar().toggleSidebar()——视口感知：<768 视口
+ *   切 Sheet 分支消费 openMobile，桌面走受控 open 经 AppShellFrame 写回
+ *   userOpen 偏好。不直接写 useSidebarPrefs：真小视口下 Sheet 分支根本
+ *   不消费该偏好，只会被静默持久化（R2-a））。
  * 「更多操作」菜单只收纳当档缺失的钮，收起项与平铺项永不重复。
  * 既有行为函数 restoreChat / toggleManualMention / toggleNotesPanel /
  * togglePeopleDrawer 与编排骨手（services.uiBus 'open-orchestration'）
@@ -46,8 +49,8 @@ export function ChatHeader() {
   const notesPanelOpen = useStoreSelector(state => state.notesPanelOpen)
 
   const tier = useAppSizeTier()
-  const sidebar = useSidebarPrefs()
-  const sidebarOpen = sidebar.userOpen ?? tier === 'wide'
+  const { isMobile, open, openMobile, toggleSidebar } = useSidebar()
+  const sidebarOpen = isMobile ? openMobile : open
   const showTool = tier === 'wide' // 恢复会话 / 编排 / 免@
   const showPanel = tier !== 'compact' // 笔记
 
@@ -93,7 +96,9 @@ export function ChatHeader() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-4">
+      {/* compact 档右侧让出窗控圆点带（floating-toolbar absolute right:18px +
+          3×11px 圆点 ≈ 63px；78px 让位留 ~15px 间距，圆点几何零改动，R2-b） */}
+      <header className={`flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-4${tier === 'compact' ? ' pr-[78px]' : ''}`}>
         {tier === 'compact' && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -103,7 +108,7 @@ export function ChatHeader() {
                 className="size-8 shrink-0 text-muted-foreground"
                 aria-expanded={sidebarOpen}
                 aria-label={ui(sidebarOpen ? '收起侧栏' : '打开侧栏')}
-                onClick={() => sidebar.setUserOpen(!sidebarOpen)}
+                onClick={toggleSidebar}
               >
                 <PanelLeft className="size-4" aria-hidden="true" />
               </Button>

@@ -6,6 +6,8 @@ import { useT } from '../../hooks/useT'
 import { showError } from '../../lib/toast'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
+import { useSidebar } from '../ui/sidebar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
 
 interface QuickCreateChatContextValue {
   open: boolean
@@ -52,21 +54,30 @@ export function QuickCreateChatProvider({ children }: { children: ReactNode }) {
 export function QuickCreateChatTrigger() {
   const t = useT()
   const { open, openPopover } = useQuickCreateChat()
-  // S1 新壳：触发钮从侧栏头部的图标钮改为全宽 primary 观感（AppShellFrame
-  // SidebarHeader 内铺满一行）。id/aria/逻辑不动。
+  // 图标条形态（medium 档 48px 图标条）按官方 sidebar 模式收缩为 size-8
+  // 方钮（`group-data-[collapsible=icon]` 变体压过 w-full/px-3，文字整段
+  // 隐藏），tooltip 仅在收起态弹出（同 SidebarMenuButton 的 hidden 门控）。
+  // 展开态（wide / compact 唤出）保持全宽 primary + 文字。id/aria/逻辑不动。
+  // 组件必须位于 SidebarProvider 内（tooltip 由其 TooltipProvider 承载）。
+  const { isMobile, state } = useSidebar()
   return (
-    <Button
-      id="quick-create-chat"
-      className="flex h-8 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
-      type="button"
-      aria-label={t('新建群聊')}
-      aria-controls="chat-create-popover"
-      aria-expanded={open}
-      onClick={openPopover}
-    >
-      <Plus className="size-4" aria-hidden="true" />
-      {t('新建群聊')}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          id="quick-create-chat"
+          className="flex h-8 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-0!"
+          type="button"
+          aria-label={t('新建群聊')}
+          aria-controls="chat-create-popover"
+          aria-expanded={open}
+          onClick={openPopover}
+        >
+          <Plus className="size-4 shrink-0" aria-hidden="true" />
+          <span className="truncate group-data-[collapsible=icon]:hidden">{t('新建群聊')}</span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="right" hidden={state !== 'collapsed' || isMobile}>{t('新建群聊')}</TooltipContent>
+    </Tooltip>
   )
 }
 

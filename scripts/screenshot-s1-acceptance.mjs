@@ -12,8 +12,10 @@
  *   三向拉伸手柄）后复测对齐，几何 300ms 防抖持久化且重载后恢复；
  * - 侧栏拖宽 200–320 钳制、双击回 240、刷新保持（openteam.sidebar）；
  * - fullscreen 手柄隐藏 / minimized 笔记面板卸载（Task 8 的 React 守卫）；
- * - compact 窗控圆点与头部按钮重叠探查 + 侧栏唤出观察项（坐标/结果只记录，
- *   肉眼与主观裁定留人工/终审）。
+ * - compact 窗控圆点与头部按钮零重叠（R2-b：compact 头部右侧让位 78px，
+ *   圆点带 right:18px + 3×11px ≈ 63px）+ 侧栏唤出真正打开抽屉（R2-a：
+ *   唤出钮走 sidebar 原语官方 API，<768 视口 Sheet 分支生效）——两项均为
+ *   硬断言（R2 脚本硬化：原 record 观察项升格）。
  * 断言失败置 exitCode 3；控制台/页面报错置 exitCode 2。
  */
 import puppeteer from 'puppeteer'
@@ -162,8 +164,12 @@ try {
   })
   function checkHandleAlignment(label, probe, { withSidebar = true } = {}) {
     const groups = withSidebar ? ['right', 'bottom', 'corner', 'sidebar'] : ['right', 'bottom', 'corner']
+    // fail closed：任一预期探针组缺失（选择器没命中 → null）直接判负，
+    // 不允许「元素缺失 ⇒ 空 delta ⇒ 误绿」。
+    const missing = groups.filter(key => !probe[key])
     const worst = Math.max(0, ...groups.flatMap(key => probe[key] ? Object.values(probe[key]).map(Math.abs) : []))
-    check(label, worst <= 3, `max edge delta ${worst}px — ${JSON.stringify(probe)}`)
+    check(label, missing.length === 0 && worst <= 3,
+      `${missing.length > 0 ? `missing probes [${missing.join(', ')}] — ` : ''}max edge delta ${worst}px — ${JSON.stringify(probe)}`)
   }
 
   // ---- 三档位场景（dark）：视口宽 → .app-shell 宽（min(1420px, 100vw-52px)）→ 档位翻转 ----
@@ -227,7 +233,9 @@ try {
       check('medium icon tooltip on hover', tooltip !== null && tooltip.visible && tooltip.text?.length > 0, JSON.stringify(tooltip))
     }
     if (name === 'compact') {
-      // 窗控圆点 vs 头部按钮重叠探查（T7 评审预测 ~5px @ y12–17）：只记录坐标，肉眼裁定留人工
+      // 窗控圆点 vs 头部按钮重叠（R2-b 修复证据，record 升格为硬断言）：
+      // compact 头部右侧让位 78px 后必须零重叠（buttons 数组已过滤出
+      // 发生重叠的钮，非空即负）。
       const overlap = await page.evaluate(() => {
         const toolbar = document.querySelector('#floating-toolbar')?.getBoundingClientRect()
         if (!toolbar) return null
@@ -243,10 +251,10 @@ try {
             .filter(item => item.overlapX > 0 && item.overlapY > 0),
         }
       })
-      record('compact window-dots vs header buttons overlap', JSON.stringify(overlap))
-      // 观察项（非断言）：compact 档头部唤出钮能否唤出侧栏。sidebar 原语
-      // useIsMobile 以视口 <768 判定移动端并切 Sheet 分支（消费 openMobile），
-      // 而 AppShellFrame 的唤出钮写的是 userOpen——真小视口下的行为记录在案。
+      check('compact window-dots vs header buttons: zero overlap', overlap !== null && overlap.buttons.length === 0, JSON.stringify(overlap))
+      // compact 侧栏唤出（R2-a 回归守卫，观察项升格为硬断言）：sidebar 原语
+      // useIsMobile 以视口 <768 切 Sheet 分支（消费 openMobile）——唤出钮
+      // 走官方 toggleSidebar 后抽屉必须真正打开（R2-a 前此处恒 false）。
       await page.evaluate(() => {
         const button = [...document.querySelectorAll('#app header button')]
           .find(button => (button.getAttribute('aria-label') ?? '').includes('侧栏'))
@@ -254,14 +262,17 @@ try {
       })
       await sleep(700)
       const summoned = await page.evaluate(() => {
-        const sheet = document.querySelector('[data-slot="sheet-content"]')
+        // 注意：ui/sidebar.tsx 传给 SheetContent 的 data-slot="sidebar" 会覆盖
+        // sheet.tsx 内置的 data-slot="sheet-content"（props 展开在硬编码之后），
+        // 移动端抽屉元素的正确选择器是 [data-sidebar="sidebar"][data-mobile="true"]。
+        const sheet = document.querySelector('[data-sidebar="sidebar"][data-mobile="true"]')
         const desktop = document.querySelector('[data-slot="sidebar-container"]')
         return {
           sheetOpened: Boolean(sheet && sheet.getBoundingClientRect().width > 0),
           desktopSidebarVisible: Boolean(desktop && desktop.getBoundingClientRect().width > 0),
         }
       })
-      record('compact sidebar summon via header button', JSON.stringify(summoned))
+      check('compact sidebar summon via header button', summoned.sheetOpened === true, JSON.stringify(summoned))
       await page.keyboard.press('Escape')
       await sleep(300)
     }

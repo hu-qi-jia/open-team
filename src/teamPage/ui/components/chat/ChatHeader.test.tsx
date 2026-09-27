@@ -2,6 +2,7 @@
 
 import { cleanup, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { GroupChat, GroupMessage, GroupRole } from '../../../../group/types'
 import { createTeamPageState } from '../../../appState'
@@ -9,6 +10,7 @@ import { ChatHeader } from './ChatHeader'
 import type { TeamPageServices } from '../../context/ServicesContext'
 import { createFakeServices, renderWithServices } from '../../test/TestProviders'
 import { notifyAppState } from '../../lib/appStore'
+import { SidebarProvider } from '../ui/sidebar'
 
 /*
  * ChatHeader v2（S1 壳层）：状态渲染为 Badge（outline + data-status）、
@@ -17,9 +19,18 @@ import { notifyAppState } from '../../lib/appStore'
  * 「更多操作」菜单、compact 档新增唤出侧栏钮。
  * useAppSizeTier 在效果阶段对 #app[data-app-size] 挂 MutationObserver，
  * 故每个用例先摆一枚 #app（未摆时初始档位默认 wide）。
- * 注：useSidebarPrefs 是模块级共享 store——涉及 userOpen 的用例放最后，
- * 且以二次点击翻回初值，避免跨用例污染。
+ * 唤出钮走 sidebar 原语官方 API（useSidebar().toggleSidebar，R2-a），
+ * 组件必须在 SidebarProvider 内——用 AppShellFrame 同款受控接线镜像
+ * 生产结构（compact 档初值 false，onOpenChange 回写）。
  */
+function HeaderWithSidebar() {
+  const [open, setOpen] = useState(false)
+  return (
+    <SidebarProvider open={open} onOpenChange={setOpen}>
+      <ChatHeader />
+    </SidebarProvider>
+  )
+}
 
 afterEach(() => {
   cleanup()
@@ -29,7 +40,7 @@ afterEach(() => {
 describe('ChatHeader', () => {
   it('协作模式（默认 wide 档）渲染全套图标钮，且主题分段控件已退役', () => {
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     expect(document.getElementById('restore-chat')).not.toBeNull()
     expect(document.getElementById('open-orchestration')).not.toBeNull()
@@ -43,7 +54,7 @@ describe('ChatHeader', () => {
 
   it('状态渲染为 Badge（outline），携带 data-status', () => {
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     const badge = document.querySelector('header [data-status][data-slot="badge"]')
     expect(badge).not.toBeNull()
@@ -53,7 +64,7 @@ describe('ChatHeader', () => {
 
   it('compact 档：工具钮收纳，仅剩成员 + 更多 + 唤出侧栏按钮', () => {
     document.body.innerHTML = '<div id="app" data-app-size="compact"></div>'
-    renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     expect(document.getElementById('restore-chat')).toBeNull()
     expect(document.getElementById('toggle-notes-panel')).toBeNull()
@@ -65,7 +76,7 @@ describe('ChatHeader', () => {
 
   it('medium 档：恢复/编排/免@ 收纳进菜单，笔记保留，无唤出按钮', () => {
     document.body.innerHTML = '<div id="app" data-app-size="medium"></div>'
-    renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     expect(document.getElementById('restore-chat')).toBeNull()
     expect(document.getElementById('open-orchestration')).toBeNull()
@@ -76,7 +87,7 @@ describe('ChatHeader', () => {
 
   it('编排与免@仅在协作模式渲染，恢复会话不随模式收起', async () => {
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    const { state } = renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    const { state } = renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     expect(document.getElementById('open-orchestration')).not.toBeNull()
     expect(document.querySelector('[role="switch"]')).not.toBeNull()
@@ -94,7 +105,7 @@ describe('ChatHeader', () => {
     const user = userEvent.setup()
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
     const services = createFakeServices({ uiBus: { emit: vi.fn(), on: vi.fn(() => () => undefined) } as unknown as TeamPageServices['uiBus'] })
-    renderWithServices(<ChatHeader />, { services, state: makeState('collaborative') })
+    renderWithServices(<HeaderWithSidebar />, { services, state: makeState('collaborative') })
 
     await user.click(document.querySelector<HTMLButtonElement>('#open-orchestration')!)
 
@@ -109,7 +120,7 @@ describe('ChatHeader', () => {
     state.store.messagesById['msg-1'] = makeMessage()
     state.store.chatsById['chat-1'].messageIds = ['msg-1']
 
-    renderWithServices(<ChatHeader />, { state, language: 'en' })
+    renderWithServices(<HeaderWithSidebar />, { state, language: 'en' })
 
     expect(document.querySelector('header [data-status][data-slot="badge"]')?.textContent).toBe('Active')
     expect(document.querySelector('#chat-subtitle')?.textContent).toBe('Collaborative mode · 1 members · 1 messages')
@@ -121,7 +132,7 @@ describe('ChatHeader', () => {
   it('toggles manual mention routing through GROUP_CHAT_UPDATE', async () => {
     const user = userEvent.setup()
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    const { services, state } = renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    const { services, state } = renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     const toggle = document.querySelector<HTMLButtonElement>('[role="switch"]')!
     const hint = '开启后，普通消息也会触发所有成员回复；关闭后，只有 @ 成员或 @所有人才触发回复'
@@ -141,7 +152,7 @@ describe('ChatHeader', () => {
   it('toggles the people drawer through appState and tracks it in aria-expanded', async () => {
     const user = userEvent.setup()
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    const { state } = renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    const { state } = renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     const drawerToggle = document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!
     expect(drawerToggle.disabled).toBe(false)
@@ -164,7 +175,7 @@ describe('ChatHeader', () => {
 
   it('renders the empty state when no chat is selected', () => {
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    renderWithServices(<ChatHeader />, {})
+    renderWithServices(<HeaderWithSidebar />, {})
 
     expect(document.querySelector('#chat-title')?.textContent).toBe('未选择群聊')
     expect(document.querySelector('#chat-subtitle')?.textContent).toBe('创建或选择一个群聊开始协作')
@@ -183,7 +194,7 @@ describe('ChatHeader', () => {
       makeFrame('role-2', 'assigned'),
     ])
     const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
-    const { state } = renderWithServices(<ChatHeader />, { services, state: makeStateWithRoles() })
+    const { state } = renderWithServices(<HeaderWithSidebar />, { services, state: makeStateWithRoles() })
 
     await user.click(document.querySelector<HTMLButtonElement>('#restore-chat')!)
 
@@ -203,7 +214,7 @@ describe('ChatHeader', () => {
       makeFrame('role-2', 'recovering'),
     ])
     const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
-    renderWithServices(<ChatHeader />, { services, state: makeStateWithRoles() })
+    renderWithServices(<HeaderWithSidebar />, { services, state: makeStateWithRoles() })
 
     await user.click(document.querySelector<HTMLButtonElement>('#restore-chat')!)
 
@@ -215,7 +226,7 @@ describe('ChatHeader', () => {
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
     const restoreChat = vi.fn(() => [])
     const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
-    renderWithServices(<ChatHeader />, { services })
+    renderWithServices(<HeaderWithSidebar />, { services })
 
     await user.click(document.querySelector<HTMLButtonElement>('#restore-chat')!)
 
@@ -226,7 +237,7 @@ describe('ChatHeader', () => {
   it('toggles the notes panel through appState and tracks it in aria-expanded', async () => {
     const user = userEvent.setup()
     document.body.innerHTML = '<div id="app" data-app-size="wide"></div>'
-    const { state } = renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    const { state } = renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     const notesToggle = document.querySelector<HTMLButtonElement>('#toggle-notes-panel')!
     expect(notesToggle.getAttribute('aria-expanded')).toBe('false')
@@ -250,7 +261,7 @@ describe('ChatHeader', () => {
     const state = createTeamPageState()
     state.activeNoteScope = 'global'
 
-    renderWithServices(<ChatHeader />, { state })
+    renderWithServices(<HeaderWithSidebar />, { state })
 
     await user.click(document.querySelector<HTMLButtonElement>('#toggle-notes-panel')!)
 
@@ -263,7 +274,7 @@ describe('ChatHeader', () => {
     document.body.innerHTML = '<div id="app" data-app-size="compact"></div>'
     const restoreChat = vi.fn(() => [])
     const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
-    renderWithServices(<ChatHeader />, { services, state: makeStateWithRoles() })
+    renderWithServices(<HeaderWithSidebar />, { services, state: makeStateWithRoles() })
 
     await user.click(screen.getByRole('button', { name: '更多操作' }))
     await user.click(screen.getByRole('menuitem', { name: '恢复会话' }))
@@ -271,10 +282,10 @@ describe('ChatHeader', () => {
     expect(restoreChat).toHaveBeenCalledWith(expect.objectContaining({ id: 'chat-1' }), expect.anything())
   })
 
-  it('compact 档唤出按钮翻转侧栏偏好（末位执行，二次点击翻回以免污染模块级 store）', async () => {
+  it('compact 档唤出按钮经 sidebar 原语官方 API 翻转侧栏（二次点击翻回）', async () => {
     const user = userEvent.setup()
     document.body.innerHTML = '<div id="app" data-app-size="compact"></div>'
-    renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
+    renderWithServices(<HeaderWithSidebar />, { state: makeState('collaborative') })
 
     const sidebarToggle = document.querySelector<HTMLButtonElement>('[aria-label="打开侧栏"]')!
     expect(sidebarToggle.getAttribute('aria-expanded')).toBe('false')
