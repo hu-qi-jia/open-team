@@ -30,6 +30,7 @@ import {
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
+import { Card } from '../ui/card'
 
 /*
  * 成员抽屉（原 rolePanelView 整体 React 化，P3；#add-role-form 提交于
@@ -226,31 +227,33 @@ export function RolePanel() {
           ))}
         </div>
 
-        <form
-          id="add-role-form"
-          className="editor-card role-form mx-3 mb-3 rounded-lg border border-border bg-card p-3"
-          onSubmit={event => {
-            event.preventDefault()
-            // 原 addRoleFormEl submit → openAddPersonDialog；弹窗本体在
-            // <AddPersonModal/>（无当前群聊时由其自行忽略）
-            services.uiBus.emit('open-add-person')
-          }}
-        >
-          <h3 className="text-sm font-medium">{ui('添加人员')}</h3>
-          <p className="tiny mt-0.5 text-xs text-muted-foreground">{ui('从人员库批量选择，或临时添加只属于当前群聊的人员。')}</p>
-          {/* 遗留隐藏位：值无人读取，选项按 store 版本填充保留 DOM 契约 */}
-          <select id="role-template-select" hidden>
-            <option value="">{ui('不使用人员库，手动创建')}</option>
-            {getAllRoleTemplates(view.store).map(template => (
-              <option key={template.id} value={template.id}>{localizeRoleTemplate(template, language).name}</option>
-            ))}
-          </select>
-          <Button
-            className="mt-2.5 w-full"
-            size="sm"
-            type="submit"
-          >{ui('添加人员')}</Button>
-        </form>
+        <Card className="editor-card mx-3 mb-3 gap-0 rounded-lg border-border bg-card p-3">
+          <form
+            id="add-role-form"
+            className="role-form mt-0"
+            onSubmit={event => {
+              event.preventDefault()
+              // 原 addRoleFormEl submit → openAddPersonDialog；弹窗本体在
+              // <AddPersonModal/>（无当前群聊时由其自行忽略）
+              services.uiBus.emit('open-add-person')
+            }}
+          >
+            <h3 className="text-sm font-medium">{ui('添加人员')}</h3>
+            <p className="tiny mt-0.5 text-xs text-muted-foreground">{ui('从人员库批量选择，或临时添加只属于当前群聊的人员。')}</p>
+            {/* 遗留隐藏位：值无人读取，选项按 store 版本填充保留 DOM 契约 */}
+            <select id="role-template-select" hidden>
+              <option value="">{ui('不使用人员库，手动创建')}</option>
+              {getAllRoleTemplates(view.store).map(template => (
+                <option key={template.id} value={template.id}>{localizeRoleTemplate(template, language).name}</option>
+              ))}
+            </select>
+            <Button
+              className="mt-2.5 w-full"
+              size="sm"
+              type="submit"
+            >{ui('添加人员')}</Button>
+          </form>
+        </Card>
       </div>
 
       <Dialog open={promptDetailRole !== undefined} onOpenChange={open => { if (!open) setPromptDetailRole(undefined) }}>
@@ -318,7 +321,7 @@ function RoleCard(props: RoleCardProps) {
   }
 
   return (
-    <section
+    <Card
       className={`role-card relative grid cursor-pointer grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg border bg-card p-3 text-left transition-colors${active ? ' active border-ring bg-accent/50' : ' border-border hover:bg-accent/30'}`}
       onClick={props.onSelect}
     >
@@ -413,7 +416,7 @@ function RoleCard(props: RoleCardProps) {
           }}
         ><TrashIcon /></button>
       </div>
-    </section>
+    </Card>
   )
 }
 

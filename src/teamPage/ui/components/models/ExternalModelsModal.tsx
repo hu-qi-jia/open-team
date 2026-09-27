@@ -8,6 +8,7 @@ import { externalModels } from '../../lib/peopleLibrary'
 import { showError } from '../../lib/toast'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
 import { Button } from '../ui/button'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 
 /*
@@ -155,44 +156,44 @@ export function ExternalModelsModal() {
             ) : models.map(model => {
               const phase = testState?.id === model.id ? testState.phase : undefined
               return (
-                <section key={model.id} className="template-card">
-                  <div className="template-card-body">
-                    <div className="role-name">{model.name}</div>
-                    <div className="template-description">{ui(`${model.format === 'anthropic' ? 'Anthropic' : 'OpenAI'} · ${model.modelName}`)}</div>
-                    <div className="template-description">{model.baseUrl}</div>
-                  </div>
-                  <div className="template-card-actions">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="external-model-test"
-                      disabled={phase === 'testing'}
-                      onClick={() => { void testModel(model) }}
-                    >{phase === 'testing' ? ui('测试中') : phase === 'passed' ? ui('测试通过') : ui('测试')}</Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="external-model-edit"
-                      onClick={() => setDraft({
-                        modelId: model.id,
-                        name: model.name,
-                        format: model.format,
-                        baseUrl: model.baseUrl,
-                        apiKey: model.apiKey,
-                        modelName: model.modelName,
-                      })}
-                    >{ui('编辑')}</Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="external-model-delete"
-                      onClick={() => setDeleteTarget(model)}
-                    >{ui('删除')}</Button>
-                  </div>
-                </section>
+                <Card key={model.id} className="template-card gap-1.5 rounded-lg border-border bg-card p-3 text-left">
+                  <CardHeader className="gap-1">
+                    <CardTitle className="text-sm font-medium">{model.name}</CardTitle>
+                    <CardDescription className="text-xs leading-relaxed">{ui(`${model.format === 'anthropic' ? 'Anthropic' : 'OpenAI'} · ${model.modelName}`)}</CardDescription>
+                    <CardAction>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="external-model-test"
+                        disabled={phase === 'testing'}
+                        onClick={() => { void testModel(model) }}
+                      >{phase === 'testing' ? ui('测试中') : phase === 'passed' ? ui('测试通过') : ui('测试')}</Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="external-model-edit"
+                        onClick={() => setDraft({
+                          modelId: model.id,
+                          name: model.name,
+                          format: model.format,
+                          baseUrl: model.baseUrl,
+                          apiKey: model.apiKey,
+                          modelName: model.modelName,
+                        })}
+                      >{ui('编辑')}</Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="external-model-delete"
+                        onClick={() => setDeleteTarget(model)}
+                      >{ui('删除')}</Button>
+                    </CardAction>
+                  </CardHeader>
+                  <CardContent className="px-0 text-xs text-muted-foreground">{model.baseUrl}</CardContent>
+                </Card>
               )
             })}
           </div>

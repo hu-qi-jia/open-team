@@ -19,6 +19,7 @@ import {
 import { showError } from '../../lib/toast'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
 import { Button } from '../ui/button'
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { CategoryFilter, EmptyState, TypeTabs } from './primitives'
 
@@ -283,26 +284,28 @@ function TemplateCard({ template, store, language, ui, used, onEdit, onDetail, o
       ? ' · Project'
       : ''
   return (
-    <section className="template-card">
-      <div className="template-card-body">
-        <div className="role-row">
-          <div className="role-name">{displayTemplate.name}</div>
+    <Card className="template-card gap-1.5 rounded-lg border-border bg-card p-3 text-left">
+      <CardHeader className="gap-1">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <span className="role-name truncate">{displayTemplate.name}</span>
           <span className={`template-type-badge template-type-${template.type}`}>{ui(template.type === 'builtin' ? '内置' : '自定义')}</span>
-        </div>
-        <div className="template-description">{displayTemplate.description || ui('未填写人员库描述')}</div>
-        <div className="template-description template-meta">{templateMetaText(displayTemplate, language)}</div>
-        <div className="template-description">{ui(`默认模型：${templateModelLabel(template, store)}${siteSuffix}`)}</div>
-      </div>
-      <div className="template-card-actions">
-        {template.type === 'builtin' ? (
-          <Button type="button" variant="ghost" size="sm" className="template-detail" onClick={event => { event.stopPropagation(); onDetail() }}>{ui('详情')}</Button>
-        ) : (
-          <Button type="button" variant="ghost" size="sm" className="template-edit" onClick={event => { event.stopPropagation(); onEdit() }}>{ui('编辑')}</Button>
-        )}
-        {template.type !== 'builtin' && !used && (
-          <Button type="button" variant="destructive" size="sm" className="template-delete" onClick={event => { event.stopPropagation(); onDelete() }}>{ui('删除')}</Button>
-        )}
-      </div>
-    </section>
+        </CardTitle>
+        <CardDescription className="text-xs leading-relaxed">{displayTemplate.description || ui('未填写人员库描述')}</CardDescription>
+        <CardAction>
+          {template.type === 'builtin' ? (
+            <Button type="button" variant="ghost" size="sm" className="template-detail" onClick={event => { event.stopPropagation(); onDetail() }}>{ui('详情')}</Button>
+          ) : (
+            <Button type="button" variant="ghost" size="sm" className="template-edit" onClick={event => { event.stopPropagation(); onEdit() }}>{ui('编辑')}</Button>
+          )}
+          {template.type !== 'builtin' && !used && (
+            <Button type="button" variant="destructive" size="sm" className="template-delete" onClick={event => { event.stopPropagation(); onDelete() }}>{ui('删除')}</Button>
+          )}
+        </CardAction>
+      </CardHeader>
+      <CardContent className="space-y-1 px-0 text-xs text-muted-foreground">
+        <div>{templateMetaText(displayTemplate, language)}</div>
+        <div>{ui(`默认模型：${templateModelLabel(template, store)}${siteSuffix}`)}</div>
+      </CardContent>
+    </Card>
   )
 }
