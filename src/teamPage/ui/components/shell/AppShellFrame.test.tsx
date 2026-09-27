@@ -17,7 +17,7 @@ afterEach(() => {
  * useAppSizeTier 在首渲染期就读 #app，注入的壳元素要先于 render 落位。
  */
 describe('AppShellFrame footer tool buttons', () => {
-  it('emits the people-library command when 人员库 is clicked', () => {
+  it('emits the people-library, all-notes, and external-models commands on click', () => {
     const services = createFakeServices()
     const emit = vi.spyOn(services.uiBus, 'emit')
 
@@ -26,5 +26,9 @@ describe('AppShellFrame footer tool buttons', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '人员库' }))
     expect(emit).toHaveBeenCalledWith('open-people-library')
+    fireEvent.click(screen.getByRole('button', { name: '全部笔记' }))
+    expect(emit).toHaveBeenCalledWith('open-all-notes')
+    fireEvent.click(screen.getByRole('button', { name: '添加大模型' }))
+    expect(emit).toHaveBeenCalledWith('open-external-models')
   })
 })

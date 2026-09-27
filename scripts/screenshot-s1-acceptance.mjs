@@ -15,7 +15,9 @@
  * - compact 窗控圆点与头部按钮零重叠（R2-b：compact 头部右侧让位 78px，
  *   圆点带 right:18px + 3×11px ≈ 63px）+ 侧栏唤出真正打开抽屉（R2-a：
  *   唤出钮走 sidebar 原语官方 API，<768 视口 Sheet 分支生效）——两项均为
- *   硬断言（R2 脚本硬化：原 record 观察项升格）。
+ *   硬断言（R2 脚本硬化：原 record 观察项升格）；
+ * - 桌面视口 compact 召唤（R3-5：1500 视口 + seed 640px 窄壳 → 档位 compact
+ *   但走桌面受控分支）——召唤打开桌面侧栏且无移动 Sheet（R2-a 证据补全）。
  * 断言失败置 exitCode 3；控制台/页面报错置 exitCode 2。
  */
 import puppeteer from 'puppeteer'
@@ -435,6 +437,44 @@ try {
     pref: JSON.parse(localStorage.getItem('openteam.sidebar') ?? 'null'),
   }))
   check('sidebar double-click resets to 240px', Math.abs(resetWidth.gap - 240) <= 2 && resetWidth.pref?.width === 240, JSON.stringify(resetWidth))
+
+  // ---- 桌面视口 compact 召唤（R3-5：640 视口场景只覆盖 <768 的 Sheet 分支）----
+  // 1500 视口（≥768 → sidebar 原语桌面分支）+ seed 窄壳几何（640×760 → boot
+  // 恢复后 #app 宽 640 ≤ 767 → 档位 compact）：点头部 PanelLeft 召唤必须打开
+  // 受控桌面侧栏（data-state=expanded、gap 240px），且不出现移动 Sheet。
+  await page.setViewport({ width: 1500, height: 950, deviceScaleFactor: 1 })
+  await page.evaluate(() => {
+    localStorage.setItem('openteam.shellGeometry', JSON.stringify({ left: 100, top: 80, width: 640, height: 760 }))
+    localStorage.removeItem('openteam.sidebar')
+  })
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page.waitForSelector('#app', { timeout: 15_000 })
+  await sleep(2000)
+  const desktopCompactTier = await page.evaluate(() => document.getElementById('app')?.dataset.appSize)
+  check('desktop-viewport compact tier (shell 640px)', desktopCompactTier === 'compact', `got ${desktopCompactTier}`)
+  await page.evaluate(() => {
+    const button = [...document.querySelectorAll('#app header button')]
+      .find(button => (button.getAttribute('aria-label') ?? '').includes('侧栏'))
+    button?.click()
+  })
+  await sleep(700)
+  const desktopSummon = await page.evaluate(() => {
+    // 桌面分支：状态挂在 [data-slot="sidebar"]（group/peer 包装层，无 data-mobile）；
+    // Sheet 分支的元素带 data-mobile="true"（见上文 data-slot 覆盖说明）
+    const group = document.querySelector('[data-slot="sidebar"]:not([data-mobile])')
+    const container = document.querySelector('[data-slot="sidebar-container"]')
+    const gap = document.querySelector('[data-slot="sidebar-gap"]')
+    return {
+      noSheet: document.querySelector('[data-mobile="true"]') === null,
+      state: group?.dataset.state ?? null,
+      containerWidth: Math.round(container?.getBoundingClientRect().width ?? 0),
+      gapWidth: Math.round(gap?.getBoundingClientRect().width ?? 0),
+    }
+  })
+  check('desktop-compact summon opens controlled sidebar (no sheet)',
+    desktopSummon.noSheet && desktopSummon.state === 'expanded' && Math.abs(desktopSummon.gapWidth - 240) <= 2,
+    JSON.stringify(desktopSummon))
+  await shot(page, 'wide-dark-desktop-compact-summon')
 
   // ---- 浅色主题：写 localStorage['openteam.theme']='light' 后 reload，重复三档位 ----
   await page.evaluate(() => {

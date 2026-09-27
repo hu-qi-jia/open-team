@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { fireEvent, render } from '@testing-library/react'
+import { fireEvent } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { SidebarResizeHandle } from './SidebarResizeHandle'
+import { renderWithServices } from '../../test/TestProviders'
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH, SIDEBAR_DEFAULT_WIDTH } from '../../hooks/useSidebarPrefs'
 
 function storedWidth(): number {
@@ -12,7 +13,8 @@ describe('SidebarResizeHandle', () => {
   beforeEach(() => window.localStorage.clear())
 
   it('按指针增量调宽并钳制在 200–320', () => {
-    render(<SidebarResizeHandle />)
+    // 手柄文案走 useT（R3-3），组件须在 services/绑定 appState 的装配内渲染
+    renderWithServices(<SidebarResizeHandle />, {})
     const handle = document.querySelector('.sidebar-resize-handle')!
     fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 100 })
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 100 + 9999 })
@@ -23,7 +25,7 @@ describe('SidebarResizeHandle', () => {
   })
 
   it('双击重置 240', () => {
-    render(<SidebarResizeHandle />)
+    renderWithServices(<SidebarResizeHandle />, {})
     const handle = document.querySelector('.sidebar-resize-handle')!
     fireEvent.pointerDown(handle, { button: 0, pointerId: 1, clientX: 100 })
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 160 })

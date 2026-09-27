@@ -4,7 +4,7 @@ import { useServices } from '../../context/ServicesContext'
 import { useT } from '../../hooks/useT'
 import { useAppSizeTier } from '../../hooks/useAppShellChrome'
 import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from '../ui/sidebar'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '../ui/sidebar'
 import { ChatList } from '../chat/ChatList'
 import { QuickCreateChatProvider, QuickCreateChatTrigger } from './QuickCreateChat'
 import { StoreSummary } from './StoreSummary'
@@ -38,9 +38,13 @@ export function AppShellFrame({ children }: { children: ReactNode }) {
       <QuickCreateChatProvider>
         <Sidebar collapsible={collapsible}>
           <SidebarHeader>
-            <div className="flex items-center gap-2.5 px-2 py-1.5">
-              <div className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground" aria-hidden="true">O</div>
-              <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight">OpenTeam</span>
+            {/* 品牌行含规格 §4.2 的折叠按钮（官方 SidebarTrigger，内部走
+                toggleSidebar，与 ChatHeader compact 召唤同一 API）：wide 可收起、
+                medium 可展开（不再只有 Ctrl/Cmd+B）。图标条形态只留方钮。 */}
+            <div className="flex items-center gap-2.5 px-2 py-1.5 group-data-[collapsible=icon]:justify-center">
+              <div className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground group-data-[collapsible=icon]:hidden" aria-hidden="true">O</div>
+              <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight group-data-[collapsible=icon]:hidden">OpenTeam</span>
+              <SidebarTrigger className="shrink-0" />
             </div>
             <div className="px-2 group-data-[collapsible=icon]:hidden">
               <StoreSummary />{/* 摘要行；图标条形态整行隐藏 */}

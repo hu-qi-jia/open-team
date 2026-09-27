@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { useT } from '../../hooks/useT'
 import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
 
 /*
@@ -8,10 +9,10 @@ import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
  * absolute 相对 #app 定位（#app 自身 fixed，恒为包含块，与 floatingWindow
  * 是否清掉 #app 的 transform 无关，见 globals.css）；
  * left 跟随 SidebarProvider 注入的 --sidebar-width。
- * aria-label/title 沿简报原文案，英文键已入 UI_TRANSLATIONS（同
- * FloatingWindowChrome 的 vanilla 铬件模式）。
+ * aria-label/title 走 useT（文案一律过 translateUi，键在 UI_TRANSLATIONS）。
  */
 export function SidebarResizeHandle() {
+  const t = useT()
   const { width, setWidth, resetWidth } = useSidebarPrefs()
   const [resizing, setResizing] = useState(false)
   const drag = useRef<{ pointerId: number; startClientX: number; startWidth: number } | undefined>(undefined)
@@ -21,8 +22,8 @@ export function SidebarResizeHandle() {
       className="sidebar-resize-handle"
       role="separator"
       aria-orientation="vertical"
-      aria-label="调整侧栏宽度"
-      title="拖拽调整宽度，双击重置"
+      aria-label={t('调整侧栏宽度')}
+      title={t('拖拽调整宽度，双击重置')}
       data-resizing={resizing || undefined}
       onPointerDown={event => {
         if (event.button !== 0) return

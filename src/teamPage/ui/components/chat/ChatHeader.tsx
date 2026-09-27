@@ -206,22 +206,28 @@ export function ChatHeader() {
               <TooltipContent>{ui('笔记')}</TooltipContent>
             </Tooltip>
           )}
-          <Separator orientation="vertical" className="mx-1 !h-5" />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={ui('更多操作')}>
-                <MoreHorizontal className="size-4" aria-hidden="true" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {!showTool && <DropdownMenuItem onSelect={restoreChat}>{ui('恢复会话')}</DropdownMenuItem>}
-              {!showTool && chatMode === 'collaborative' && <DropdownMenuItem onSelect={() => services.uiBus.emit('open-orchestration')}>{ui('编排')}</DropdownMenuItem>}
-              {!showTool && chatMode === 'collaborative' && (
-                <DropdownMenuCheckboxItem checked={manualMentionOn} onCheckedChange={toggleManualMention} onSelect={event => event.preventDefault()}>{ui('免@')}</DropdownMenuCheckboxItem>
-              )}
-              {!showPanel && <DropdownMenuItem onClick={toggleNotesPanel}>{ui('笔记')}</DropdownMenuItem>}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* 菜单只在该档确有收纳项时渲染（wide 档 showTool && showPanel 全平铺，
+              触发钮 + 分隔线一并隐藏——零项空菜单，R3-2） */}
+          {!(showTool && showPanel) && (
+            <>
+              <Separator orientation="vertical" className="mx-1 !h-5" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={ui('更多操作')}>
+                    <MoreHorizontal className="size-4" aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {!showTool && <DropdownMenuItem onSelect={restoreChat}>{ui('恢复会话')}</DropdownMenuItem>}
+                  {!showTool && chatMode === 'collaborative' && <DropdownMenuItem onSelect={() => services.uiBus.emit('open-orchestration')}>{ui('编排')}</DropdownMenuItem>}
+                  {!showTool && chatMode === 'collaborative' && (
+                    <DropdownMenuCheckboxItem checked={manualMentionOn} onCheckedChange={toggleManualMention} onSelect={event => event.preventDefault()}>{ui('免@')}</DropdownMenuCheckboxItem>
+                  )}
+                  {!showPanel && <DropdownMenuItem onClick={toggleNotesPanel}>{ui('笔记')}</DropdownMenuItem>}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )}
         </div>
       </header>
     </TooltipProvider>
