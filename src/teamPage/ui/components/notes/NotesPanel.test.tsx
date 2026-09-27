@@ -255,6 +255,40 @@ describe('team page notes panel', () => {
     expect(document.getElementById('notes-panel')).toBeNull()
   })
 
+  it('destroys the editor when minimized (saveNow first) and rebuilds it against the fresh element on restore', async () => {
+    const { state, creations, editor, services } = renderPanel()
+
+    await act(async () => {
+      state.notesPanelOpen = true
+      notifyAppState()
+    })
+    expect(creations).toHaveLength(1)
+    const firstElement = creations[0].element
+
+    // #app 挂上 minimized → 守卫渲染 null；渲染 null 会换掉 #notes-editor，
+    // 引擎须先 saveNow 清防抖、再 destroy 旧 adapter（否则旧实例悬空失联）
+    await act(async () => {
+      document.getElementById('app')!.classList.add('minimized')
+    })
+    expect(document.getElementById('notes-panel')).toBeNull()
+    expect(editor.destroy).toHaveBeenCalled()
+    expect(services.runCommand).toHaveBeenCalledWith('GROUP_NOTE_SAVE', {
+      scope: 'chat',
+      chatId: 'chat-1',
+      content: note('已更新'),
+    })
+
+    // 恢复：ensureEditor 对新的 #notes-editor 重建，内容从目标重读
+    await act(async () => {
+      document.getElementById('app')!.classList.remove('minimized')
+    })
+    expect(creations).toHaveLength(2)
+    expect(creations[1].element).not.toBe(firstElement)
+    expect(creations[1].element.id).toBe('notes-editor')
+    expect(creations[1].content).toEqual(note('群聊笔记'))
+    expect(document.querySelector('#notes-panel #notes-editor')).not.toBeNull()
+  })
+
   it('lets the note window be resized without exceeding the viewport', async () => {
     const { state } = renderPanel()
 

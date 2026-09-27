@@ -138,6 +138,14 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
   // 原 `.app-shell.minimized + .notes-panel` 隐藏规则（Task 7 已删）的 React
   // 等价物：浮窗最小化时整面板不渲染，解除「面板必须紧跟壳元素」的相邻兄弟约束。
   const chrome = useAppShellChromeState()
+  // 渲染 null 会把 #notes-editor 换成新元素，而引擎 adapter 挂 ref 不随 DOM
+  // 重建——须先 saveNow（清防抖、落盘未存内容）再 destroy 旧实例；恢复时
+  // 既有的 open 驱动 effect 会对新元素懒重建（legacy 隐藏规则只藏面板，编辑器常驻）。
+  useEffect(() => {
+    if (!chrome.minimized) return
+    engine.saveNow()
+    engine.destroy()
+  }, [chrome.minimized, engine])
   if (chrome.minimized) return null
 
   function selectDefaultOpenScope(): void {

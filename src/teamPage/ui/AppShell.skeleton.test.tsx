@@ -54,7 +54,7 @@ describe('App shell', () => {
     }
   })
 
-  it('places #notes-panel as the immediate sibling of #app (legacy.css minimized rule)', () => {
+  it('keeps #notes-panel mounted adjacent to #app in the shell tree (minimized hiding is React-driven)', () => {
     const { unmount } = renderWithServices(<App />, {})
     try {
       const app = document.querySelector('#app')!
