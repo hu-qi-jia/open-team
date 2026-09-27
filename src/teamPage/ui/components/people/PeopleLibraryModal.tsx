@@ -18,11 +18,15 @@ import {
 } from '../../lib/peopleLibrary'
 import { showError } from '../../lib/toast'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { CategoryFilter, EmptyState, TypeTabs } from './primitives'
 
 /*
- * 人员库弹窗（原 peopleLibraryView 主体 React 化，P4）。#people-library-modal
- * 结构与内部 id 逐字保留。与原实现的对译关系：
+ * 人员库弹窗（原 peopleLibraryView 主体 React 化，P4；W1 起外壳换 Radix
+ * Dialog——#people-library-modal id 移到 DialogContent，Escape/遮罩点击
+ * 关闭经 onOpenChange 走 close；删除确认 AlertDialog 移出 Dialog 成为
+ * fragment 兄弟）。内部 id 逐字保留。与原实现的对译关系：
  * - 开启入口：Rail 的 #open-people-library → uiBus 'open-people-library'
  *   （打开即重置搜索/类型/分类/页码，同原 openPeopleLibraryEl 处理器）；
  * - renderTemplates → items useMemo（store 版本驱动）：类型无条目回退
@@ -33,8 +37,8 @@ import { CategoryFilter, EmptyState, TypeTabs } from './primitives'
  *   'open-builtin-template-detail'；「删除」window.confirm → AlertDialog，
  *   确认后 ROLE_TEMPLATE_DELETE（被编辑中的模板随之关闭编辑弹窗——
  *   PersonTemplateModal 自行侦测目标消失）；
- * - Escape 仅关闭本弹窗（原 document 级一次性关闭全部弹窗，React 化后
- *   各弹窗自管，叠层时逐层关闭）。
+ * - 原 document 级 Escape 监听随 Radix 移除：叠加其上的 Radix 弹窗
+ *   改为逐层关闭（Escape 只派发最顶层），遮罩点击同理只关顶层。
  */
 export function PeopleLibraryModal() {
   const services = useServices()
@@ -85,15 +89,9 @@ export function PeopleLibraryModal() {
     if (open) setPage(current => clampPeopleLibraryPage(current, view.templates.length))
   })
 
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open])
-
+  // Escape/遮罩关闭改由 Radix 接管（onOpenChange → close）。原 document
+  // 级 Escape 监听移除后，叠加其上的 Radix 弹窗（详情/编辑）不再被一并
+  // 关闭，改为逐层关闭（Radix 只派发最顶层）
   function close(): void {
     setOpen(false)
   }
@@ -137,107 +135,107 @@ export function PeopleLibraryModal() {
   )
 
   return (
-    <div
-      id="people-library-modal"
-      className="modal-backdrop"
-      hidden={!open}
-      onClick={event => {
-        if (event.target === event.currentTarget) close()
-      }}
-    >
-      <section className="modal" role="dialog" aria-modal="true" aria-labelledby="people-library-title">
-        <div className="modal-header">
-          <div>
-            <h2 id="people-library-title">{ui('人员库')}</h2>
-            <p className="tiny">{ui('维护可复用人员人设；加入群聊后会复制为独立人员。')}</p>
-          </div>
-          <div className="chat-row">
-            <button id="new-template" className="btn btn-primary" type="button" onClick={() => {
-              const state = getAppState()
-              state.selectedTemplateId = undefined
-              notifyAppState()
-              services.uiBus.emit('open-person-template-edit')
-            }}>{ui('新建')}</button>
-            <button id="close-people-library" className="icon-btn modal-close" type="button" aria-label={ui('关闭人员库')} onClick={close}>×</button>
-          </div>
-        </div>
-        <div className="people-library-content">
-          <div className="people-library-pane">
-            <div className="section-title">
-              <h3>{ui('人员列表')}</h3>
-              <span id="people-library-summary" className="tiny">{ui(`${view.templates.length} 人`)}</span>
+    <>
+      <Dialog open={open} onOpenChange={next => { if (!next) close() }}>
+        <DialogContent
+          id="people-library-modal"
+          aria-labelledby="people-library-title"
+          showCloseButton={false}
+          className="people-library-modal w-[min(640px,calc(100vw-48px))] max-w-none sm:max-w-none bg-popover"
+        >
+          <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
+            <div>
+              <DialogTitle id="people-library-title">{ui('人员库')}</DialogTitle>
+              <DialogDescription className="tiny">{ui('维护可复用人员人设；加入群聊后会复制为独立人员。')}</DialogDescription>
             </div>
-            <div className="people-library-toolbar">
-              <input
-                id="people-library-search"
-                type="search"
-                placeholder={ui('搜索人员名称、描述或提示词')}
-                autoComplete="off"
-                value={searchQuery}
-                onChange={event => {
-                  setSearchQuery(event.target.value)
-                  setPage(0)
-                }}
-              />
-              <TypeTabs
-                active={view.effectiveType}
-                builtinId="people-library-tab-builtin"
-                customId="people-library-tab-custom"
-                language={language}
-                ariaLabel={ui('人员库类型')}
-                onSelect={selectTab}
-              />
-              <CategoryFilter
-                id="people-library-category-filter"
-                active={category}
-                categories={categoryOptions(view.allTemplates.filter(template => template.type === view.effectiveType).map(template => template.category))}
-                language={language}
-                ariaLabel={ui('人员分类')}
-                onSelect={next => {
-                  setCategory(next)
-                  setPage(0)
-                }}
-              />
+            <div className="chat-row flex items-center gap-2">
+              <button id="new-template" className="btn btn-primary" type="button" onClick={() => {
+                const state = getAppState()
+                state.selectedTemplateId = undefined
+                notifyAppState()
+                services.uiBus.emit('open-person-template-edit')
+              }}>{ui('新建')}</button>
+              <Button id="close-people-library" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭人员库')} onClick={close}>×</Button>
             </div>
-            <div id="people-library-list" className="template-list">
-              {view.templates.length === 0 ? (
-                <EmptyState title={emptyTitle} body={emptyBody} />
-              ) : view.visible.map(template => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  store={view.store}
-                  language={language}
-                  ui={ui}
-                  used={isTemplateUsed(template.id, view.store)}
-                  onEdit={() => openTemplateEditor(template.id)}
-                  onDetail={() => openBuiltinDetail(template)}
-                  onDelete={() => setDeleteTarget(template)}
+          </DialogHeader>
+          <div className="people-library-content">
+            <div className="people-library-pane">
+              <div className="section-title">
+                <h3>{ui('人员列表')}</h3>
+                <span id="people-library-summary" className="tiny">{ui(`${view.templates.length} 人`)}</span>
+              </div>
+              <div className="people-library-toolbar">
+                <input
+                  id="people-library-search"
+                  type="search"
+                  placeholder={ui('搜索人员名称、描述或提示词')}
+                  autoComplete="off"
+                  value={searchQuery}
+                  onChange={event => {
+                    setSearchQuery(event.target.value)
+                    setPage(0)
+                  }}
                 />
-              ))}
-            </div>
-            <div id="people-library-pagination" className="pagination-bar">
-              {view.pageCount > 1 && (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-ghost pagination-btn"
-                    disabled={view.currentPage === 0}
-                    onClick={() => setPage(Math.max(0, view.currentPage - 1))}
-                  >{ui('上一页')}</button>
-                  <span className="pagination-label">{view.currentPage + 1} / {view.pageCount}</span>
-                  <button
-                    type="button"
-                    className="btn btn-ghost pagination-btn"
-                    disabled={view.currentPage >= view.pageCount - 1}
-                    onClick={() => setPage(Math.min(view.pageCount - 1, view.currentPage + 1))}
-                  >{ui('下一页')}</button>
-                </>
-              )}
+                <TypeTabs
+                  active={view.effectiveType}
+                  builtinId="people-library-tab-builtin"
+                  customId="people-library-tab-custom"
+                  language={language}
+                  ariaLabel={ui('人员库类型')}
+                  onSelect={selectTab}
+                />
+                <CategoryFilter
+                  id="people-library-category-filter"
+                  active={category}
+                  categories={categoryOptions(view.allTemplates.filter(template => template.type === view.effectiveType).map(template => template.category))}
+                  language={language}
+                  ariaLabel={ui('人员分类')}
+                  onSelect={next => {
+                    setCategory(next)
+                    setPage(0)
+                  }}
+                />
+              </div>
+              <div id="people-library-list" className="template-list">
+                {view.templates.length === 0 ? (
+                  <EmptyState title={emptyTitle} body={emptyBody} />
+                ) : view.visible.map(template => (
+                  <TemplateCard
+                    key={template.id}
+                    template={template}
+                    store={view.store}
+                    language={language}
+                    ui={ui}
+                    used={isTemplateUsed(template.id, view.store)}
+                    onEdit={() => openTemplateEditor(template.id)}
+                    onDetail={() => openBuiltinDetail(template)}
+                    onDelete={() => setDeleteTarget(template)}
+                  />
+                ))}
+              </div>
+              <div id="people-library-pagination" className="pagination-bar">
+                {view.pageCount > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-ghost pagination-btn"
+                      disabled={view.currentPage === 0}
+                      onClick={() => setPage(Math.max(0, view.currentPage - 1))}
+                    >{ui('上一页')}</button>
+                    <span className="pagination-label">{view.currentPage + 1} / {view.pageCount}</span>
+                    <button
+                      type="button"
+                      className="btn btn-ghost pagination-btn"
+                      disabled={view.currentPage >= view.pageCount - 1}
+                      onClick={() => setPage(Math.min(view.pageCount - 1, view.currentPage + 1))}
+                    >{ui('下一页')}</button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteTarget !== undefined} onOpenChange={nextOpen => { if (!nextOpen) setDeleteTarget(undefined) }}>
         <AlertDialogContent>
@@ -253,7 +251,7 @@ export function PeopleLibraryModal() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }
 

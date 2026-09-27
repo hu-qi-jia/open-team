@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, within } from '@testing-library/react'
+import { act, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
@@ -263,27 +263,28 @@ describe('team page external models modal', () => {
     expect(list.textContent).not.toContain('测试')
   })
 
-  it('closes from the close button, backdrop, and Escape key', async () => {
+  it('closes from the close button, overlay, and Escape key', async () => {
     const state = createTeamPageState()
     state.store = makeStoreWithModel(makeModel())
     const { services } = renderModal(state)
 
     await openModal(services)
-    expect(document.querySelector<HTMLElement>('#external-models-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#external-models-modal')).not.toBeNull()
 
     await user.click(document.querySelector<HTMLButtonElement>('#close-external-models')!)
-    expect(document.querySelector<HTMLElement>('#external-models-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#external-models-modal')).toBeNull())
 
     await openModal(services)
     await act(async () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     })
-    expect(document.querySelector<HTMLElement>('#external-models-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#external-models-modal')).toBeNull())
 
+    // Radix 遮罩：deferPointerDownOutside 把关闭推迟到后续 click，
+    // user.click 的完整指针序列正好触发
     await openModal(services)
-    const backdrop = document.querySelector<HTMLElement>('#external-models-modal')!
-    await user.click(backdrop)
-    expect(document.querySelector<HTMLElement>('#external-models-modal')?.hidden).toBe(true)
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
+    await waitFor(() => expect(document.querySelector('#external-models-modal')).toBeNull())
   })
 
   it('focuses the name field after opening', async () => {

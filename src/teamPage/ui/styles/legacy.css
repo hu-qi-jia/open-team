@@ -2957,11 +2957,10 @@ select:focus {
   box-shadow: var(--shadow), var(--glow);
 }
 
-#people-library-modal .modal {
+.people-library-modal {
   display: grid;
   height: min(760px, calc(100vh - 48px));
   min-height: 0;
-  width: min(640px, 100%);
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
@@ -3128,31 +3127,6 @@ select:focus {
 
 .modal-grid-wide {
   grid-column: 1 / -1;
-}
-
-#d4d4d8-person-modal .modal {
-  display: grid;
-  width: min(820px, 100%);
-  min-height: min(680px, calc(100vh - 48px));
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
-}
-
-#d4d4d8-person-modal .modal-grid,
-#d4d4d8-person-modal .modal-card,
-#d4d4d8-library-people-form {
-  min-height: 0;
-}
-
-#d4d4d8-library-people-form {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-}
-
-#d4d4d8-library-people-list {
-  min-height: 0;
-  max-height: none;
-  overflow: auto;
 }
 
 .group-template-modal {

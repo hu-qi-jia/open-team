@@ -7,10 +7,16 @@ import { getAppState, getAppStateVersion } from '../../lib/appStore'
 import { externalModels } from '../../lib/peopleLibrary'
 import { showError } from '../../lib/toast'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 
 /*
- * 外部模型弹窗（原 externalModelsView React 化，P4b）。#external-models-modal
- * 与内部 id 逐字保留。对译关系：
+ * 外部模型弹窗（原 externalModelsView React 化，P4b）。W1 起外壳换 Radix
+ * Dialog——#external-modal id 移到 DialogContent，Escape/遮罩点击关闭经
+ * onOpenChange 走 close；首开聚焦改走 onOpenAutoFocus（Radix 挂载内容
+ * 晚于 open 翻转，原 queueMicrotask 那时元素尚不存在）。删除确认
+ * AlertDialog 移出 Dialog 成为 fragment 兄弟。内部 id 逐字保留。
+ * 对译关系：
  * - 开启入口：Rail 的 #open-external-models → uiBus 'open-external-models'
  *   （打开即重置表单并聚焦名称框，原 openExternalModels）；
  * - 列表 = store 版本驱动派生（外部模型命令经 background 落盘后广播，
@@ -61,18 +67,14 @@ export function ExternalModelsModal() {
   useEffect(() => services.uiBus.on('open-external-models', () => {
     setDraft(EMPTY_DRAFT)
     setOpen(true)
-    // 打开即聚焦名称框（原 externalModelNameEl.focus()；受控渲染后执行）
+    // 打开即聚焦名称框（原 externalModelNameEl.focus()）。首开由下方
+    // onOpenAutoFocus 承担（Radix 挂载内容晚于 open 翻转，微任务时元素
+    // 尚未存在）；弹窗已开时的再次触发则由这里兜底
     queueMicrotask(() => document.getElementById('external-model-name')?.focus())
   }), [services])
 
-  useEffect(() => {
-    if (!open) return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') close()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open])
+  // Escape/遮罩关闭改由 Radix 接管（onOpenChange → close）；原 document
+  // 级 Escape 监听随之外移除
 
   function close(): void {
     setOpen(false)
@@ -128,125 +130,129 @@ export function ExternalModelsModal() {
   }
 
   return (
-    <div
-      id="external-models-modal"
-      className="modal-backdrop"
-      hidden={!open}
-      onClick={event => {
-        if (event.target === event.currentTarget) close()
-      }}
-    >
-      <section className="modal template-editor-modal" role="dialog" aria-modal="true" aria-labelledby="external-models-title">
-        <div className="modal-header">
-          <div>
-            <h2 id="external-models-title">{ui('外部模型')}</h2>
-            <p className="tiny">{ui('配置 OpenAI 或 Anthropic 兼容 API，人员可直接选择这些模型。')}</p>
+    <>
+      <Dialog open={open} onOpenChange={next => { if (!next) close() }}>
+        <DialogContent
+          id="external-models-modal"
+          aria-labelledby="external-models-title"
+          showCloseButton={false}
+          className="template-editor-modal w-[min(520px,calc(100vw-48px))] max-w-none sm:max-w-none bg-popover"
+          onOpenAutoFocus={event => {
+            event.preventDefault()
+            document.getElementById('external-model-name')?.focus()
+          }}
+        >
+          <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
+            <div>
+              <DialogTitle id="external-models-title">{ui('外部模型')}</DialogTitle>
+              <DialogDescription className="tiny">{ui('配置 OpenAI 或 Anthropic 兼容 API，人员可直接选择这些模型。')}</DialogDescription>
+            </div>
+            <Button id="close-external-models" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭外部模型')} onClick={close}>×</Button>
+          </DialogHeader>
+          <div id="external-models-list" className="template-list">
+            {models.length === 0 ? (
+              <div className="empty-card">{ui('暂无外部模型')}</div>
+            ) : models.map(model => {
+              const phase = testState?.id === model.id ? testState.phase : undefined
+              return (
+                <section key={model.id} className="template-card">
+                  <div className="template-card-body">
+                    <div className="role-name">{model.name}</div>
+                    <div className="template-description">{ui(`${model.format === 'anthropic' ? 'Anthropic' : 'OpenAI'} · ${model.modelName}`)}</div>
+                    <div className="template-description">{model.baseUrl}</div>
+                  </div>
+                  <div className="template-card-actions">
+                    <button
+                      type="button"
+                      className="btn btn-ghost external-model-test"
+                      disabled={phase === 'testing'}
+                      onClick={() => { void testModel(model) }}
+                    >{phase === 'testing' ? ui('测试中') : phase === 'passed' ? ui('测试通过') : ui('测试')}</button>
+                    <button
+                      type="button"
+                      className="btn btn-ghost external-model-edit"
+                      onClick={() => setDraft({
+                        modelId: model.id,
+                        name: model.name,
+                        format: model.format,
+                        baseUrl: model.baseUrl,
+                        apiKey: model.apiKey,
+                        modelName: model.modelName,
+                      })}
+                    >{ui('编辑')}</button>
+                    <button
+                      type="button"
+                      className="btn btn-danger external-model-delete"
+                      onClick={() => setDeleteTarget(model)}
+                    >{ui('删除')}</button>
+                  </div>
+                </section>
+              )
+            })}
           </div>
-          <button id="close-external-models" className="icon-btn modal-close" type="button" aria-label={ui('关闭外部模型')} onClick={close}>×</button>
-        </div>
-        <div id="external-models-list" className="template-list">
-          {models.length === 0 ? (
-            <div className="empty-card">{ui('暂无外部模型')}</div>
-          ) : models.map(model => {
-            const phase = testState?.id === model.id ? testState.phase : undefined
-            return (
-              <section key={model.id} className="template-card">
-                <div className="template-card-body">
-                  <div className="role-name">{model.name}</div>
-                  <div className="template-description">{ui(`${model.format === 'anthropic' ? 'Anthropic' : 'OpenAI'} · ${model.modelName}`)}</div>
-                  <div className="template-description">{model.baseUrl}</div>
-                </div>
-                <div className="template-card-actions">
-                  <button
-                    type="button"
-                    className="btn btn-ghost external-model-test"
-                    disabled={phase === 'testing'}
-                    onClick={() => { void testModel(model) }}
-                  >{phase === 'testing' ? ui('测试中') : phase === 'passed' ? ui('测试通过') : ui('测试')}</button>
-                  <button
-                    type="button"
-                    className="btn btn-ghost external-model-edit"
-                    onClick={() => setDraft({
-                      modelId: model.id,
-                      name: model.name,
-                      format: model.format,
-                      baseUrl: model.baseUrl,
-                      apiKey: model.apiKey,
-                      modelName: model.modelName,
-                    })}
-                  >{ui('编辑')}</button>
-                  <button
-                    type="button"
-                    className="btn btn-danger external-model-delete"
-                    onClick={() => setDeleteTarget(model)}
-                  >{ui('删除')}</button>
-                </div>
-              </section>
-            )
-          })}
-        </div>
-        <form id="external-model-form" className="modal-form" onSubmit={event => { void submit(event) }}>
-          <input id="external-model-id" type="hidden" value={draft.modelId} readOnly />
-          <div className="field">
-            <label htmlFor="external-model-name">{ui('显示名称')}</label>
-            <input
-              id="external-model-name"
-              type="text"
-              autoComplete="off"
-              placeholder={ui('例如：本地模型')}
-              value={draft.name}
-              onChange={event => setDraft(current => ({ ...current, name: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="external-model-format">{ui('接口格式')}</label>
-            <select
-              id="external-model-format"
-              value={draft.format}
-              onChange={event => setDraft(current => ({ ...current, format: event.target.value === 'anthropic' ? 'anthropic' : 'openai' }))}
-            >
-              <option value="openai">{ui('OpenAI 格式')}</option>
-              <option value="anthropic">{ui('Anthropic 格式')}</option>
-            </select>
-          </div>
-          <div className="field">
-            <label htmlFor="external-model-base-url">{ui('模型地址')}</label>
-            <input
-              id="external-model-base-url"
-              type="url"
-              autoComplete="off"
-              placeholder="https://api.example.com/v1"
-              value={draft.baseUrl}
-              onChange={event => setDraft(current => ({ ...current, baseUrl: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="external-model-api-key">{ui('模型 Key')}</label>
-            <input
-              id="external-model-api-key"
-              type="password"
-              autoComplete="off"
-              value={draft.apiKey}
-              onChange={event => setDraft(current => ({ ...current, apiKey: event.target.value }))}
-            />
-          </div>
-          <div className="field">
-            <label htmlFor="external-model-model-name">{ui('模型名称')}</label>
-            <input
-              id="external-model-model-name"
-              type="text"
-              autoComplete="off"
-              placeholder={ui('gpt-4.1 / claude-sonnet')}
-              value={draft.modelName}
-              onChange={event => setDraft(current => ({ ...current, modelName: event.target.value }))}
-            />
-          </div>
-          <div className="template-actions">
-            <button id="reset-external-model-form" className="btn" type="button" onClick={() => setDraft(EMPTY_DRAFT)}>{ui('新建')}</button>
-            <button className="btn btn-primary" type="submit">{ui('保存外部模型')}</button>
-          </div>
-        </form>
-      </section>
+          <form id="external-model-form" className="modal-form" onSubmit={event => { void submit(event) }}>
+            <input id="external-model-id" type="hidden" value={draft.modelId} readOnly />
+            <div className="field">
+              <label htmlFor="external-model-name">{ui('显示名称')}</label>
+              <input
+                id="external-model-name"
+                type="text"
+                autoComplete="off"
+                placeholder={ui('例如：本地模型')}
+                value={draft.name}
+                onChange={event => setDraft(current => ({ ...current, name: event.target.value }))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="external-model-format">{ui('接口格式')}</label>
+              <select
+                id="external-model-format"
+                value={draft.format}
+                onChange={event => setDraft(current => ({ ...current, format: event.target.value === 'anthropic' ? 'anthropic' : 'openai' }))}
+              >
+                <option value="openai">{ui('OpenAI 格式')}</option>
+                <option value="anthropic">{ui('Anthropic 格式')}</option>
+              </select>
+            </div>
+            <div className="field">
+              <label htmlFor="external-model-base-url">{ui('模型地址')}</label>
+              <input
+                id="external-model-base-url"
+                type="url"
+                autoComplete="off"
+                placeholder="https://api.example.com/v1"
+                value={draft.baseUrl}
+                onChange={event => setDraft(current => ({ ...current, baseUrl: event.target.value }))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="external-model-api-key">{ui('模型 Key')}</label>
+              <input
+                id="external-model-api-key"
+                type="password"
+                autoComplete="off"
+                value={draft.apiKey}
+                onChange={event => setDraft(current => ({ ...current, apiKey: event.target.value }))}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="external-model-model-name">{ui('模型名称')}</label>
+              <input
+                id="external-model-model-name"
+                type="text"
+                autoComplete="off"
+                placeholder={ui('gpt-4.1 / claude-sonnet')}
+                value={draft.modelName}
+                onChange={event => setDraft(current => ({ ...current, modelName: event.target.value }))}
+              />
+            </div>
+            <div className="template-actions">
+              <button id="reset-external-model-form" className="btn" type="button" onClick={() => setDraft(EMPTY_DRAFT)}>{ui('新建')}</button>
+              <button className="btn btn-primary" type="submit">{ui('保存外部模型')}</button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteTarget !== undefined} onOpenChange={nextOpen => { if (!nextOpen) setDeleteTarget(undefined) }}>
         <AlertDialogContent>
@@ -262,6 +268,6 @@ export function ExternalModelsModal() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }

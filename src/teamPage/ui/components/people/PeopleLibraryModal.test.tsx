@@ -76,7 +76,7 @@ describe('team page people library modal', () => {
 
     await openLibrary(services)
 
-    expect(document.querySelector<HTMLElement>('#people-library-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#people-library-modal')).not.toBeNull()
     expect(document.querySelectorAll('#people-library-list .template-card')).toHaveLength(5)
     expect(document.querySelector('#people-library-summary')?.textContent).toBe('6 人')
     expect(document.querySelector('#people-library-pagination')?.textContent).toContain('1 / 2')
