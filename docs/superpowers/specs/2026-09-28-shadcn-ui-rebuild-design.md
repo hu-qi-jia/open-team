@@ -141,8 +141,8 @@ OpenTeam 此前完成了 V1–V5 / W1–W3 的渐进式 shadcn 化：组件大�
 
 ### 5.2 拖拽（D9）
 
-- 窗口级：拖拽手柄从单一右下角扩展为右缘 / 底缘 / 右下角；钳制 min 520×480，max 为屏幕可用区；宽高与位置持久化（沿用 floatingWindow 现有存储字段）；
-- 侧栏级：`Resizable`（新增官方依赖 `react-resizable-panels`，仅此一个新依赖），200–320px，双击重置，宽度持久化；
+- 窗口级：拖拽手柄从单一右下角扩展为右缘 / 底缘 / 右下角；钳制 min 520×480（现值为 760×520，按本规格下调以触达 compact 档），max 为屏幕可用区；宽高与位置持久化（新增 localStorage 键 `openteam.shellGeometry`——floatingWindow 原无持久化，此为补充而非沿用）；
+- 侧栏级：自绘 `SidebarResizeHandle`（约 40 行 pointer-events 手柄，像素钳制 200–320px，双击重置 240px，宽度持久化到 localStorage 键 `openteam.sidebar`）。**修订**：原定 `react-resizable-panels`（官方 Resizable）只支持百分比约束，无法保证像素钳制，且引入依赖不划算；视觉与交互仍与官方 Resizable 一致；
 - 其他面板：笔记浮窗保留现有拖拽缩放；成员 Sheet 为覆盖层不参与拖宽。
 
 ## 6. 组件映射总表
@@ -160,7 +160,7 @@ OpenTeam 此前完成了 V1–V5 / W1–W3 的渐进式 shadcn 化：组件大�
 | 人员库 5 弹窗 | 重塑 | Dialog、Command/Input、Card、Badge、Empty |
 | AllNotes / ExternalModels / GroupTemplate | 重塑 | Dialog、ScrollArea、Card |
 | 编排 3 弹窗 + X6 画布 | 弹窗重塑；画布节点配色已 token 化，微调 | Dialog、Card |
-| `ui/` 29 个原语 | 已就绪 | 新增 `resizable.tsx`（官方源） |
+| `ui/` 29 个原语 | 已就绪 | 无新增组件、无新增依赖（侧栏拖宽用自绘手柄，见 §5.2） |
 | `FloatingWindowChrome` | 保留 + 样式 ghost 化 | 自绘（圆钮） |
 
 ## 7. 架构与迁移策略（方案一，D10）
