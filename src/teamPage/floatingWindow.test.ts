@@ -2,8 +2,9 @@
 
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createFloatingWindowControls } from './floatingWindow'
+import { SHELL_GEOMETRY_STORAGE_KEY } from './shellGeometry'
 
 function mockShellRect(el: HTMLElement, width: number, height = 600): void {
   el.getBoundingClientRect = () => ({
@@ -221,6 +222,56 @@ describe('team page floating window boundary', () => {
     expect(appShellEl.style.width).toBe('520px')
     expect(appShellEl.style.height).toBe('480px')
     expect(appShellEl.classList.contains('resizing')).toBe(true)
+  })
+
+  it('does not persist shell geometry when fullscreen is entered before the persistence timer fires', () => {
+    vi.useFakeTimers()
+    try {
+      const appShellEl = document.createElement('main')
+      const toggleWindowSizeEl = document.createElement('button')
+      const toggleFullscreenEl = document.createElement('button')
+      const windowLauncherEl = document.createElement('button')
+      const windowResizeHandleEl = document.createElement('button')
+      appShellEl.append(windowResizeHandleEl)
+      document.body.append(appShellEl)
+      Object.defineProperty(appShellEl, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({
+          left: 100,
+          top: 80,
+          right: 1000,
+          bottom: 700,
+          width: 900,
+          height: 620,
+          x: 100,
+          y: 80,
+          toJSON: () => ({}),
+        }),
+      })
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 })
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
+      localStorage.removeItem(SHELL_GEOMETRY_STORAGE_KEY)
+
+      createFloatingWindowControls({
+        appShellEl,
+        toggleWindowSizeEl,
+        toggleFullscreenEl,
+        windowLauncherEl,
+        windowResizeHandleEl,
+      }).registerFloatingWindowControls()
+
+      windowResizeHandleEl.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 1000, clientY: 700, pointerId: 1, bubbles: true }))
+      windowResizeHandleEl.dispatchEvent(new PointerEvent('pointerup', { button: 0, clientX: 1000, clientY: 700, pointerId: 1, bubbles: true }))
+      toggleFullscreenEl.click()
+
+      // 同文件早前用例可能留下未触发的真实定时器写入，同步清掉以隔离本断言
+      localStorage.removeItem(SHELL_GEOMETRY_STORAGE_KEY)
+      vi.advanceTimersByTime(300)
+
+      expect(localStorage.getItem(SHELL_GEOMETRY_STORAGE_KEY)).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
 

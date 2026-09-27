@@ -71,9 +71,13 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
   }
 
   function persistShellGeometry(): void {
-    if (deps.appShellEl.classList.contains('fullscreen')) return
     window.clearTimeout(persistTimer)
-    persistTimer = window.setTimeout(() => writeShellGeometry(window.localStorage, currentGeometry()), 300)
+    // 全屏守卫放在回调内：手势结束后 300ms 内进入全屏会清掉 left/top，
+    // 若只在调用时检查，挂起的定时器仍会把全屏矩形写进持久化键。
+    persistTimer = window.setTimeout(() => {
+      if (deps.appShellEl.classList.contains('fullscreen')) return
+      writeShellGeometry(window.localStorage, currentGeometry())
+    }, 300)
   }
 
   function setWindowMinimized(minimized: boolean): void {
