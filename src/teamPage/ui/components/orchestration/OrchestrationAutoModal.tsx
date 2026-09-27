@@ -100,9 +100,9 @@ export function OrchestrationAutoModal({ open, entries, instruction, busy, gener
                     event.currentTarget.form?.requestSubmit()
                   }}
                 />
-                <button className="btn btn-primary orchestration-auto-submit" type="submit" disabled={busy}>
+                <Button className="orchestration-auto-submit" size="sm" type="submit" disabled={busy}>
                   {generating ? ui('生成中...') : ui('发送')}
-                </button>
+                </Button>
               </div>
             </form>
           </section>

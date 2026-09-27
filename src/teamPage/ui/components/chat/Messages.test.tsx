@@ -907,7 +907,7 @@ describe('team page messages (React)', () => {
     services.uiBus.on('open-add-person', () => received.push('open-add-person'))
 
     expect(messagesEl.textContent).toContain('暂无人员')
-    const addPersonButton = messagesEl.querySelector<HTMLButtonElement>('button.btn-primary')
+    const addPersonButton = messagesEl.querySelector<HTMLButtonElement>('button[data-slot="button"]')
     expect(addPersonButton?.textContent).toBe('添加人员')
     addPersonButton?.click()
 

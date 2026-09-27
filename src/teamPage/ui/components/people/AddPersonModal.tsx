@@ -176,7 +176,7 @@ export function AddPersonModal() {
             <DialogDescription className="tiny">{ui('从人员库或临时草稿中选择人员，并为每个人指定站点。')}</DialogDescription>
           </div>
           <div className="modal-header-actions flex items-center gap-2">
-            <button id="open-temporary-person" className="btn btn-ghost" type="button" onClick={() => services.uiBus.emit('open-temporary-person')}>{ui('临时添加')}</button>
+            <Button id="open-temporary-person" variant="ghost" size="sm" type="button" onClick={() => services.uiBus.emit('open-temporary-person')}>{ui('临时添加')}</Button>
             <Button id="close-add-person" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭添加人员')} onClick={close}>×</Button>
           </div>
         </DialogHeader>
@@ -228,7 +228,7 @@ export function AddPersonModal() {
                 />
               ))}
             </div>
-            <button className="btn btn-primary" type="submit">{ui('加入选中人员')}</button>
+            <Button size="sm" type="submit">{ui('加入选中人员')}</Button>
           </form>
         </div>
       </DialogContent>

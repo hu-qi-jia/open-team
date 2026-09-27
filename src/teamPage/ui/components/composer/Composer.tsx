@@ -236,15 +236,17 @@ export function Composer() {
             <div className="reference-draft-preview truncate rounded-md bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
               {`引用 ${view.reference.roleName || '人员'}：${view.reference.contentSnapshot}`}
             </div>
-            <button
+            <Button
               type="button"
-              className="btn btn-ghost ml-1 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+              variant="ghost"
+              size="icon-xs"
+              className="ml-1 shrink-0 text-muted-foreground"
               aria-label="取消引用"
               onClick={() => {
                 getAppState().selectedReference = undefined
                 notifyAppState()
               }}
-            >×</button>
+            >×</Button>
           </>
         )}
       </div>

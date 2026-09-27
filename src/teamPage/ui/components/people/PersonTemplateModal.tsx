@@ -200,15 +200,16 @@ export function PersonTemplateModal() {
             </div>
             <div className="template-actions template-ai-actions">
               <p id="template-persona-generation-status" className="tiny" aria-live="polite">{generationStatus}</p>
-              <button
+              <Button
                 id="generate-template-persona"
-                className="btn btn-ghost"
+                variant="ghost"
+                size="sm"
                 type="button"
                 disabled={generating}
                 onClick={() => {
                   generatePersona().catch(error => showError(personaGenerationErrorMessage(error)))
                 }}
-              >{generating ? ui('生成中') : ui('AI 生成')}</button>
+              >{generating ? ui('生成中') : ui('AI 生成')}</Button>
             </div>
           </div>
           <div className="field">
@@ -283,7 +284,7 @@ export function PersonTemplateModal() {
             </div>
           )}
           <div className="template-actions">
-            <button className="btn btn-primary" type="submit">{ui('保存人员')}</button>
+            <Button size="sm" type="submit">{ui('保存人员')}</Button>
           </div>
         </form>
       </DialogContent>

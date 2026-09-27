@@ -89,7 +89,7 @@ export function TemporaryPersonModal() {
             <label htmlFor="temporary-person-prompt">{ui('人设')}</label>
             <textarea id="temporary-person-prompt" value={prompt} onChange={event => setPrompt(event.target.value)} />
           </div>
-          <button className="btn btn-primary" type="submit">{ui('加入待选列表')}</button>
+          <Button size="sm" type="submit">{ui('加入待选列表')}</Button>
         </form>
       </DialogContent>
     </Dialog>

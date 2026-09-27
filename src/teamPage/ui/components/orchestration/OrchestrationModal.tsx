@@ -638,10 +638,10 @@ export function OrchestrationModal() {
                 placeholder={ui('描述要让编排流程完成的任务；不需要 @ 人员。')}
                 onChange={event => setTask(event.target.value)}
               />
-              <button id="open-orchestration-template" className="btn orchestration-template-trigger" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</button>
-              <button id="auto-orchestration" className="btn orchestration-auto" type="button" disabled={busy} onClick={openAutoPanel}>
+              <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
+              <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto" type="button" disabled={busy} onClick={openAutoPanel}>
                 {autoGenerating ? ui('生成中...') : ui('自动编排')}
-              </button>
+              </Button>
             </div>
           </div>
           <div className={`orchestration-layout${selectedStage ? '' : ' settings-hidden'}`}>
@@ -676,7 +676,7 @@ export function OrchestrationModal() {
               </div>
             </aside>
             <section className="orchestration-workspace">
-              <button id="arrange-orchestration" className="btn orchestration-arrange" type="button" onClick={arrangeCanvas}>{ui('整理')}</button>
+              <Button id="arrange-orchestration" variant="outline" size="sm" className="orchestration-arrange" type="button" onClick={arrangeCanvas}>{ui('整理')}</Button>
               {open && (
                 <CanvasPortal
                   stages={stages}
@@ -780,7 +780,7 @@ export function OrchestrationModal() {
                       ))}
                     </div>
                   )}
-                  <button className="btn btn-danger" type="button" onClick={() => removeStage(selectedStage.id)}>{ui('删除节点')}</button>
+                  <Button variant="destructive" size="sm" type="button" onClick={() => removeStage(selectedStage.id)}>{ui('删除节点')}</Button>
                 </div>
               )}
               {selectedStage?.kind === 'review' && (
@@ -845,8 +845,8 @@ export function OrchestrationModal() {
             </label>
             <p className="tiny">{ui('默认 50 个，最多 200 个；用于防止循环流程无限执行，执行节点和审核节点都会计数。')}</p>
             <div className="template-actions orchestration-actions">
-              <button id="save-orchestration" className="btn" type="button" disabled={busy} onClick={() => void saveOrchestrationFlow()}>{ui('保存')}</button>
-              <button id="run-orchestration" className="btn btn-primary" type="button" disabled={busy} onClick={() => void runOrchestration()}>{ui('运行')}</button>
+              <Button id="save-orchestration" variant="outline" size="sm" type="button" disabled={busy} onClick={() => void saveOrchestrationFlow()}>{ui('保存')}</Button>
+              <Button id="run-orchestration" size="sm" type="button" disabled={busy} onClick={() => void runOrchestration()}>{ui('运行')}</Button>
             </div>
           </div>
         </DialogContent>

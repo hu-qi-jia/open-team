@@ -162,15 +162,19 @@ export function ExternalModelsModal() {
                     <div className="template-description">{model.baseUrl}</div>
                   </div>
                   <div className="template-card-actions">
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-ghost external-model-test"
+                      variant="ghost"
+                      size="sm"
+                      className="external-model-test"
                       disabled={phase === 'testing'}
                       onClick={() => { void testModel(model) }}
-                    >{phase === 'testing' ? ui('测试中') : phase === 'passed' ? ui('测试通过') : ui('测试')}</button>
-                    <button
+                    >{phase === 'testing' ? ui('测试中') : phase === 'passed' ? ui('测试通过') : ui('测试')}</Button>
+                    <Button
                       type="button"
-                      className="btn btn-ghost external-model-edit"
+                      variant="ghost"
+                      size="sm"
+                      className="external-model-edit"
                       onClick={() => setDraft({
                         modelId: model.id,
                         name: model.name,
@@ -179,12 +183,14 @@ export function ExternalModelsModal() {
                         apiKey: model.apiKey,
                         modelName: model.modelName,
                       })}
-                    >{ui('编辑')}</button>
-                    <button
+                    >{ui('编辑')}</Button>
+                    <Button
                       type="button"
-                      className="btn btn-danger external-model-delete"
+                      variant="destructive"
+                      size="sm"
+                      className="external-model-delete"
                       onClick={() => setDeleteTarget(model)}
-                    >{ui('删除')}</button>
+                    >{ui('删除')}</Button>
                   </div>
                 </section>
               )
@@ -247,8 +253,8 @@ export function ExternalModelsModal() {
               />
             </div>
             <div className="template-actions">
-              <button id="reset-external-model-form" className="btn" type="button" onClick={() => setDraft(EMPTY_DRAFT)}>{ui('新建')}</button>
-              <button className="btn btn-primary" type="submit">{ui('保存外部模型')}</button>
+              <Button id="reset-external-model-form" variant="outline" size="sm" type="button" onClick={() => setDraft(EMPTY_DRAFT)}>{ui('新建')}</Button>
+              <Button type="submit" size="sm">{ui('保存外部模型')}</Button>
             </div>
           </form>
         </DialogContent>

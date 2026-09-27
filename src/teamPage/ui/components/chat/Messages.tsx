@@ -177,7 +177,6 @@ export function Messages() {
           <Button
             type="button"
             size="sm"
-            className="btn btn-primary"
             onClick={() => services.uiBus.emit('open-add-person')}
           >添加人员</Button>
         </EmptyState>

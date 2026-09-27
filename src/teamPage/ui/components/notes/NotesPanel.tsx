@@ -7,6 +7,7 @@ import { getAppState, getAppStateVersion, notifyAppState } from '../../lib/appSt
 import type { NoteEditorFactory, NoteScope, NoteToolbarCommand } from '../../lib/noteEditor'
 import { readNoteContent } from '../../lib/noteItems'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
 import { useNoteEditorEngine } from './useNoteEditorEngine'
 
 const FLOATING_PANEL_MARGIN = 12
@@ -209,11 +210,11 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
       </div>
       <div className="note-toolbar flex items-center gap-0.5 px-3 py-2" aria-label={t('富文本工具栏')}>
         {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
-          <button key={id} id={id} className="note-tool-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</button>
+          <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-xs text-muted-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
         ))}
         <span className="note-toolbar-spacer flex-1"></span>
-        <button id="note-undo" className="note-tool-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</button>
-        <button id="note-redo" className="note-tool-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</button>
+        <Button id="note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
+        <Button id="note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
       </div>
       <div ref={editorElementRef} id="notes-editor" className="notes-editor min-h-0 bg-transparent px-3.5 pb-2.5 text-sm" aria-label={t('富文本笔记编辑器')}></div>
       <button

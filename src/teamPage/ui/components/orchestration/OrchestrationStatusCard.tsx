@@ -5,6 +5,7 @@ import { runCommandWithReconnect } from '../../../sendWithReconnect'
 import { useServices } from '../../context/ServicesContext'
 import { useFloatingPanelGeometry } from '../../hooks/useFloatingPanelGeometry'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
+import { Button } from '../ui/button'
 import { getAppState, getAppStateVersion } from '../../lib/appStore'
 import {
   STATUS_LABELS,
@@ -210,27 +211,27 @@ export function OrchestrationStatusCard() {
   const statusActions: ReactNode[] = []
   if (run.status === 'stopped') {
     statusActions.push(
-      <button key="resume" type="button" className="btn btn-primary" onClick={() => resumeAction(model)}>{ui('继续')}</button>,
-      <button key="rerun-stopped" type="button" className="btn btn-ghost" onClick={() => rerunAction(model)}>{ui('重新运行')}</button>,
+      <Button key="resume" type="button" size="xs" onClick={() => resumeAction(model)}>{ui('继续')}</Button>,
+      <Button key="rerun-stopped" type="button" variant="ghost" size="xs" onClick={() => rerunAction(model)}>{ui('重新运行')}</Button>,
     )
   }
   if (run.status === 'completed') {
     statusActions.push(
-      <button key="rerun-completed" type="button" className="btn btn-primary" onClick={() => rerunAction(model)}>{ui('重新运行')}</button>,
+      <Button key="rerun-completed" type="button" size="xs" onClick={() => rerunAction(model)}>{ui('重新运行')}</Button>,
     )
   }
   if ((run.status === 'error' || current?.status === 'error') && current) {
     statusActions.push(
       current.kind === 'review'
-        ? <button key="retry-review" type="button" className="btn btn-primary" onClick={() => retryAction(model, current, 'GROUP_ORCHESTRATION_RETRY_REVIEW', { chatId: chat.id })}>{ui('重发')}</button>
-        : <button key="retry-stage" type="button" className="btn btn-primary" onClick={() => retryAction(model, current, 'GROUP_ORCHESTRATION_RETRY_STAGE', { chatId: chat.id, stageId: current.stageId })}>{ui('重发')}</button>,
-      <button key="skip" type="button" className="btn btn-ghost" onClick={() => runAction('GROUP_ORCHESTRATION_SKIP_STAGE', { chatId: chat.id, stageId: current.stageId })}>{ui('跳过节点')}</button>,
-      <button key="rerun-error" type="button" className="btn btn-ghost" onClick={() => rerunAction(model)}>{ui('重新运行')}</button>,
+        ? <Button key="retry-review" type="button" size="xs" onClick={() => retryAction(model, current, 'GROUP_ORCHESTRATION_RETRY_REVIEW', { chatId: chat.id })}>{ui('重发')}</Button>
+        : <Button key="retry-stage" type="button" size="xs" onClick={() => retryAction(model, current, 'GROUP_ORCHESTRATION_RETRY_STAGE', { chatId: chat.id, stageId: current.stageId })}>{ui('重发')}</Button>,
+      <Button key="skip" type="button" variant="ghost" size="xs" onClick={() => runAction('GROUP_ORCHESTRATION_SKIP_STAGE', { chatId: chat.id, stageId: current.stageId })}>{ui('跳过节点')}</Button>,
+      <Button key="rerun-error" type="button" variant="ghost" size="xs" onClick={() => rerunAction(model)}>{ui('重新运行')}</Button>,
     )
   }
   if (run.status === 'running' && run.updatedAt && Date.now() - run.updatedAt > STALE_RUNNING_MS) {
     statusActions.push(
-      <button key="force-reset" type="button" className="btn btn-danger" onClick={() => runAction('GROUP_ORCHESTRATION_STOP', { chatId: chat.id })}>{ui('强制重置')}</button>,
+      <Button key="force-reset" type="button" variant="destructive" size="xs" onClick={() => runAction('GROUP_ORCHESTRATION_STOP', { chatId: chat.id })}>{ui('强制重置')}</Button>,
     )
   }
 
@@ -268,9 +269,9 @@ export function OrchestrationStatusCard() {
             </div>
             <div className="orchestration-status-window-actions">
               {statusActions.length > 0 && <div className="orchestration-status-actions">{statusActions}</div>}
-              <button type="button" className="btn orchestration-status-collapse" aria-label={ui('收起编排状态')} onClick={() => updatePrefs({ collapsed: true })}>－</button>
+              <Button type="button" variant="ghost" size="icon-xs" className="orchestration-status-collapse" aria-label={ui('收起编排状态')} onClick={() => updatePrefs({ collapsed: true })}>－</Button>
               {(run.status === 'running' || run.status === 'pending') && (
-                <button type="button" className="btn btn-danger" onClick={() => runAction('GROUP_ORCHESTRATION_STOP', { chatId: chat.id })}>{ui('停止')}</button>
+                <Button type="button" variant="destructive" size="xs" onClick={() => runAction('GROUP_ORCHESTRATION_STOP', { chatId: chat.id })}>{ui('停止')}</Button>
               )}
             </div>
           </div>

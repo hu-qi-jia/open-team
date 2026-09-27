@@ -159,8 +159,8 @@ export function GroupTemplateModal() {
               <strong>{ui('没有找到匹配的小组')}</strong>
               <p>{ui('可以试试换个说法，例如搜索「写论文」「合同」「面试」「投放」「装修」。')}</p>
               <div className="group-template-empty-actions">
-                <button className="btn btn-ghost" type="button" onClick={clearSearch}>{ui('清空搜索')}</button>
-                <button className="btn btn-ghost" type="button" onClick={showAllTemplates}>{ui('查看全部模板')}</button>
+                <Button className="btn" type="button" variant="ghost" size="sm" onClick={clearSearch}>{ui('清空搜索')}</Button>
+                <Button className="btn" type="button" variant="ghost" size="sm" onClick={showAllTemplates}>{ui('查看全部模板')}</Button>
               </div>
             </div>
           ) : templates.map(template => (
@@ -175,9 +175,9 @@ export function GroupTemplateModal() {
           ))}
         </div>
         <div className="group-template-footer">
-          <button id="confirm-group-template-create" className="btn btn-primary" type="button" disabled={!selectedTemplate} onClick={confirmCreate}>
+          <Button id="confirm-group-template-create" type="button" disabled={!selectedTemplate} onClick={confirmCreate}>
             {ui(selectedTemplate?.riskLevel === 'professional' ? '了解限制并创建' : '确认创建')}
-          </button>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

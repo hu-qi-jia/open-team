@@ -149,12 +149,12 @@ export function PeopleLibraryModal() {
               <DialogDescription className="tiny">{ui('维护可复用人员人设；加入群聊后会复制为独立人员。')}</DialogDescription>
             </div>
             <div className="chat-row flex items-center gap-2">
-              <button id="new-template" className="btn btn-primary" type="button" onClick={() => {
+              <Button id="new-template" type="button" size="sm" onClick={() => {
                 const state = getAppState()
                 state.selectedTemplateId = undefined
                 notifyAppState()
                 services.uiBus.emit('open-person-template-edit')
-              }}>{ui('新建')}</button>
+              }}>{ui('新建')}</Button>
               <Button id="close-people-library" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭人员库')} onClick={close}>×</Button>
             </div>
           </DialogHeader>
@@ -216,19 +216,23 @@ export function PeopleLibraryModal() {
               <div id="people-library-pagination" className="pagination-bar">
                 {view.pageCount > 1 && (
                   <>
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-ghost pagination-btn"
+                      variant="ghost"
+                      size="sm"
+                      className="pagination-btn"
                       disabled={view.currentPage === 0}
                       onClick={() => setPage(Math.max(0, view.currentPage - 1))}
-                    >{ui('上一页')}</button>
+                    >{ui('上一页')}</Button>
                     <span className="pagination-label">{view.currentPage + 1} / {view.pageCount}</span>
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-ghost pagination-btn"
+                      variant="ghost"
+                      size="sm"
+                      className="pagination-btn"
                       disabled={view.currentPage >= view.pageCount - 1}
                       onClick={() => setPage(Math.min(view.pageCount - 1, view.currentPage + 1))}
-                    >{ui('下一页')}</button>
+                    >{ui('下一页')}</Button>
                   </>
                 )}
               </div>
@@ -291,12 +295,12 @@ function TemplateCard({ template, store, language, ui, used, onEdit, onDetail, o
       </div>
       <div className="template-card-actions">
         {template.type === 'builtin' ? (
-          <button type="button" className="btn btn-ghost template-detail" onClick={event => { event.stopPropagation(); onDetail() }}>{ui('详情')}</button>
+          <Button type="button" variant="ghost" size="sm" className="template-detail" onClick={event => { event.stopPropagation(); onDetail() }}>{ui('详情')}</Button>
         ) : (
-          <button type="button" className="btn btn-ghost template-edit" onClick={event => { event.stopPropagation(); onEdit() }}>{ui('编辑')}</button>
+          <Button type="button" variant="ghost" size="sm" className="template-edit" onClick={event => { event.stopPropagation(); onEdit() }}>{ui('编辑')}</Button>
         )}
         {template.type !== 'builtin' && !used && (
-          <button type="button" className="btn btn-danger template-delete" onClick={event => { event.stopPropagation(); onDelete() }}>{ui('删除')}</button>
+          <Button type="button" variant="destructive" size="sm" className="template-delete" onClick={event => { event.stopPropagation(); onDelete() }}>{ui('删除')}</Button>
         )}
       </div>
     </section>

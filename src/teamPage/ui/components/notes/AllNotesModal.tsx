@@ -155,11 +155,11 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
             </div>
             <div className="note-toolbar all-note-toolbar">
               {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
-                <button key={id} id={id} className="note-tool-btn" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</button>
+                <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
               ))}
               <span className="note-toolbar-spacer"></span>
-              <button id="all-note-undo" className="note-tool-btn" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</button>
-              <button id="all-note-redo" className="note-tool-btn" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</button>
+              <Button id="all-note-undo" variant="ghost" size="icon-sm" className="note-tool-btn" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
+              <Button id="all-note-redo" variant="ghost" size="icon-sm" className="note-tool-btn" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
             </div>
             <div
               ref={node => {
