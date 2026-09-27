@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { act, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
 import type { GroupChat, OpenTeamStore, RichNoteDocument } from '../../../../group/types'
@@ -30,7 +31,7 @@ describe('team page all notes modal', () => {
       services.uiBus.emit('open-all-notes')
     })
 
-    expect(document.querySelector<HTMLElement>('#all-notes-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#all-notes-modal')).not.toBeNull()
     expect(document.querySelector<HTMLElement>('[data-note-target-id="chat-1"]')?.classList.contains('active')).toBe(true)
     expect(document.querySelector('#all-notes-active-title')?.textContent).toBe('当前群')
     expect(document.querySelector('#all-notes-active-meta')?.textContent).toBe('群聊笔记')
@@ -141,7 +142,6 @@ describe('team page all notes modal', () => {
   })
 
   it('saves unsaved edits and hides the modal from the close button', async () => {
-    vi.useFakeTimers()
     const { services, triggerUpdate } = renderModal()
 
     await act(async () => {
@@ -153,7 +153,7 @@ describe('team page all notes modal', () => {
       document.querySelector<HTMLButtonElement>('#close-all-notes')!.click()
     })
 
-    expect(document.querySelector<HTMLElement>('#all-notes-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#all-notes-modal')).toBeNull())
     expect(services.runCommand).toHaveBeenCalledWith('GROUP_NOTE_SAVE', {
       scope: 'chat',
       chatId: 'chat-1',
@@ -161,8 +161,9 @@ describe('team page all notes modal', () => {
     })
   })
 
-  it('closes on Escape and on backdrop clicks without saving clean notes', async () => {
+  it('closes on Escape and on overlay clicks without saving clean notes', async () => {
     const { services } = renderModal()
+    const user = userEvent.setup()
 
     await act(async () => {
       services.uiBus.emit('open-all-notes')
@@ -171,16 +172,16 @@ describe('team page all notes modal', () => {
     act(() => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     })
-    expect(document.querySelector<HTMLElement>('#all-notes-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#all-notes-modal')).toBeNull())
     expect(services.runCommand).not.toHaveBeenCalled()
 
     await act(async () => {
       services.uiBus.emit('open-all-notes')
     })
-    act(() => {
-      document.querySelector<HTMLElement>('#all-notes-modal')!.click()
-    })
-    expect(document.querySelector<HTMLElement>('#all-notes-modal')?.hidden).toBe(true)
+    // Radix Dialog deferPointerDownOutside：主键 pointerdown 登记、后续
+    // click 才触发关闭——用 userEvent 走完整指针事件序列（等价真实点击）
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
+    await waitFor(() => expect(document.querySelector('#all-notes-modal')).toBeNull())
 
     await act(async () => {
       services.uiBus.emit('open-all-notes')
@@ -188,7 +189,7 @@ describe('team page all notes modal', () => {
     act(() => {
       document.querySelector<HTMLElement>('.all-notes-modal')!.click()
     })
-    expect(document.querySelector<HTMLElement>('#all-notes-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#all-notes-modal')).not.toBeNull()
     expect(services.runCommand).not.toHaveBeenCalled()
   })
 })

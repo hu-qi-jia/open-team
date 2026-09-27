@@ -6,6 +6,8 @@ import { getAppState, getAppStateVersion } from '../../lib/appStore'
 import type { NoteEditorFactory } from '../../lib/noteEditor'
 import { collectNoteItems, type NoteListItem } from '../../lib/noteItems'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { useNoteEditorEngine } from './useNoteEditorEngine'
 
 const TOOLBAR_COMMANDS: Array<{ command: 'bold' | 'italic' | 'strike' | 'bulletList' | 'orderedList'; id: string; label: string; content: React.ReactNode }> = [
@@ -17,17 +19,20 @@ const TOOLBAR_COMMANDS: Array<{ command: 'bold' | 'italic' | 'strike' | 'bulletL
 ]
 
 /*
- * 全部笔记弹窗（原 allNotesView 整体 React 化，P3）。#all-notes-modal
- * 结构与内部 id 原样保留（.modal-backdrop hidden 开合、#all-notes-list、
- * #all-notes-active-title/-meta、#all-notes-editor、#all-note-* 工具栏）。
- * 与原实现的对译关系：
+ * 全部笔记弹窗（原 allNotesView 整体 React 化，P3；W1 起外壳换 Radix
+ * Dialog——#all-notes-modal id 移到 DialogContent，Escape/遮罩点击关闭
+ * 经 onOpenChange 走 closeAllNotes 先落保存）。内部 id 原样保留
+ * （#all-notes-list、#all-notes-active-title/-meta、#all-notes-editor、
+ * #all-note-* 工具栏）。与原实现的对译关系：
  * - 开启入口：Rail 的 #open-all-notes 点击 → uiBus 'open-all-notes'
- *   （弹窗组件挂载期订阅；关闭时机由本组件 Escape / 遮罩 / 关闭钮处理）；
+ *   （弹窗组件挂载期订阅；关闭时机由 Radix Escape/遮罩与关闭钮汇入
+ *   closeAllNotes）；
  * - renderAllNotes 的收集与目标兜底 → items useMemo（version 驱动）+
  *   selectAvailableTarget effect（活跃目标失活时回退当前群聊/首项）；
  * - 切目标前先落保存（saveNow + 脏标记），与原 closeAllNotes/切目标语义一致；
  * - 编辑器机制复用 useNoteEditorEngine（250ms 防抖 + 脏标记，同原
- *   hasUnsavedChanges：无编辑不落保存）。
+ *   hasUnsavedChanges：无编辑不落保存）；Radix 关闭卸载编辑器容器，
+ *   关闭时 engine.destroy()，重开在新容器重建。
  */
 export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFactory } = {}) {
   const services = useServices()
@@ -35,6 +40,7 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
   const version = useStoreSelector(getAppStateVersion)
   const [open, setOpen] = useState(false)
   const [activeTargetId, setActiveTargetId] = useState<string | undefined>(undefined)
+  const [editorMounted, setEditorMounted] = useState(false)
   const editorElementRef = useRef<HTMLDivElement | null>(null)
 
   const items = useMemo(
@@ -73,12 +79,14 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
 
   // 打开与切目标后同步内容并聚焦（原 registerAllNotesEvents 开钮与
   // renderNoteTargetButton 点击两处 ensureEditor + renderActiveTarget +
-  // focusEditorWhenReady；activeTarget 由 activeTargetId 派生，不入依赖）
+  // focusEditorWhenReady；activeTarget 由 activeTargetId 派生，不入依赖）。
+  // Radix Presence 挂载内容比 open 晚一拍，activeTargetId 更新可能先于
+  // 编辑器容器挂载——以回调 ref 写入的 editorMounted 兜底再触发一次。
   useEffect(() => {
-    if (!open || !activeTarget) return
+    if (!open || !activeTarget || !editorMounted) return
     engine.syncTarget()
     engine.focusWhenReady()
-  }, [open, activeTargetId])
+  }, [open, activeTargetId, editorMounted])
 
   useEffect(() => {
     services.uiBus.on('open-all-notes', () => setOpen(true))
@@ -86,15 +94,13 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
 
   useEffect(() => () => engine.destroy(), [engine])
 
-  // 原 document keydown Escape 关闭
+  // Radix 关闭即卸载 #all-notes-editor；关闭时销毁编辑器实例（解绑已
+  // 分离节点），重开时由 ensureEditor 在新容器上重建。Escape/遮罩关闭
+  // 也经 onOpenChange → closeAllNotes，先 saveNow 再卸载。
   useEffect(() => {
     if (!open) return
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') closeAllNotes()
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  })
+    return () => engine.destroy()
+  }, [open, engine])
 
   function closeAllNotes(): void {
     engine.saveNow()
@@ -108,22 +114,20 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
   }
 
   return (
-    <div
-      id="all-notes-modal"
-      className="modal-backdrop"
-      hidden={!open}
-      onClick={event => {
-        if (event.target === event.currentTarget) closeAllNotes()
-      }}
-    >
-      <section className="modal all-notes-modal" role="dialog" aria-modal="true" aria-labelledby="all-notes-title">
-        <div className="modal-header">
+    <Dialog open={open} onOpenChange={next => { if (!next) closeAllNotes() }}>
+      <DialogContent
+        id="all-notes-modal"
+        aria-labelledby="all-notes-title"
+        showCloseButton={false}
+        className="all-notes-modal max-h-[min(760px,calc(100vh-48px))] w-[min(980px,calc(100vw-48px))] max-w-none sm:max-w-none bg-popover"
+      >
+        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
           <div>
-            <h2 id="all-notes-title">{t('全部笔记')}</h2>
-            <p className="tiny">{t('全局、群聊、已删除群聊')}</p>
+            <DialogTitle id="all-notes-title">{t('全部笔记')}</DialogTitle>
+            <DialogDescription className="tiny">{t('全局、群聊、已删除群聊')}</DialogDescription>
           </div>
-          <button id="close-all-notes" className="icon-btn modal-close" type="button" aria-label={t('关闭全部笔记')} onClick={closeAllNotes}>×</button>
-        </div>
+          <Button id="close-all-notes" variant="ghost" size="icon-sm" type="button" aria-label={t('关闭全部笔记')} onClick={closeAllNotes}>×</Button>
+        </DialogHeader>
         <div className="all-notes-workspace">
           <div id="all-notes-list" className="all-notes-list" aria-label={t('笔记范围')}>
             {items.length === 0 ? (
@@ -157,10 +161,18 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
               <button id="all-note-undo" className="note-tool-btn" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</button>
               <button id="all-note-redo" className="note-tool-btn" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</button>
             </div>
-            <div ref={editorElementRef} id="all-notes-editor" className="notes-editor all-notes-editor" aria-label={t('当前笔记富文本编辑器')}></div>
+            <div
+              ref={node => {
+                editorElementRef.current = node
+                setEditorMounted(node !== null)
+              }}
+              id="all-notes-editor"
+              className="notes-editor all-notes-editor"
+              aria-label={t('当前笔记富文本编辑器')}
+            ></div>
           </section>
         </div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
