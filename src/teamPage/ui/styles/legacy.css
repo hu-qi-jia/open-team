@@ -1095,22 +1095,6 @@ select:focus {
   background: transparent;
 }
 
-.empty-state {
-  display: grid;
-  place-items: center;
-  min-height: 100%;
-  color: var(--muted);
-  text-align: center;
-}
-
-.empty-card {
-  max-width: 420px;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 12px;
-  padding: 24px;
-  background: rgba(24, 24, 27, 0.58);
-}
-
 .message-row {
   display: flex;
   width: 100%;
@@ -3153,38 +3137,6 @@ select:focus {
   color: #ff9fb2;
 }
 
-.group-template-empty {
-  display: grid;
-  place-items: center;
-  gap: 10px;
-  grid-column: 1 / -1;
-  min-height: 240px;
-  border: 1px dashed rgba(113, 113, 122, 0.24);
-  border-radius: 8px;
-  padding: 24px;
-  color: var(--muted);
-  text-align: center;
-}
-
-.group-template-empty strong {
-  color: var(--text);
-  font-size: 15px;
-}
-
-.group-template-empty p {
-  max-width: 420px;
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.group-template-empty-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-}
-
 .group-template-footer {
   display: flex;
   justify-content: flex-end;
@@ -4272,9 +4224,7 @@ select:focus {
   color: var(--muted);
 }
 
-:root[data-theme="light"] .empty-card,
 :root[data-theme="light"] .group-template-option,
-:root[data-theme="light"] .group-template-empty,
 :root[data-theme="light"] .modal-card,
 :root[data-theme="light"] .select-row,
 :root[data-theme="light"] .orchestration-sidebar,
@@ -4465,7 +4415,6 @@ select:focus {
 :root[data-theme="light"] .notes-editor,
 :root[data-theme="light"] .all-note-target,
 :root[data-theme="light"] .all-note-target-title,
-:root[data-theme="light"] .group-template-empty strong,
 :root[data-theme="light"] .template-prompt-preview,
 :root[data-theme="light"] .orchestration-status,
 :root[data-theme="light"] .orchestration-status-title,

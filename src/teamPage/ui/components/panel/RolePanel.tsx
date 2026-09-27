@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GroupRole } from '../../../../group/types'
 import { getAllRoleTemplates } from '../../../../group/roleTemplates'
 import { localizeRoleTemplate, normalizeLanguage, translateUi } from '../../../../shared/i18n'
+import { Users } from 'lucide-react'
 import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
@@ -29,6 +30,7 @@ import {
 } from '../ui/alert-dialog'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
 
@@ -193,19 +195,21 @@ export function RolePanel() {
         </div>
         <div id="role-list" className="role-list grid gap-2 px-3 py-2">
           {!view.chat ? (
-            <div className="empty-state px-1 py-4">
-              <div className="empty-card rounded-lg border border-dashed border-border p-4 text-center">
-                <h3 className="text-sm font-medium">{ui('未选择群聊')}</h3>
-                <p className="muted mt-1 text-xs leading-relaxed text-muted-foreground">{ui('选择群聊后可添加、查看、恢复和唤醒人员。')}</p>
-              </div>
-            </div>
+            <Empty className="my-2 p-4">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Users className="size-4" /></EmptyMedia>
+                <EmptyTitle className="text-sm font-medium">{ui('未选择群聊')}</EmptyTitle>
+                <EmptyDescription className="text-xs">{ui('选择群聊后可添加、查看、恢复和唤醒人员。')}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : view.roles.length === 0 ? (
-            <div className="empty-state px-1 py-4">
-              <div className="empty-card rounded-lg border border-dashed border-border p-4 text-center">
-                <h3 className="text-sm font-medium">{ui('暂无人员')}</h3>
-                <p className="muted mt-1 text-xs leading-relaxed text-muted-foreground">{ui('点击添加人员，可从人员库批量加入或临时添加。')}</p>
-              </div>
-            </div>
+            <Empty className="my-2 p-4">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Users className="size-4" /></EmptyMedia>
+                <EmptyTitle className="text-sm font-medium">{ui('暂无人员')}</EmptyTitle>
+                <EmptyDescription className="text-xs">{ui('点击添加人员，可从人员库批量加入或临时添加。')}</EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : view.roles.map(role => (
             <RoleCard
               key={role.id}

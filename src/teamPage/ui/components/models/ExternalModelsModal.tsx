@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ExternalModelConfig, ExternalModelFormat } from '../../../../group/types'
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
+import { Server } from 'lucide-react'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { getAppState, getAppStateVersion } from '../../lib/appStore'
@@ -10,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from '../ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 
 /*
  * 外部模型弹窗（原 externalModelsView React 化，P4b）。W1 起外壳换 Radix
@@ -152,7 +154,13 @@ export function ExternalModelsModal() {
           </DialogHeader>
           <div id="external-models-list" className="template-list">
             {models.length === 0 ? (
-              <div className="empty-card">{ui('暂无外部模型')}</div>
+              <Empty className="my-4 p-4">
+                <EmptyHeader>
+                  <EmptyMedia variant="icon"><Server className="size-4" /></EmptyMedia>
+                  <EmptyTitle className="text-sm font-medium">{ui('暂无外部模型')}</EmptyTitle>
+                  <EmptyDescription className="text-xs">{ui('在下方表单保存第一个外部模型后，会显示在这里。')}</EmptyDescription>
+                </EmptyHeader>
+              </Empty>
             ) : models.map(model => {
               const phase = testState?.id === model.id ? testState.phase : undefined
               return (

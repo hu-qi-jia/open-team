@@ -1,18 +1,22 @@
+import { Users } from 'lucide-react'
 import { localizeCategory, translateUi, type TeamLanguage } from '../../../../shared/i18n'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 
 /*
  * 人员库弹窗群的共享小件（原 renderCategoryFilter / emptyCard /
  * template-type-tabs 内联结构对译）。id 由各弹窗传入以保持原样。
+ * W3-3 起空态换 Empty 原语（居中图标 + 标题 + 描述，无描边盒子）。
  */
 
 export function EmptyState({ body, title }: { title: string; body: string }) {
   return (
-    <div className="empty-state">
-      <div className="empty-card">
-        <h3>{title}</h3>
-        <p className="muted">{body}</p>
-      </div>
-    </div>
+    <Empty className="mx-auto my-6 max-w-sm p-4 md:p-6">
+      <EmptyHeader>
+        <EmptyMedia variant="icon"><Users className="size-4" /></EmptyMedia>
+        <EmptyTitle className="text-sm font-medium">{title}</EmptyTitle>
+        <EmptyDescription className="text-xs">{body}</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
   )
 }
 

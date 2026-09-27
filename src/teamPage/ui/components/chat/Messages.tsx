@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GroupMessage, GroupRole, MessageHighlight, OpenTeamStore, OrchestrationReviewResult } from '../../../../group/types'
+import { MessageSquare, Users } from 'lucide-react'
 import { Button } from '../ui/button'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 import { roleMentionLabelOptionsFromSettings } from '../../../../group/mentionParser'
 import {
   THINKING_TIMEOUT_MS,
@@ -173,7 +175,7 @@ export function Messages() {
     <section id="messages" className="messages" aria-live="polite" ref={scrollRef}>
       <OrchestrationStatusCard />
       {view.messages.length === 0 && (view.roles.length === 0 ? (
-        <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。">
+        <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。" icon={<Users className="size-4" />}>
           <Button
             type="button"
             size="sm"
@@ -221,15 +223,18 @@ export function Messages() {
   )
 }
 
-function EmptyState({ title, body, children }: { title: string; body: string; children?: React.ReactNode }) {
+/* W3-3：空态换 Empty 原语（.messages 为 flex 列，Empty 的 flex-1 +
+ * justify-center 使内容垂直居中）；icon 可选，默认会话图标 */
+function EmptyState({ title, body, children, icon }: { title: string; body: string; children?: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <div className="empty-state px-6 py-10">
-      <div className="empty-card mx-auto max-w-sm rounded-lg border border-dashed border-border p-6 text-center">
-        <h3 className="text-sm font-medium">{title}</h3>
-        <p className="muted mt-1.5 text-xs leading-relaxed text-muted-foreground">{body}</p>
-        {children && <div className="mt-4">{children}</div>}
-      </div>
-    </div>
+    <Empty className="mx-auto max-w-sm">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">{icon ?? <MessageSquare className="size-4" />}</EmptyMedia>
+        <EmptyTitle className="text-sm font-medium">{title}</EmptyTitle>
+        <EmptyDescription className="text-xs">{body}</EmptyDescription>
+      </EmptyHeader>
+      {children && <EmptyContent>{children}</EmptyContent>}
+    </Empty>
   )
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { MessageSquare } from 'lucide-react'
 import { formatChatExportMarkdown, safeChatExportFilename } from '../../../chatExport'
 import { normalizeLanguage, translateUi, type TeamLanguage } from '../../../../shared/i18n'
 import { useServices } from '../../context/ServicesContext'
@@ -18,6 +19,7 @@ import {
 } from '../ui/alert-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 
 /*
  * 群列表（原 chatListView.renderChatList 整体 React 化）：
@@ -82,12 +84,13 @@ export function ChatList() {
   return (
     <div id="chat-list" className="chat-list min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1.5">
       {items.length === 0 ? (
-        <div className="empty-state px-2 py-8">
-          <div className="empty-card rounded-lg border border-dashed border-border p-4 text-center">
-            <h3 className="text-sm font-medium">{ui('还没有群聊')}</h3>
-            <p className="muted mt-1 text-xs text-muted-foreground">{ui('在上方创建一个群聊，然后从人员库添加人员。')}</p>
-          </div>
-        </div>
+        <Empty className="my-4 p-3">
+          <EmptyHeader>
+            <EmptyMedia variant="icon"><MessageSquare className="size-4" /></EmptyMedia>
+            <EmptyTitle className="text-sm font-medium">{ui('还没有群聊')}</EmptyTitle>
+            <EmptyDescription className="text-xs">{ui('在上方创建一个群聊，然后从人员库添加人员。')}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : items.map(chat => (
         <section
           key={chat.id}

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { Users } from 'lucide-react'
 import type {
   ChatSite,
   GroupChat,
@@ -57,6 +58,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { CanvasPortal } from '../containers/CanvasPortal'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 import { OrchestrationAutoModal } from './OrchestrationAutoModal'
 import { OrchestrationTemplatePickerModal } from './OrchestrationTemplatePickerModal'
 
@@ -652,7 +654,13 @@ export function OrchestrationModal() {
               </div>
               <div id="orchestration-people-list" className="orchestration-people-list">
                 {roles.length === 0 ? (
-                  <div className="empty-card compact">{ui('当前群聊暂无人员，无法编排任务。')}</div>
+                  <Empty className="my-1 p-3">
+                    <EmptyHeader className="max-w-none">
+                      <EmptyMedia variant="icon" className="size-8"><Users className="size-4" /></EmptyMedia>
+                      <EmptyTitle className="text-xs font-medium">{ui('当前群聊暂无人员')}</EmptyTitle>
+                      <EmptyDescription className="text-xs">{ui('无法编排任务，请先为群聊添加人员。')}</EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
                 ) : roles.map(role => {
                   const model = roleModelDisplay(role, store)
                   return (

@@ -8,11 +8,13 @@ import {
   type BuiltinGroupTemplate,
 } from '../../../../group/builtinGroupTemplates'
 import { localizeCategory, localizeGroupTemplate, normalizeLanguage, translateUi } from '../../../../shared/i18n'
+import { SearchX } from 'lucide-react'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { showError } from '../../lib/toast'
 import { Button } from '../ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 
 /*
  * 群模板弹窗（teamUiController 群模板段整体 React 化，P4d；标记与
@@ -155,14 +157,20 @@ export function GroupTemplateModal() {
         </div>
         <div id="group-template-list" className="group-template-list" aria-label={ui('群聊模板')}>
           {templates.length === 0 ? (
-            <div className="group-template-empty">
-              <strong>{ui('没有找到匹配的小组')}</strong>
-              <p>{ui('可以试试换个说法，例如搜索「写论文」「合同」「面试」「投放」「装修」。')}</p>
-              <div className="group-template-empty-actions">
+            /* 锚类保留：GroupTemplateModal.test 以 .group-template-empty 断言
+             * 文案、以 .group-template-empty-actions .btn 点击动作；空态网格
+             * 铺满/最小高原由 legacy 规则承担，W3-3 起改 utility 表达 */
+            <Empty className="group-template-empty col-span-full min-h-60 p-6 md:p-8">
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><SearchX className="size-4" /></EmptyMedia>
+                <EmptyTitle className="text-sm font-medium">{ui('没有找到匹配的小组')}</EmptyTitle>
+                <EmptyDescription className="text-xs">{ui('可以试试换个说法，例如搜索「写论文」「合同」「面试」「投放」「装修」。')}</EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent className="group-template-empty-actions flex-row justify-center gap-2">
                 <Button className="btn" type="button" variant="ghost" size="sm" onClick={clearSearch}>{ui('清空搜索')}</Button>
                 <Button className="btn" type="button" variant="ghost" size="sm" onClick={showAllTemplates}>{ui('查看全部模板')}</Button>
-              </div>
-            </div>
+              </EmptyContent>
+            </Empty>
           ) : templates.map(template => (
             <GroupTemplateOption
               key={template.id}

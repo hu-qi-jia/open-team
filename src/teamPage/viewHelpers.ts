@@ -1,21 +1,6 @@
 import type { GroupChat, GroupMessage, OpenTeamStore } from '../group/types'
 import { getAvatarInitial } from './chatExperience'
 
-export function emptyCard(title: string, body: string): HTMLElement {
-  const wrapper = document.createElement('div')
-  wrapper.className = 'empty-state'
-  const card = document.createElement('div')
-  card.className = 'empty-card'
-  const heading = document.createElement('h3')
-  heading.textContent = title
-  const paragraph = document.createElement('p')
-  paragraph.className = 'muted'
-  paragraph.textContent = body
-  card.append(heading, paragraph)
-  wrapper.append(card)
-  return wrapper
-}
-
 export function roleToneClass(seed: string | undefined): string {
   const source = seed || 'OpenTeam'
   let hash = 0
