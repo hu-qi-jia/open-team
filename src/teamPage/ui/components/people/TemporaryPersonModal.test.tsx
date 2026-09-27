@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act } from '@testing-library/react'
+import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
@@ -54,7 +54,8 @@ describe('team page temporary person modal', () => {
     expect(draft.systemPrompt).toBe('临时人设')
     expect(draft.chatSite).toBe('deepseek')
     expect(state.addPersonSiteByKey.get(`temporary:${draft.id}`)).toEqual(new Set(['site:deepseek']))
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(true)
+    // Radix Dialog 关闭即卸载（原 hidden 属性断言对译）
+    await waitFor(() => expect(document.querySelector('#temporary-person-modal')).toBeNull())
   })
 
   it('rejects an empty name and stays open', async () => {
@@ -68,7 +69,7 @@ describe('team page temporary person modal', () => {
 
     expect(showError).toHaveBeenCalledWith('人员名称不能为空')
     expect(state.temporaryPersonDrafts).toHaveLength(0)
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#temporary-person-modal')).not.toBeNull()
   })
 
   it('closes from the close button and the Escape key', async () => {
@@ -77,17 +78,17 @@ describe('team page temporary person modal', () => {
     const { services } = renderWithServices(<TemporaryPersonModal />, { state })
 
     await openTemporary(services)
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#temporary-person-modal')).not.toBeNull()
 
     await act(async () => {
       document.querySelector<HTMLButtonElement>('#close-temporary-person')!.click()
     })
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#temporary-person-modal')).toBeNull())
 
     await openTemporary(services)
     await act(async () => {
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
     })
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#temporary-person-modal')).toBeNull())
   })
 })

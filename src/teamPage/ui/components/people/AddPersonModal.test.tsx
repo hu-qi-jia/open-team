@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act } from '@testing-library/react'
+import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
@@ -283,13 +283,13 @@ describe('team page add person modal', () => {
 
     await openAddPerson(services)
     await user.click(document.querySelector<HTMLButtonElement>('#open-temporary-person')!)
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#temporary-person-modal')).not.toBeNull()
 
     await user.type(document.querySelector<HTMLInputElement>('#temporary-person-name')!, '临调员')
     await user.type(document.querySelector<HTMLTextAreaElement>('#temporary-person-description')!, '临时描述')
     await user.type(document.querySelector<HTMLTextAreaElement>('#temporary-person-prompt')!, '临时人设')
     await user.click(document.querySelector<HTMLButtonElement>('#add-temporary-person-form button[type="submit"]')!)
-    expect(document.querySelector<HTMLElement>('#temporary-person-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#temporary-person-modal')).toBeNull())
     expect(state.temporaryPersonDrafts).toHaveLength(1)
 
     const list = document.querySelector('#add-library-people-list')!

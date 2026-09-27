@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, within } from '@testing-library/react'
+import { act, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
@@ -205,7 +205,7 @@ describe('team page people library modal', () => {
       document.querySelector<HTMLButtonElement>('#people-library-list .template-detail')!.click()
     })
 
-    expect(document.querySelector<HTMLElement>('#builtin-template-detail-modal')?.hidden).toBe(false)
+    expect(document.querySelector('#builtin-template-detail-modal')).not.toBeNull()
     expect(document.querySelector('#builtin-template-detail-title')?.textContent).toBe('弗兰克尔')
     expect(document.querySelector('#builtin-template-detail-meta')?.textContent).toContain('内置人员')
     const prompt = document.querySelector('#builtin-template-detail-prompt')?.textContent ?? ''
@@ -215,7 +215,7 @@ describe('team page people library modal', () => {
     await act(async () => {
       document.querySelector<HTMLButtonElement>('#close-builtin-template-detail')!.click()
     })
-    expect(document.querySelector<HTMLElement>('#builtin-template-detail-modal')?.hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#builtin-template-detail-modal')).toBeNull())
     expect(state.previewTemplateId).toBeUndefined()
   })
 
