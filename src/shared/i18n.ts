@@ -47,6 +47,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   '选择群聊后可添加、查看、恢复和唤醒人员。': 'Select a chat to add, view, restore, and wake people.',
   '点击添加人员，可从人员库批量加入或临时添加。': 'Click Add people to add from the library or add a temporary person.',
   '界面模式': 'Theme',
+  '主题': 'Theme',
   '浅色模式': 'Light mode',
   '深色模式': 'Dark mode',
   '浅色': 'Light',

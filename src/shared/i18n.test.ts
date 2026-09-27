@@ -18,6 +18,8 @@ describe('shared i18n configuration', () => {
     expect(translateUi('进行中', 'en')).toBe('Active')
     expect(translateUi('进行中', 'zh-CN')).toBe('进行中')
     expect(translateUi('9 个群聊 · 311 个人员库人员', 'en')).toBe('9 chats · 311 people')
+    expect(translateUi('主题', 'en')).toBe('Theme')
+    expect(translateUi('主题', 'zh-CN')).toBe('主题')
   })
 
   it('localizes built-in people from the same configuration', () => {
