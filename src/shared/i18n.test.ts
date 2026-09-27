@@ -20,6 +20,12 @@ describe('shared i18n configuration', () => {
     expect(translateUi('9 个群聊 · 311 个人员库人员', 'en')).toBe('9 chats · 311 people')
     expect(translateUi('主题', 'en')).toBe('Theme')
     expect(translateUi('主题', 'zh-CN')).toBe('主题')
+    // ChatHeader v2 新增的头部钮标签（S1 壳层）
+    expect(translateUi('收起侧栏', 'en')).toBe('Collapse sidebar')
+    expect(translateUi('打开侧栏', 'en')).toBe('Open sidebar')
+    expect(translateUi('群聊列表', 'en')).toBe('Chat list')
+    expect(translateUi('成员', 'en')).toBe('Members')
+    expect(translateUi('更多操作', 'en')).toBe('More actions')
   })
 
   it('localizes built-in people from the same configuration', () => {

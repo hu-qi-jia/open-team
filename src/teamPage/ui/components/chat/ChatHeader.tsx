@@ -1,25 +1,33 @@
-import { memo } from 'react'
-import { Moon, Sun } from 'lucide-react'
+import { AtSign, MoreHorizontal, PanelLeft, RotateCcw, StickyNote, Users, Workflow } from 'lucide-react'
 import type { GroupChat, GroupRole, RoomMode } from '../../../../group/types'
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import type { TeamPageState } from '../../../appState'
 import { useServices } from '../../context/ServicesContext'
+import { useAppSizeTier } from '../../hooks/useAppShellChrome'
+import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { getAppState, notifyAppState } from '../../lib/appStore'
 import { showError } from '../../lib/toast'
+import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Separator } from '../ui/separator'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
 
 /*
- * 聊天头（原 chatHeaderView 整体 React 化）。区域分两种：
- * - 响应区：标题 / 副标题 / 状态 / 免@ / 恢复会话 / 成员抽屉开关 / 笔记
- *   开关 / 编排显隐——全部由 selector 驱动、React 自持事件（P4d 起
- *   成员抽屉开关与恢复会话从 teamUiController 收编：前者翻转
- *   appState.peopleDrawerOpen，后者走 services.iframeHost.restoreChat +
- *   GROUP_ROLE_RECOVER，与原 controller 逐行同义）。笔记开关（P3 起）
- *   直接翻转 appState.notesPanelOpen，aria-expanded 与 <NotesPanel/> 同源。
- * - 静态控制区（memo-true）：主题切换——themeController 在启动时对它绑
- *   事件并写属性（aria-pressed），React 永不重渲染这一块，避免覆写。
- * 免@ 为新增 React 事件（原按钮由 chatHeaderView 动态插入）。
+ * 聊天头 v2（S1 壳层，shadcn 化）。全部工具钮图标化（aria-label/Tooltip
+ * 提供无障碍名），状态由 status-pill span 改为 Badge（outline + data-status），
+ * 主题分段控件（HeaderStaticControls/#theme-switch）已退役——主题入口自
+ * P4e 起在设置菜单。
+ * 档位收纳规则（useAppSizeTier 读 #app[data-app-size]）：
+ * - wide：恢复会话 / 编排（协作模式）/ 免@（协作模式）/ 成员 / 笔记 全部平铺；
+ * - medium：恢复会话 / 编排 / 免@ 收进「更多操作」菜单（笔记保留）；
+ * - compact：上述之外笔记也收进菜单，并新增唤出侧栏钮（PanelLeft，
+ *   写 useSidebarPrefs.userOpen，AppShellFrame 侧栏消费同一份共享 store）。
+ * 「更多操作」菜单只收纳当档缺失的钮，收起项与平铺项永不重复。
+ * 既有行为函数 restoreChat / toggleManualMention / toggleNotesPanel /
+ * togglePeopleDrawer 与编排骨手（services.uiBus 'open-orchestration'）
+ * 原样保留；免@ 双写 aria-pressed 改为 role="switch" + aria-checked。
  */
 export function ChatHeader() {
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
@@ -36,6 +44,12 @@ export function ChatHeader() {
   const drawerOpen = useStoreSelector(state => state.peopleDrawerOpen)
   const chatId = useStoreSelector(state => state.selectedChatId)
   const notesPanelOpen = useStoreSelector(state => state.notesPanelOpen)
+
+  const tier = useAppSizeTier()
+  const sidebar = useSidebarPrefs()
+  const sidebarOpen = sidebar.userOpen ?? tier === 'wide'
+  const showTool = tier === 'wide' // 恢复会话 / 编排 / 免@
+  const showPanel = tier !== 'compact' // 笔记
 
   const manualMentionOn = requireManualMention === false
   const mentionRuleHint = ui('开启后，普通消息也会触发所有成员回复；关闭后，只有 @ 成员或 @所有人才触发回复')
@@ -78,113 +92,136 @@ export function ChatHeader() {
   }
 
   return (
-    <header className="chat-header flex items-center justify-between gap-3 border-b border-border bg-background/80 px-6 py-3 backdrop-blur">
-      <div className="chat-title-block min-w-0">
-        <h2 id="chat-title" className="chat-title truncate text-sm font-semibold tracking-tight">{chatName !== undefined ? chatName : ui('未选择群聊')}</h2>
-        <p id="chat-subtitle" className="chat-subtitle truncate text-xs text-muted-foreground">
-          {chatMode !== undefined
-            ? (roleCount ? ui(`${modeLabel(chatMode)} · ${roleCount} 位成员 · ${messageCount} 条消息`) : ui('暂无成员'))
-            : ui('创建或选择一个群聊开始协作')}
-        </p>
-      </div>
-      <div className="chat-row flex shrink-0 items-center gap-1.5">
-        <HeaderStaticControls />
-
-        <Button
-          id="restore-chat"
-          variant="outline"
-          size="sm"
-          className="h-7 px-2.5 text-xs text-muted-foreground"
-          type="button"
-          onClick={restoreChat}
-        >{ui('恢复会话')}</Button>
-
-        <Button
-          id="open-orchestration"
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground"
-          type="button"
-          hidden={chatMode !== 'collaborative'}
-          onClick={() => services.uiBus.emit('open-orchestration')}
-        >
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-3.5">
-            <path d="M5 7.5h4.5v4H5z" />
-            <path d="M14.5 4.5H19v4h-4.5z" />
-            <path d="M14.5 15.5H19v4h-4.5z" />
-            <path d="M9.5 9.5h2.8c1.2 0 2.2-1 2.2-2.2v-.8" />
-            <path d="M9.5 9.5h2.8c1.2 0 2.2 1 2.2 2.2v5.8" />
-          </svg>
-          <span>{ui('编排')}</span>
-        </Button>
-
-        <Button
-          variant="outline"
-          size="sm"
-          className="manual-mention-toggle h-7 px-2.5 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
-          type="button"
-          role="switch"
-          title={mentionRuleHint}
-          aria-label={mentionRuleHint}
-          aria-pressed={manualMentionOn}
-          aria-checked={manualMentionOn}
-          hidden={chatMode !== 'collaborative'}
-          onClick={toggleManualMention}
-        >{ui('免@')}</Button>
-
-        <Button
-          id="toggle-people-drawer"
-          variant="outline"
-          size="sm"
-          className="h-7 px-2.5 text-xs text-muted-foreground"
-          type="button"
-          disabled={chatMode === undefined}
-          aria-label={ui(drawerOpen ? '收起成员面板' : '打开成员面板')}
-          aria-expanded={drawerOpen}
-          onClick={togglePeopleDrawer}
-        >{ui(`成员 ${roleCount}`)}</Button>
-
-        <Button
-          id="toggle-notes-panel"
-          variant="outline"
-          size="sm"
-          className="h-7 px-2.5 text-xs text-muted-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground"
-          type="button"
-          aria-expanded={notesPanelOpen}
-          aria-controls="notes-panel"
-          onClick={toggleNotesPanel}
-        >{ui('笔记')}</Button>
-
-        <span id="chat-status" className={chatStatus !== undefined ? `status-pill status-${chatStatus} inline-flex h-6 items-center rounded-full border border-border bg-none px-2 text-xs text-muted-foreground` : 'status-pill inline-flex h-6 items-center rounded-full border border-border px-2 text-xs text-muted-foreground'}>
-          {chatStatus !== undefined ? ui(chatStatusLabel(chatStatus)) : ui('空')}
-        </span>
-      </div>
-    </header>
+    <TooltipProvider delayDuration={200}>
+      <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-4">
+        {tier === 'compact' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 shrink-0 text-muted-foreground"
+                aria-expanded={sidebarOpen}
+                aria-label={ui(sidebarOpen ? '收起侧栏' : '打开侧栏')}
+                onClick={() => sidebar.setUserOpen(!sidebarOpen)}
+              >
+                <PanelLeft className="size-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{ui('群聊列表')}</TooltipContent>
+          </Tooltip>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 id="chat-title" className="truncate text-sm font-semibold tracking-tight">{chatName !== undefined ? chatName : ui('未选择群聊')}</h2>
+            {chatStatus !== undefined && (
+              <Badge variant="outline" data-status={chatStatus} className="text-muted-foreground">{ui(chatStatusLabel(chatStatus))}</Badge>
+            )}
+          </div>
+          <p id="chat-subtitle" className="truncate text-xs text-muted-foreground">
+            {chatMode !== undefined
+              ? (roleCount ? ui(`${modeLabel(chatMode)} · ${roleCount} 位成员 · ${messageCount} 条消息`) : ui('暂无成员'))
+              : ui('创建或选择一个群聊开始协作')}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          {showTool && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button id="restore-chat" variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={ui('恢复会话')} onClick={restoreChat}>
+                  <RotateCcw className="size-4" aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{ui('恢复会话')}</TooltipContent>
+            </Tooltip>
+          )}
+          {showTool && chatMode === 'collaborative' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button id="open-orchestration" variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={ui('编排')} onClick={() => services.uiBus.emit('open-orchestration')}>
+                  <Workflow className="size-4" aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{ui('编排')}</TooltipContent>
+            </Tooltip>
+          )}
+          {showTool && chatMode === 'collaborative' && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={manualMentionOn ? 'size-8 bg-accent text-accent-foreground' : 'size-8 text-muted-foreground'}
+                  type="button"
+                  role="switch"
+                  aria-checked={manualMentionOn}
+                  aria-label={mentionRuleHint}
+                  title={mentionRuleHint}
+                  onClick={toggleManualMention}
+                >
+                  <AtSign className="size-4" aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{ui('免@')}</TooltipContent>
+            </Tooltip>
+          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                id="toggle-people-drawer"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground"
+                disabled={chatMode === undefined}
+                aria-label={ui(drawerOpen ? '收起成员面板' : '打开成员面板')}
+                aria-expanded={drawerOpen}
+                onClick={togglePeopleDrawer}
+              >
+                <Users className="size-4" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{ui('成员')}</TooltipContent>
+          </Tooltip>
+          {showPanel && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  id="toggle-notes-panel"
+                  variant="ghost"
+                  size="icon"
+                  className={notesPanelOpen ? 'size-8 bg-accent text-accent-foreground' : 'size-8 text-muted-foreground'}
+                  aria-expanded={notesPanelOpen}
+                  aria-controls="notes-panel"
+                  aria-label={ui('笔记')}
+                  onClick={toggleNotesPanel}
+                >
+                  <StickyNote className="size-4" aria-hidden="true" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{ui('笔记')}</TooltipContent>
+            </Tooltip>
+          )}
+          <Separator orientation="vertical" className="mx-1 !h-5" />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" aria-label={ui('更多操作')}>
+                <MoreHorizontal className="size-4" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {!showTool && <DropdownMenuItem onSelect={restoreChat}>{ui('恢复会话')}</DropdownMenuItem>}
+              {!showTool && chatMode === 'collaborative' && <DropdownMenuItem onSelect={() => services.uiBus.emit('open-orchestration')}>{ui('编排')}</DropdownMenuItem>}
+              {!showTool && chatMode === 'collaborative' && (
+                <DropdownMenuCheckboxItem checked={manualMentionOn} onCheckedChange={toggleManualMention} onSelect={event => event.preventDefault()}>{ui('免@')}</DropdownMenuCheckboxItem>
+              )}
+              {!showPanel && <DropdownMenuItem onClick={toggleNotesPanel}>{ui('笔记')}</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+    </TooltipProvider>
   )
 }
-
-/*
- * 主题切换：id 与原 team.html 一致，themeController 按 id 绑事件并写
- * 属性（aria-pressed），memo(..., () => true) 保证 React 重渲永不触碰
- * 这块 DOM。恢复会话已移出（P4d 起由上方响应区渲染并自持事件）。
- */
-const HeaderStaticControls = memo(function HeaderStaticControls() {
-  return (
-    <div id="theme-switch" className="theme-switch flex items-center rounded-md border border-border p-0.5" role="group" aria-label="界面模式">
-      <button id="theme-light" className="theme-option flex h-6 cursor-pointer items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground transition-colors hover:text-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground" type="button" aria-pressed="false" title="浅色模式">
-        <SunIcon className="size-3" aria-hidden="true" />
-        <span>浅色</span>
-      </button>
-      <button id="theme-dark" className="theme-option flex h-6 cursor-pointer items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground transition-colors hover:text-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground" type="button" aria-pressed="true" title="深色模式">
-        <MoonIcon className="size-3" aria-hidden="true" />
-        <span>深色</span>
-      </button>
-    </div>
-  )
-}, () => true)
-
-const SunIcon = Sun
-const MoonIcon = Moon
 
 function currentChatOf(state: TeamPageState): GroupChat | undefined {
   return state.selectedChatId ? state.store.chatsById[state.selectedChatId] : undefined
