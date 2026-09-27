@@ -222,16 +222,150 @@
   }
 
   /*
-   * V2 壳层铬件 zinc 化：仅覆盖视觉（边框/底色/圆角/阴影），结构规则
-   * （grid 三列、fixed 定位、minimized/fullscreen 几何）仍在 legacy——
-   * floatingWindow 继续直写 #app 的内联样式与状态类，互不干涉。
+   * S1 新壳（AppShell v2）：壳层几何自 legacy 上收至 components 层——
+   * legacy 的三列 grid（rail/sidebar/workspace）退役，改为 SidebarProvider
+   * 受控侧栏（data-slot="sidebar-wrapper"）+ workspace 插槽。
+   * floatingWindow 仍直写 #app 的内联样式与状态类（left/top/width/height、
+   * minimized/fullscreen/dragging/resizing），与本块互不干涉。
    */
   .app-shell {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    width: min(1420px, calc(100vw - 52px));
+    height: min(900px, calc(100vh - 42px));
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-xl);   /* 14px，规格 §3：仅浮窗外壳用 xl */
     background: var(--card);
-    box-shadow: var(--shadow);
-    backdrop-filter: none;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    transform: translate(-50%, -50%);
+    overflow: hidden;
+    pointer-events: none;
+    transform-origin: center;
+  }
+  .app-shell > * { pointer-events: auto; }
+
+  /* SidebarProvider 官方包装层用 min-h-svh（视口高）；壳内必须随 #app 高度 */
+  .app-shell [data-slot='sidebar-wrapper'] {
+    min-height: 0;
+    height: 100%;
+  }
+
+  /* 侧栏拖宽手柄（自绘，规格 §5.2 修订）：#app 有 transform，
+     fixed 相对 #app 定位；left 跟随 provider 注入的 --sidebar-width */
+  .sidebar-resize-handle {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--sidebar-width) - 2px);
+    width: 4px;
+    z-index: 30;
+    cursor: col-resize;
+    background: transparent;
+  }
+  .sidebar-resize-handle:hover,
+  .sidebar-resize-handle[data-resizing] { background: var(--border); }
+
+  /* 拖宽进行中关闭 gap 宽度过渡（sidebar 原语自带 transition-[width]），
+     避免拖拽跟手延迟 */
+  .app-shell:has(.sidebar-resize-handle[data-resizing]) [data-slot='sidebar-gap'] {
+    transition: none;
+  }
+
+  /*
+   * 右缘/底缘窗口拉伸手柄（T4 引入的 DOM，定位规则此前缺失，此处补齐）：
+   * 与侧栏手柄同理，#app 有 transform 时 fixed 相对 #app 定位。
+   * width/height 的 auto 是必需重置——共享类 .window-resize-handle 把
+   * 两维都钉在 24px，不重置则 top:0;bottom:0 / left:0;right:0 拉不满整边。
+   */
+  #window-resize-handle-right {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 4px;
+    height: auto;
+    cursor: ew-resize;
+  }
+
+  #window-resize-handle-bottom {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    width: auto;
+    cursor: ns-resize;
+  }
+
+  /*
+   * 以下壳层状态/铬件几何自 legacy.css 搬迁（S1 Task 7，搬迁项先复制后删）：
+   * 几何数值一字不改，颜色字面量换 zinc token；legacy 独有的
+   * .rail/.panel-header/.chat-header 死选择器随旧壳退役不再搬迁。
+   */
+  .app-shell.minimized {
+    display: none;
+  }
+
+  .app-shell.fullscreen {
+    inset: 8px;
+    width: auto;
+    height: auto;
+    border-radius: 12px;
+    transform: none;
+  }
+
+  .app-shell.fullscreen .floating-toolbar {
+    left: auto;
+    right: 18px;
+    top: 6px;
+  }
+
+  .app-shell.fullscreen .message-inner {
+    max-width: min(86%, 980px);
+  }
+
+  .app-shell.fullscreen .messages {
+    padding-inline: 34px;
+  }
+
+  .app-shell.dragging,
+  .app-shell.resizing {
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  /* 拖拽进行中表单控件不继承 grabbing 光标 */
+  .app-shell:not(.fullscreen) button,
+  .app-shell:not(.fullscreen) input,
+  .app-shell:not(.fullscreen) textarea,
+  .app-shell:not(.fullscreen) select {
+    cursor: revert;
+  }
+
+  /* 角落拉伸把手（三个手柄共享此类：可见性随 minimized/fullscreen 统一隐藏） */
+  .window-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 8;
+    width: 24px;
+    height: 24px;
+    border: 0;
+    border-radius: 10px 0 16px 0;
+    background:
+      linear-gradient(135deg, transparent 0 44%, var(--border) 44% 50%, transparent 50% 62%, var(--border) 62% 68%, transparent 68%);
+    cursor: nwse-resize;
+    pointer-events: auto;
+  }
+
+  .app-shell.fullscreen .window-resize-handle {
+    display: none;
+  }
+
+  .app-shell.minimized .window-resize-handle {
+    display: none;
   }
 
   /*
@@ -243,20 +377,6 @@
   }
   #send-message::before {
     content: none;
-  }
-
-  /* 浮窗铬件的 toast 式 tooltip：zinc 化（原为青色硬编码） */
-  .rail-btn[data-tooltip]::after,
-  .icon-btn[data-tooltip]::after {
-    background: var(--popover);
-    color: var(--popover-foreground);
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.12);
-  }
-  .rail-btn[data-tooltip]::before,
-  .icon-btn[data-tooltip]::before {
-    border-top-color: var(--border);
-    border-bottom-color: var(--border);
   }
 
   /*

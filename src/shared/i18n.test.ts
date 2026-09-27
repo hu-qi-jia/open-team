@@ -26,6 +26,9 @@ describe('shared i18n configuration', () => {
     expect(translateUi('群聊列表', 'en')).toBe('Chat list')
     expect(translateUi('成员', 'en')).toBe('Members')
     expect(translateUi('更多操作', 'en')).toBe('More actions')
+    // 侧栏拖宽手柄（S1 Task 7）
+    expect(translateUi('调整侧栏宽度', 'en')).toBe('Resize sidebar')
+    expect(translateUi('拖拽调整宽度，双击重置', 'en')).toBe('Drag to resize, double-click to reset')
   })
 
   it('localizes built-in people from the same configuration', () => {

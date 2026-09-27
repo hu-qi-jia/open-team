@@ -52,12 +52,12 @@ export function QuickCreateChatProvider({ children }: { children: ReactNode }) {
 export function QuickCreateChatTrigger() {
   const t = useT()
   const { open, openPopover } = useQuickCreateChat()
+  // S1 新壳：触发钮从侧栏头部的图标钮改为全宽 primary 观感（AppShellFrame
+  // SidebarHeader 内铺满一行）。id/aria/逻辑不动。
   return (
     <Button
       id="quick-create-chat"
-      variant="outline"
-      size="icon-sm"
-      className="size-7"
+      className="flex h-8 w-full items-center justify-center gap-2 rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
       type="button"
       aria-label={t('新建群聊')}
       aria-controls="chat-create-popover"
@@ -65,6 +65,7 @@ export function QuickCreateChatTrigger() {
       onClick={openPopover}
     >
       <Plus className="size-4" aria-hidden="true" />
+      {t('新建群聊')}
     </Button>
   )
 }

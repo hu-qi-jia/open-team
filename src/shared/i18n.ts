@@ -61,6 +61,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   '收起侧栏': 'Collapse sidebar',
   '打开侧栏': 'Open sidebar',
   '群聊列表': 'Chat list',
+  '调整侧栏宽度': 'Resize sidebar',
+  '拖拽调整宽度，双击重置': 'Drag to resize, double-click to reset',
   '成员': 'Members',
   '更多操作': 'More actions',
   '输入消息，@成员可指定回复；不 @ 仅记录到群聊。': 'Type a message. Mention @members to request replies; without @ it is saved to the chat.',

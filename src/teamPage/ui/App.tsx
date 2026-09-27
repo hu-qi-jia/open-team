@@ -1,4 +1,5 @@
 import { Toaster } from '@/teamPage/ui/components/ui/sonner'
+import { AppShellFrame } from './components/shell/AppShellFrame'
 import { ChatHeader } from './components/chat/ChatHeader'
 import { Messages } from './components/chat/Messages'
 import { Composer } from './components/composer/Composer'
@@ -6,7 +7,6 @@ import { ExternalModelsModal } from './components/models/ExternalModelsModal'
 import { AllNotesModal } from './components/notes/AllNotesModal'
 import { NotesPanel } from './components/notes/NotesPanel'
 import { OrchestrationModal } from './components/orchestration/OrchestrationModal'
-import { RolePanel } from './components/panel/RolePanel'
 import { AddPersonModal } from './components/people/AddPersonModal'
 import { BuiltinTemplateDetailModal } from './components/people/BuiltinTemplateDetailModal'
 import { PeopleLibraryModal } from './components/people/PeopleLibraryModal'
@@ -16,40 +16,40 @@ import { FloatingWindowChrome } from './components/shell/FloatingWindowChrome'
 import { GroupTemplateModal } from './components/shell/GroupTemplateModal'
 import { IframeLayer } from './components/shell/IframeLayer'
 import { LanguageSync } from './components/shell/LanguageSync'
-import { Rail } from './components/shell/Rail'
-import { Sidebar } from './components/shell/Sidebar'
 
 /*
- * 壳层全量接管（P1 起，P2a 工作区头部落地）。原始 body 的子级顺序在此逐一复刻：
+ * 壳层全量接管（S1 起 AppShell v2：统一侧栏三态 + workspace 插槽）。
+ * 原始 body 的子级顺序在此逐一复刻：
  *   #app → #notes-panel → 隐藏位（template-summary/list、window-launcher）
  *   → 弹窗群 → #iframe-host
  * 关键约束：
- * - `.app-shell.minimized + .notes-panel`（legacy.css）要求 #app 与
- *   #notes-panel 相邻——#root 以 display:contents 让本组件的子元素直接
- *   参与 body 布局，fragment 顺序即 DOM 顺序。
+ * - #app 与 #notes-panel 相邻是骨架测试锁定的 DOM 契约（legacy 的
+ *   `.app-shell.minimized + .notes-panel` 隐藏规则已由 React chrome 态
+ *   守卫接替，Task 8 闭环）——#root 以 display:contents 让本组件的子元素
+ *   直接参与 body 布局，fragment 顺序即 DOM 顺序。
  * - `.app-shell` 自带 transform 定位，modals / notes / iframe-host 必须留在
  *   #app 之外（transform 会创建包含块，fixed 后代会被劫持）。
- * - 弹窗群已全部 React 化（role-panel 已于 P3 由 <RolePanel/>、notes 面板
- *   与全部笔记弹窗由 <NotesPanel/> / <AllNotesModal/> 接管；人员库 5 弹窗
- *   已于 P4a 由 people/ 下组件接管，外部模型弹窗已于 P4b 由
- *   <ExternalModelsModal/> 接管，编排三弹窗已于 P4c 由 <OrchestrationModal/>
- *   接管，群模板弹窗已于 P4d 由 <GroupTemplateModal/> 接管）。
- * - workspace 内的 ChatHeader / Messages / Composer 与 aside RolePanel 是
- *   真组件（P2a / P2b / P2c / P3 落地）。
+ * - #app 内部：FloatingWindowChrome（vanilla floatingWindow 直写的铬件，
+ *   React 侧保持静态）+ AppShellFrame（SidebarProvider 受控三态统一侧栏、
+ *   自绘拖宽手柄、workspace 插槽）；data-app-size 为 floatingWindow 派生
+ *   写入前的档位初值（useAppSizeTier 消费）。
+ * - 弹窗群已全部 React 化（notes 面板与全部笔记弹窗由 <NotesPanel/> /
+ *   <AllNotesModal/> 接管；人员库 5 弹窗由 people/ 下组件接管，外部模型
+ *   弹窗由 <ExternalModelsModal/> 接管，编排三弹窗由 <OrchestrationModal/>
+ *   接管，群模板弹窗由 <GroupTemplateModal/> 接管）。
+ * - workspace 内的 ChatHeader / Messages / Composer 是真组件
+ *   （P2a / P2b / P2c 落地，ChatHeader 已升级为档位收纳的 v2）。
  */
 export function App() {
   return (
     <>
-      <div id="app" className="app-shell">
+      <div id="app" className="app-shell" data-app-size="wide">
         <FloatingWindowChrome />
-        <Rail />
-        <Sidebar />
-        <main className="panel workspace">
+        <AppShellFrame>
           <ChatHeader />
           <Messages />
           <Composer />
-        </main>
-        <RolePanel />
+        </AppShellFrame>
       </div>
 
       <NotesPanel />

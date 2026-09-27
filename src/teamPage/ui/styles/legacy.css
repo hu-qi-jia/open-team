@@ -46,53 +46,6 @@ button {
   border: 0;
 }
 
-.app-shell {
-  position: fixed;
-  left: 50%;
-  top: 50%;
-  z-index: 2;
-  display: grid;
-  width: min(1420px, calc(100vw - 52px));
-  height: min(900px, calc(100vh - 42px));
-  grid-template-columns: 72px minmax(250px, 306px) minmax(520px, 1fr);
-  border: 1px solid rgba(104, 139, 164, 0.24);
-  border-radius: 16px;
-  background:
-    linear-gradient(140deg, rgba(20, 32, 44, 0.3), transparent 42%),
-    linear-gradient(180deg, rgba(5, 13, 22, 0.985), rgba(1, 7, 13, 0.985));
-  box-shadow: 0 36px 110px rgba(0, 0, 0, 0.62), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
-  transform: translate(-50%, -50%);
-  overflow: hidden;
-  pointer-events: none;
-  backdrop-filter: blur(26px);
-}
-
-.app-shell.minimized {
-  display: none;
-}
-
-.app-shell.fullscreen {
-  inset: 8px;
-  width: auto;
-  height: auto;
-  border-radius: 12px;
-  transform: none;
-}
-
-.app-shell.fullscreen .floating-toolbar {
-  left: auto;
-  right: 18px;
-  top: 6px;
-}
-
-.app-shell.fullscreen .message-inner {
-  max-width: min(86%, 980px);
-}
-
-.app-shell.fullscreen .messages {
-  padding-inline: 34px;
-}
-
 .launcher {
   position: fixed;
   right: 24px;
@@ -213,87 +166,13 @@ button {
   content: "↙";
 }
 
-.app-shell:not(.fullscreen) .panel-header,
-.app-shell:not(.fullscreen) .chat-header,
-.app-shell:not(.fullscreen) .rail > :first-child {
-  cursor: grab;
-}
-
-.app-shell.dragging,
-.app-shell.resizing,
-.app-shell.dragging .panel-header,
-.app-shell.dragging .chat-header,
-.app-shell.dragging .rail > :first-child {
-  cursor: grabbing;
-  user-select: none;
-}
-
-.app-shell:not(.fullscreen) button,
-.app-shell:not(.fullscreen) input,
-.app-shell:not(.fullscreen) textarea,
-.app-shell:not(.fullscreen) select {
-  cursor: revert;
-}
-
-.window-resize-handle {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: 8;
-  width: 24px;
-  height: 24px;
-  border: 0;
-  border-radius: 10px 0 16px 0;
-  background:
-    linear-gradient(135deg, transparent 0 44%, rgba(182, 196, 207, 0.42) 44% 50%, transparent 50% 62%, rgba(182, 196, 207, 0.5) 62% 68%, transparent 68%);
-  cursor: nwse-resize;
-  pointer-events: auto;
-}
-
-.app-shell:not(.fullscreen) .window-resize-handle {
-  cursor: nwse-resize;
-}
-
-.app-shell.fullscreen .window-resize-handle {
-  display: none;
-}
-
-.app-shell.minimized .window-resize-handle {
-  display: none;
-}
-
-.panel {
-  min-height: 0;
-  overflow: hidden;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  pointer-events: auto;
-}
-
-.rail {
-  position: relative;
-  z-index: 7;
-  display: grid;
-  grid-template-rows: 74px 1fr auto;
-  border-right: 1px solid rgba(95, 126, 150, 0.18);
-  background:
-    linear-gradient(180deg, rgba(7, 16, 25, 0.9), rgba(2, 8, 14, 0.86)),
-    rgba(2, 8, 14, 0.88);
-  pointer-events: auto;
-}
-
-.rail-actions {
-  display: grid;
-  gap: 18px;
-  align-content: start;
-  justify-items: center;
-  padding-top: 0;
-}
-
-.rail-btn,
+/*
+ * S1 Task 7：壳层家族（.app-shell 几何/minimized/fullscreen/dragging/
+ * resizing/window-resize-handle）已搬迁至 globals.css components 层；
+ * .panel/.rail/.rail-actions/.rail-btn/data-tooltip 伪元素家族随旧壳
+ * （Rail.tsx、旧 Sidebar.tsx 布局）一并退役。.icon-btn 仅保留浮窗铬件
+ * （floating-toolbar 三个窗控圆点）仍在用的规则。
+ */
 .icon-btn {
   position: relative;
   display: inline-grid;
@@ -308,68 +187,6 @@ button {
   transition: 0.16s ease;
 }
 
-.rail-btn svg {
-  width: 21px;
-  height: 21px;
-  stroke: currentColor;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.rail-btn[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  z-index: 12;
-  min-width: max-content;
-  border: 1px solid rgba(113, 113, 122, 0.24);
-  border-radius: 8px;
-  padding: 7px 9px;
-  background: rgba(9, 9, 11, 0.96);
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 720;
-  line-height: 1;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) translateX(-4px);
-  transition: opacity 0.14s ease, transform 0.14s ease;
-  white-space: nowrap;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.38), var(--glow);
-}
-
-.rail-btn[data-tooltip]::before {
-  content: "";
-  position: absolute;
-  left: calc(100% + 7px);
-  top: 50%;
-  z-index: 13;
-  width: 8px;
-  height: 8px;
-  border-left: 1px solid rgba(113, 113, 122, 0.24);
-  border-bottom: 1px solid rgba(113, 113, 122, 0.24);
-  background: rgba(9, 9, 11, 0.96);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-50%) rotate(45deg);
-  transition: opacity 0.14s ease;
-}
-
-.rail-btn[data-tooltip]:hover::after,
-.rail-btn[data-tooltip]:focus-visible::after {
-  opacity: 1;
-  transform: translateY(-50%) translateX(0);
-}
-
-.rail-btn[data-tooltip]:hover::before,
-.rail-btn[data-tooltip]:focus-visible::before {
-  opacity: 1;
-}
-
-.rail-btn.active,
-.rail-btn:hover,
 .icon-btn:hover {
   border-color: rgba(113, 113, 122, 0.34);
   background:
@@ -377,24 +194,6 @@ button {
     rgba(63, 63, 70, 0.26);
   color: #ffffff;
   box-shadow: 0 0 0 1px rgba(161, 161, 170, 0.06) inset, 0 14px 28px rgba(0, 0, 0, 0.2);
-}
-
-.rail-bottom {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  padding: 0 0 24px;
-}
-
-#settings-button {
-  width: 38px;
-  height: 38px;
-  border-radius: 999px;
-  font-size: 18px;
-}
-
-#open-all-notes {
-  font-size: 18px;
 }
 
 #settings-button[hidden] {
@@ -2163,10 +1962,6 @@ select:focus {
 .notes-panel.resizing {
   transition: none;
   user-select: none;
-}
-
-.app-shell.minimized + .notes-panel {
-  display: none;
 }
 
 .notes-panel-header {
@@ -4034,31 +3829,10 @@ select:focus {
   color: #52525b;
 }
 
-:root[data-theme="light"] .rail {
-  border-right-color: rgba(113, 113, 122, 0.18);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .rail-btn,
 :root[data-theme="light"] .icon-btn {
   color: #71717a;
 }
 
-:root[data-theme="light"] .rail-btn[data-tooltip]::after {
-  border-color: rgba(113, 113, 122, 0.2);
-  background: #ffffff;
-  color: var(--text);
-  box-shadow: 0 14px 30px rgba(63, 63, 70, 0.16), var(--glow);
-}
-
-:root[data-theme="light"] .rail-btn[data-tooltip]::before {
-  border-left-color: rgba(113, 113, 122, 0.2);
-  border-bottom-color: rgba(113, 113, 122, 0.2);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .rail-btn.active,
-:root[data-theme="light"] .rail-btn:hover,
 :root[data-theme="light"] .icon-btn:hover {
   border-color: rgba(113, 113, 122, 0.26);
   background: #ffffff;
