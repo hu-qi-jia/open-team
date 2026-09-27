@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GroupMessage, GroupRole, MessageHighlight, OpenTeamStore, OrchestrationReviewResult } from '../../../../group/types'
+import { Button } from '../ui/button'
 import { roleMentionLabelOptionsFromSettings } from '../../../../group/mentionParser'
 import {
   THINKING_TIMEOUT_MS,
@@ -173,11 +174,12 @@ export function Messages() {
       <OrchestrationStatusCard />
       {view.messages.length === 0 && (view.roles.length === 0 ? (
         <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。">
-          <button
+          <Button
             type="button"
+            size="sm"
             className="btn btn-primary"
             onClick={() => services.uiBus.emit('open-add-person')}
-          >添加人员</button>
+          >添加人员</Button>
         </EmptyState>
       ) : (
         <EmptyState
@@ -186,7 +188,7 @@ export function Messages() {
         />
       ))}
       {view.entries.map(entry => entry.kind === 'time'
-        ? <div key={entry.id} className="message-time-divider">{entry.label}</div>
+        ? <div key={entry.id} className="message-time-divider mx-auto my-3 w-fit rounded-full bg-muted/70 px-2.5 py-0.5 text-[11px] text-muted-foreground">{entry.label}</div>
         : (
           <MessageItem
             key={entry.message.id}
@@ -222,11 +224,11 @@ export function Messages() {
 
 function EmptyState({ title, body, children }: { title: string; body: string; children?: React.ReactNode }) {
   return (
-    <div className="empty-state">
-      <div className="empty-card">
-        <h3>{title}</h3>
-        <p className="muted">{body}</p>
-        {children}
+    <div className="empty-state px-6 py-10">
+      <div className="empty-card mx-auto max-w-sm rounded-lg border border-dashed border-border p-6 text-center">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <p className="muted mt-1.5 text-xs leading-relaxed text-muted-foreground">{body}</p>
+        {children && <div className="mt-4">{children}</div>}
       </div>
     </div>
   )

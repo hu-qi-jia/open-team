@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef, useState } from 'react'
+import { ArrowUpRight, Check, Copy, Download, Quote, RotateCcw, Square } from 'lucide-react'
 import type { GroupMessage, GroupRole, MessageHighlight, MessageReference, OrchestrationReviewResult } from '../../../../group/types'
 import { roleMentionLabel, roleModelLabel, type RoleMentionLabelOptions } from '../../../../group/mentionParser'
 import { messageTitle, roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
@@ -69,8 +70,8 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
 
   if (message.type === 'system') {
     return (
-      <article className="message-row message system" data-message-id={message.id}>
-        <div className="message-system-pill">
+      <article className="message-row message system my-2 flex justify-center" data-message-id={message.id}>
+        <div className="message-system-pill w-fit rounded-full bg-muted/70 px-3 py-1 text-center text-xs text-muted-foreground">
           <OrchestrationMessageLabel message={message} />
           {message.content}
         </div>
@@ -97,22 +98,22 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
 
   return (
     <article
-      className={`message-row message ${message.type}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'}`}
+      className={`message-row message ${message.type}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex px-6 py-1.5${message.type === 'user' ? ' flex-row-reverse' : ''}`}
       data-message-id={message.id}
     >
-      <div className="message-inner">
+      <div className="message-inner flex w-full min-w-0 items-start gap-3">
         <div
-          className={`message-avatar ${message.type === 'user' ? 'role-tone-5' : roleToneClass(message.roleName)}${role ? ' mention-shortcut' : ''}`}
+          className={`message-avatar ${message.type === 'user' ? 'role-tone-5' : roleToneClass(message.roleName)}${role ? ' mention-shortcut' : ''} flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-none bg-secondary shadow-none text-xs font-medium text-secondary-foreground select-none`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
           onContextMenu={onMentionContextMenu}
         >{message.type === 'user' ? '你' : roleAvatarLabel(message.roleName)}</div>
 
-        <div className="message-stack">
+        <div className={`message-stack flex min-w-0 flex-col gap-1 ${message.type === 'user' ? 'items-end' : 'items-start flex-1'}`}>
           {isAssistant && showName && (
             <div
-              className={`message-name${role ? ' mention-shortcut' : ''}`}
+              className={`message-name${role ? ' mention-shortcut' : ''} flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground`}
               title={mentionTitle}
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
@@ -123,18 +124,18 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
             </div>
           )}
 
-          <div className="message-bubble">
+          <div className={`message-bubble min-w-0 max-w-full ${message.type === 'user' ? 'rounded-2xl bg-primary px-3.5 py-2 text-primary-foreground shadow-none before:hidden' : 'bg-transparent text-foreground shadow-none before:hidden'}`}>
             <OrchestrationMessageLabel message={message} />
             {hasVisibleTextBody && (
               <div
                 ref={bodyRef}
-                className={`message-body${isPendingAssistant ? ' thinking-dots' : ''}${bodyHtml !== undefined ? ' markdown-body' : ''}`}
+                className={`message-body text-sm leading-relaxed${isPendingAssistant ? ' thinking-dots' : ''}${bodyHtml !== undefined ? ' markdown-body' : ''}`}
               >
                 {message.type === 'user' && (message.mentionsAll || mentionedRoles.length > 0) && (
-                  <div className="message-mentions">
-                    {message.mentionsAll && <span className="message-mention">@所有人</span>}
+                  <div className="message-mentions mb-0.5">
+                    {message.mentionsAll && <span className="message-mention mr-1 inline-block rounded-md bg-primary-foreground/15 px-1.5 py-0.5 text-xs font-medium text-primary-foreground">@所有人</span>}
                     {mentionedRoles.map(mentionRole => (
-                      <span key={mentionRole.id} className="message-mention">@{roleMentionLabel(mentionRole, mentionLabelOptions)}</span>
+                      <span key={mentionRole.id} className="message-mention mr-1 inline-block rounded-md bg-primary-foreground/15 px-1.5 py-0.5 text-xs font-medium text-primary-foreground">@{roleMentionLabel(mentionRole, mentionLabelOptions)}</span>
                     ))}
                   </div>
                 )}
@@ -152,7 +153,7 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
             {message.references?.length ? <ReferenceBox reference={message.references[0]} /> : null}
 
             {isAssistant && (
-              <div className="message-tools">
+              <div className="message-tools mt-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                 {message.roleId && message.status === 'pending' && role ? (
                   <MessageToolButton
                     label="停止回复"
@@ -241,7 +242,7 @@ export function handleResyncMessage(services: ReturnType<typeof useServices>, me
 /** 站点徽标（原 siteBadge 对译）；ReplyControlBubble 复用 */
 export function SiteBadge({ role, mentionLabelOptions }: { role: GroupRole; mentionLabelOptions: RoleMentionLabelOptions }) {
   return (
-    <span className={`role-site-badge ${role.modelSource === 'external' ? 'site-pill-external' : `site-pill-${role.chatSite ?? 'gemini'}`}`}>{roleModelLabel(role, mentionLabelOptions)}</span>
+    <span className={`role-site-badge ${role.modelSource === 'external' ? 'site-pill-external' : `site-pill-${role.chatSite ?? 'gemini'}`} rounded-sm bg-none bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground`}>{roleModelLabel(role, mentionLabelOptions)}</span>
   )
 }
 
@@ -263,7 +264,7 @@ function OrchestrationMessageLabel({ message }: { message: GroupMessage }) {
   const parts = ['编排']
   if (message.orchestrationStageIndex !== undefined) parts.push(`第 ${message.orchestrationStageIndex + 1} 步`)
   parts.push(orchestrationKindLabel(message.orchestrationKind))
-  return <div className={`orchestration-message-label orchestration-message-${message.orchestrationKind}`}>{parts.join(' · ')}</div>
+  return <div className={`orchestration-message-label orchestration-message-${message.orchestrationKind} mb-1 w-fit rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground`}>{parts.join(' · ')}</div>
 }
 
 function orchestrationKindLabel(kind: NonNullable<GroupMessage['orchestrationKind']>): string {
@@ -295,7 +296,7 @@ function ReviewLine({ label, value }: { label: string; value: string }) {
 
 function ReferenceBox({ reference }: { reference: MessageReference }) {
   return (
-    <div className="reference-box">
+    <div className="reference-box mt-2 rounded-md border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
       {`引用 ${reference.roleName || '人员'}：${truncate(reference.contentSnapshot, 160)}`}
     </div>
   )
@@ -307,10 +308,18 @@ function truncate(value: string, maxLength: number): string {
 
 type MessageActionIcon = 'copy' | 'quote' | 'jump' | 'check' | 'stop' | 'retry' | 'download'
 
+const CopyIcon = Copy
+const QuoteIcon = Quote
+const CheckIcon = Check
+const SquareIcon = Square
+const RotateCcwIcon = RotateCcw
+const DownloadIcon = Download
+const ArrowUpRightIcon = ArrowUpRight
+
 /*
  * 消息工具按钮（原 createMessageIconButton 对译）：stop 按钮 pointerdown
  * 即触发（流式中无需精确点击），其余走 click；pointerdown 激活后吞掉
- * 紧随的 click，避免双重触发。
+ * 紧随的 click，避免双重触发。V3 起 icon 用 lucide 线性图标。
  */
 export function MessageToolButton({ label, icon, onClick, activateOnPointerDown = false, className, disabled = false }: {
   label: string
@@ -321,10 +330,11 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
   disabled?: boolean
 }) {
   const activatedOnPointerDownRef = useRef(false)
+  const Icon = messageActionIcon(icon)
   return (
     <button
       type="button"
-      className={className !== undefined ? `message-tool-btn ${className}` : 'message-tool-btn'}
+      className={`message-tool-btn flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2' : ''}`}
       disabled={disabled}
       aria-label={label}
       onPointerDown={event => {
@@ -344,19 +354,17 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
         onClick()
       }}
     >
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d={messageActionIconPath(icon)} />
-      </svg>
+      <Icon className="size-3.5" aria-hidden="true" />
     </button>
   )
 }
 
-function messageActionIconPath(icon: MessageActionIcon): string {
-  if (icon === 'copy') return 'M8 7.5A2.5 2.5 0 0 1 10.5 5h6A2.5 2.5 0 0 1 19 7.5v6A2.5 2.5 0 0 1 16.5 16h-6A2.5 2.5 0 0 1 8 13.5v-6Zm-3 3A2.5 2.5 0 0 1 7.5 8H8v5.5a2.5 2.5 0 0 0 2.5 2.5H16v.5a2.5 2.5 0 0 1-2.5 2.5h-6A2.5 2.5 0 0 1 5 16.5v-6Z'
-  if (icon === 'quote') return 'M7.2 6.5c-1.7 1.4-2.7 3-2.7 5.1 0 1.9 1.1 3.2 2.8 3.2 1.3 0 2.3-.9 2.3-2.2 0-1.2-.8-2-2-2.1.2-1.1.9-2 2.1-3l-1.1-1.4c-.5.1-1 .2-1.4.4Zm8 0c-1.7 1.4-2.7 3-2.7 5.1 0 1.9 1.1 3.2 2.8 3.2 1.3 0 2.3-.9 2.3-2.2 0-1.2-.8-2-2-2.1.2-1.1.9-2 2.1-3l-1.1-1.4c-.5.1-1 .2-1.4.4Z'
-  if (icon === 'check') return 'M9.2 16.4 4.8 12l1.4-1.4 3 3 8.6-8.6 1.4 1.4-10 10Z'
-  if (icon === 'stop') return 'M7.5 6h9A1.5 1.5 0 0 1 18 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 16.5v-9A1.5 1.5 0 0 1 7.5 6Z'
-  if (icon === 'retry') return 'M12 5a7 7 0 1 1-6.3 4H4a9 9 0 1 0 2.6-4.4L4 2v7h7L8.1 6.1A7 7 0 0 1 12 5Z'
-  if (icon === 'download') return 'M11 4h2v8.2l2.6-2.6L17 11l-5 5-5-5 1.4-1.4 2.6 2.6V4Zm-5 13h12v2H6v-2Z'
-  return 'M14 5h5v5h-1.6V7.7l-7.1 7.1-1.1-1.1 7.1-7.1H14V5ZM6.5 6h4v1.6h-4a.9.9 0 0 0-.9.9v9a.9.9 0 0 0 .9.9h9a.9.9 0 0 0 .9-.9v-4H18v4A2.5 2.5 0 0 1 15.5 20h-9A2.5 2.5 0 0 1 4 17.5v-9A2.5 2.5 0 0 1 6.5 6Z'
+function messageActionIcon(icon: MessageActionIcon): React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }> {
+  if (icon === 'copy') return CopyIcon
+  if (icon === 'quote') return QuoteIcon
+  if (icon === 'check') return CheckIcon
+  if (icon === 'stop') return SquareIcon
+  if (icon === 'retry') return RotateCcwIcon
+  if (icon === 'download') return DownloadIcon
+  return ArrowUpRightIcon
 }

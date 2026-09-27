@@ -35,21 +35,21 @@ export function ReplyControlBubble({ role, showName = true, showAvatar = true, m
 
   return (
     <article
-      className={`message-row message assistant ${stopped ? 'stopped' : 'thinking'}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'}`}
+      className={`message-row message assistant ${stopped ? 'stopped' : 'thinking'}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex px-6 py-1.5`}
     >
-      <div className="message-inner">
+      <div className="message-inner flex w-full min-w-0 items-start gap-3">
         <div
-          className={`message-avatar ${roleToneClass(role.name)}${showAvatar ? ' mention-shortcut' : ''}`}
+          className={`message-avatar ${roleToneClass(role.name)}${showAvatar ? ' mention-shortcut' : ''} flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-none bg-secondary shadow-none text-xs font-medium text-secondary-foreground select-none`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
           onContextMenu={onMentionContextMenu}
         >{roleAvatarLabel(role.name)}</div>
 
-        <div className="message-stack">
+        <div className="message-stack flex min-w-0 flex-1 flex-col items-start gap-1">
           {showName && (
             <div
-              className="message-name mention-shortcut"
+              className="message-name mention-shortcut flex cursor-pointer items-center gap-1.5 text-[13px] font-medium text-muted-foreground"
               title={mentionTitle}
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
@@ -60,9 +60,9 @@ export function ReplyControlBubble({ role, showName = true, showAvatar = true, m
             </div>
           )}
 
-          <div className="message-bubble">
-            <div className={`message-body${stopped ? '' : ' thinking-dots'}`}>{stopped ? '已停止回复' : '正在回复中 '}</div>
-            <div className="message-tools">
+          <div className="message-bubble min-w-0 max-w-full bg-transparent text-foreground shadow-none before:hidden">
+            <div className={`message-body text-sm leading-relaxed${stopped ? '' : ' thinking-dots'}`}>{stopped ? '已停止回复' : '正在回复中 '}</div>
+            <div className="message-tools mt-1 flex items-center gap-0.5">
               {stopped ? (
                 <MessageToolButton
                   label="重新发送"

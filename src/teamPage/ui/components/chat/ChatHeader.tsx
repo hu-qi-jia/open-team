@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { Moon, Sun } from 'lucide-react'
 import type { GroupChat, GroupRole, RoomMode } from '../../../../group/types'
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import type { TeamPageState } from '../../../appState'
@@ -6,6 +7,7 @@ import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { getAppState, notifyAppState } from '../../lib/appStore'
 import { showError } from '../../lib/toast'
+import { Button } from '../ui/button'
 
 /*
  * 聊天头（原 chatHeaderView 整体 React 化）。区域分两种：
@@ -76,33 +78,37 @@ export function ChatHeader() {
   }
 
   return (
-    <header className="chat-header">
-      <div className="chat-title-block">
-        <h2 id="chat-title" className="chat-title">{chatName !== undefined ? chatName : ui('未选择群聊')}</h2>
-        <p id="chat-subtitle" className="chat-subtitle">
+    <header className="chat-header flex items-center justify-between gap-3 border-b border-border bg-background/80 px-6 py-3 backdrop-blur">
+      <div className="chat-title-block min-w-0">
+        <h2 id="chat-title" className="chat-title truncate text-sm font-semibold tracking-tight">{chatName !== undefined ? chatName : ui('未选择群聊')}</h2>
+        <p id="chat-subtitle" className="chat-subtitle truncate text-xs text-muted-foreground">
           {chatMode !== undefined
             ? (roleCount ? ui(`${modeLabel(chatMode)} · ${roleCount} 位成员 · ${messageCount} 条消息`) : ui('暂无成员'))
             : ui('创建或选择一个群聊开始协作')}
         </p>
       </div>
-      <div className="chat-row">
+      <div className="chat-row flex shrink-0 items-center gap-1.5">
         <HeaderStaticControls />
 
-        <button
+        <Button
           id="restore-chat"
-          className="btn"
+          variant="outline"
+          size="sm"
+          className="btn h-7 border-border px-2.5 text-xs text-muted-foreground"
           type="button"
           onClick={restoreChat}
-        >{ui('恢复会话')}</button>
+        >{ui('恢复会话')}</Button>
 
-        <button
+        <Button
           id="open-orchestration"
-          className="btn drawer-summary"
+          variant="outline"
+          size="sm"
+          className="btn drawer-summary h-7 gap-1.5 border-border px-2.5 text-xs text-muted-foreground"
           type="button"
           hidden={chatMode !== 'collaborative'}
           onClick={() => services.uiBus.emit('open-orchestration')}
         >
-          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="size-3.5">
             <path d="M5 7.5h4.5v4H5z" />
             <path d="M14.5 4.5H19v4h-4.5z" />
             <path d="M14.5 15.5H19v4h-4.5z" />
@@ -110,10 +116,12 @@ export function ChatHeader() {
             <path d="M9.5 9.5h2.8c1.2 0 2.2 1 2.2 2.2v5.8" />
           </svg>
           <span>{ui('编排')}</span>
-        </button>
+        </Button>
 
-        <button
-          className="btn drawer-summary manual-mention-toggle"
+        <Button
+          variant="outline"
+          size="sm"
+          className="btn drawer-summary manual-mention-toggle h-7 border-border px-2.5 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
           type="button"
           role="switch"
           title={mentionRuleHint}
@@ -122,28 +130,32 @@ export function ChatHeader() {
           aria-checked={manualMentionOn}
           hidden={chatMode !== 'collaborative'}
           onClick={toggleManualMention}
-        >{ui('免@')}</button>
+        >{ui('免@')}</Button>
 
-        <button
+        <Button
           id="toggle-people-drawer"
-          className="btn drawer-summary"
+          variant="outline"
+          size="sm"
+          className="btn drawer-summary h-7 border-border px-2.5 text-xs text-muted-foreground"
           type="button"
           disabled={chatMode === undefined}
           aria-label={ui(drawerOpen ? '收起成员面板' : '打开成员面板')}
           aria-expanded={drawerOpen}
           onClick={togglePeopleDrawer}
-        >{ui(`成员 ${roleCount}`)}</button>
+        >{ui(`成员 ${roleCount}`)}</Button>
 
-        <button
+        <Button
           id="toggle-notes-panel"
-          className="btn drawer-summary"
+          variant="outline"
+          size="sm"
+          className="btn drawer-summary h-7 border-border px-2.5 text-xs text-muted-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground"
           type="button"
           aria-expanded={notesPanelOpen}
           aria-controls="notes-panel"
           onClick={toggleNotesPanel}
-        >{ui('笔记')}</button>
+        >{ui('笔记')}</Button>
 
-        <span id="chat-status" className={chatStatus !== undefined ? `status-pill status-${chatStatus}` : 'status-pill'}>
+        <span id="chat-status" className={chatStatus !== undefined ? `status-pill status-${chatStatus} inline-flex h-6 items-center rounded-full border border-border bg-none px-2 text-xs text-muted-foreground` : 'status-pill inline-flex h-6 items-center rounded-full border border-border px-2 text-xs text-muted-foreground'}>
           {chatStatus !== undefined ? ui(chatStatusLabel(chatStatus)) : ui('空')}
         </span>
       </div>
@@ -158,18 +170,21 @@ export function ChatHeader() {
  */
 const HeaderStaticControls = memo(function HeaderStaticControls() {
   return (
-    <div id="theme-switch" className="theme-switch" role="group" aria-label="界面模式">
-      <button id="theme-light" className="theme-option" type="button" aria-pressed="false" title="浅色模式">
-        <span aria-hidden="true">☼</span>
+    <div id="theme-switch" className="theme-switch flex items-center rounded-md border border-border p-0.5" role="group" aria-label="界面模式">
+      <button id="theme-light" className="theme-option flex h-6 cursor-pointer items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground transition-colors hover:text-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground" type="button" aria-pressed="false" title="浅色模式">
+        <SunIcon className="size-3" aria-hidden="true" />
         <span>浅色</span>
       </button>
-      <button id="theme-dark" className="theme-option" type="button" aria-pressed="true" title="深色模式">
-        <span aria-hidden="true">☾</span>
+      <button id="theme-dark" className="theme-option flex h-6 cursor-pointer items-center gap-1 rounded-sm px-2 text-xs text-muted-foreground transition-colors hover:text-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground" type="button" aria-pressed="true" title="深色模式">
+        <MoonIcon className="size-3" aria-hidden="true" />
         <span>深色</span>
       </button>
     </div>
   )
 }, () => true)
+
+const SunIcon = Sun
+const MoonIcon = Moon
 
 function currentChatOf(state: TeamPageState): GroupChat | undefined {
   return state.selectedChatId ? state.store.chatsById[state.selectedChatId] : undefined

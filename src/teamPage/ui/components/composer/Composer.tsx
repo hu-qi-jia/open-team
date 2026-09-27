@@ -9,6 +9,7 @@ import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { showError } from '../../lib/toast'
 import { deriveComposerPreview, resolveMessageTargets } from '../../lib/composerPreview'
 import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
+import { Button } from '../ui/button'
 import { MentionPicker, createMentionOptions } from './MentionPicker'
 
 /*
@@ -228,16 +229,16 @@ export function Composer() {
   }
 
   return (
-    <form id="composer" className="composer" onSubmit={handleFormSubmit}>
-      <div id="reference-draft" className="reference-draft" hidden={!view.reference}>
+    <form id="composer" className="composer mx-6 mb-4 rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-ring/60" onSubmit={handleFormSubmit}>
+      <div id="reference-draft" className="reference-draft mx-3 mt-2.5" hidden={!view.reference}>
         {view.reference && (
           <>
-            <div className="reference-draft-preview">
+            <div className="reference-draft-preview truncate rounded-md bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
               {`引用 ${view.reference.roleName || '人员'}：${view.reference.contentSnapshot}`}
             </div>
             <button
               type="button"
-              className="btn btn-ghost"
+              className="btn btn-ghost ml-1 flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
               aria-label="取消引用"
               onClick={() => {
                 getAppState().selectedReference = undefined
@@ -263,6 +264,7 @@ export function Composer() {
       <textarea
         id="message-input"
         ref={textareaRef}
+        className="max-h-40 min-h-[54px] w-full resize-none border-0 bg-transparent px-3.5 py-3 text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
         placeholder="输入消息，@成员可指定回复；不 @ 仅记录到群聊。"
         value={draft}
         onChange={event => handleDraftChange(event.target.value)}
@@ -270,12 +272,12 @@ export function Composer() {
         onKeyUp={syncCursor}
         onClick={syncCursor}
       />
-      <div className="composer-actions">
-        <div>
-          <div id="target-preview" className="muted tiny">{preview.targetText}</div>
-          <div id="busy-preview" className="tiny">{preview.busyText}</div>
+      <div className="composer-actions flex items-center justify-between gap-2 px-3.5 pb-3">
+        <div className="min-w-0">
+          <div id="target-preview" className="muted tiny truncate text-[11px] text-muted-foreground">{preview.targetText}</div>
+          <div id="busy-preview" className="tiny truncate text-[11px] text-muted-foreground">{preview.busyText}</div>
         </div>
-        <button id="send-message" className="btn btn-primary" type="submit" disabled={preview.sendDisabled}>发送</button>
+        <Button id="send-message" size="sm" type="submit" disabled={preview.sendDisabled}>发送</Button>
       </div>
     </form>
   )

@@ -157,7 +157,13 @@
     --line: var(--border);
     --line-strong: var(--ring);
     --text: var(--foreground);
-    --muted: var(--muted-foreground);
+    /*
+     * 注意：不能把 legacy 的 --muted 重映射到 --muted-foreground——
+     * shadcn token 块（未分层）里的 --muted 是 muted 背景 token，
+     * bg-muted 等 utilities 依赖它；legacy 里把 var(--muted) 当文字色
+     * 用的规则（.drawer-summary / 浅色 .message-name 等）由组件内
+     * text-muted-foreground utilities 逐个覆盖。
+     */
     --subtle: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
     --brand: var(--primary);
     --brand-deep: var(--primary);
@@ -188,7 +194,6 @@
     --line: var(--border);
     --line-strong: var(--ring);
     --text: var(--foreground);
-    --muted: var(--muted-foreground);
     --subtle: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
     --brand: var(--primary);
     --brand-deep: var(--background);
@@ -227,6 +232,17 @@
     background: var(--card);
     box-shadow: var(--shadow);
     backdrop-filter: none;
+  }
+
+  /*
+   * V3 输入区：legacy 的 #send-message 是 40px 图标钮（font-size:0 +
+   * ➤ 伪元素）；React 化后发送钮是文字 Button，宽度交还内容、伪元素去掉。
+   */
+  #send-message {
+    width: auto;
+  }
+  #send-message::before {
+    content: none;
   }
 
   /* 浮窗铬件的 toast 式 tooltip：zinc 化（原为青色硬编码） */
