@@ -258,4 +258,66 @@
     border-top-color: var(--border);
     border-bottom-color: var(--border);
   }
+
+  /*
+   * V5 弹窗统一：12 个弹窗共用 .modal-backdrop + section.modal 骨架
+   * （P4 起 React 渲染，测试锚定这些类，故覆写而非改组件）。仅接管
+   * 视觉（遮罩/底色/边框/圆角/阴影），宽度/max-height/grid 行等几何
+   * 仍在 legacy；浅色主题 legacy 覆写组的硬编码底色同被压掉。
+   */
+  .modal-backdrop {
+    background: color-mix(in oklab, var(--background) 55%, transparent);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: var(--shadow);
+  }
+
+  /*
+   * 主按钮语义回归 shadcn：legacy .btn-primary（含浅色覆写组）是青灰
+   * 渐变，平涂为 primary；hover 用 color-mix 对齐 bg-primary/90。
+   */
+  .btn-primary {
+    border-color: transparent;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    box-shadow: none;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    border-color: transparent;
+    background: color-mix(in oklab, var(--primary) 90%, transparent);
+    color: var(--primary-foreground);
+  }
+
+  /*
+   * V5 iframe 工作台层（role 真实 AI 窗口所在，结构不动）：纯黑底与
+   * 激活组青色描边压为 zinc；role 壳卡片化后与主体风格连续。
+   */
+  #iframe-host {
+    background: var(--background);
+  }
+
+  #iframe-host .chat-frame-group {
+    border: 1px solid var(--border);
+    background: color-mix(in oklab, var(--card) 82%, transparent);
+  }
+
+  #iframe-host .chat-frame-group.active {
+    border-color: var(--border);
+    outline: 1px solid var(--ring);
+    outline-offset: -1px;
+    box-shadow: none;
+  }
+
+  #iframe-host .role-frame-shell {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+  }
 }
