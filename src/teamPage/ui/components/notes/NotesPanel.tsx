@@ -183,13 +183,15 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
           <h2 className="truncate text-sm font-semibold tracking-tight">{t('笔记')}</h2>
           <p className="tiny mt-0.5 truncate text-xs text-muted-foreground">{t('手动记录或收集 Mark 内容。')}</p>
         </div>
-        <button
+        <Button
           id="close-notes-panel"
-          className="icon-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          variant="ghost"
+          size="icon-sm"
+          className="size-7 text-muted-foreground"
           type="button"
           aria-label={t('关闭笔记')}
           onClick={closePanel}
-        >×</button>
+        >×</Button>
       </div>
       <div className="note-scope-tabs flex gap-1 px-3 pt-2.5" role="tablist" aria-label={t('笔记范围')}>
         <button

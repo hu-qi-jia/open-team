@@ -94,7 +94,7 @@ export function ChatHeader() {
           id="restore-chat"
           variant="outline"
           size="sm"
-          className="btn h-7 border-border px-2.5 text-xs text-muted-foreground"
+          className="h-7 px-2.5 text-xs text-muted-foreground"
           type="button"
           onClick={restoreChat}
         >{ui('恢复会话')}</Button>
@@ -103,7 +103,7 @@ export function ChatHeader() {
           id="open-orchestration"
           variant="outline"
           size="sm"
-          className="btn drawer-summary h-7 gap-1.5 border-border px-2.5 text-xs text-muted-foreground"
+          className="h-7 gap-1.5 px-2.5 text-xs text-muted-foreground"
           type="button"
           hidden={chatMode !== 'collaborative'}
           onClick={() => services.uiBus.emit('open-orchestration')}
@@ -121,7 +121,7 @@ export function ChatHeader() {
         <Button
           variant="outline"
           size="sm"
-          className="btn drawer-summary manual-mention-toggle h-7 border-border px-2.5 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
+          className="manual-mention-toggle h-7 px-2.5 text-xs text-muted-foreground aria-pressed:bg-accent aria-pressed:text-accent-foreground"
           type="button"
           role="switch"
           title={mentionRuleHint}
@@ -136,7 +136,7 @@ export function ChatHeader() {
           id="toggle-people-drawer"
           variant="outline"
           size="sm"
-          className="btn drawer-summary h-7 border-border px-2.5 text-xs text-muted-foreground"
+          className="h-7 px-2.5 text-xs text-muted-foreground"
           type="button"
           disabled={chatMode === undefined}
           aria-label={ui(drawerOpen ? '收起成员面板' : '打开成员面板')}
@@ -148,7 +148,7 @@ export function ChatHeader() {
           id="toggle-notes-panel"
           variant="outline"
           size="sm"
-          className="btn drawer-summary h-7 border-border px-2.5 text-xs text-muted-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground"
+          className="h-7 px-2.5 text-xs text-muted-foreground aria-expanded:bg-accent aria-expanded:text-accent-foreground"
           type="button"
           aria-expanded={notesPanelOpen}
           aria-controls="notes-panel"

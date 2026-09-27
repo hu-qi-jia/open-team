@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
 } from '../ui/alert-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Button } from '../ui/button'
 
 /*
  * 群列表（原 chatListView.renderChatList 整体 React 化）：
@@ -118,10 +119,14 @@ export function ChatList() {
           <div className="chat-item-side flex shrink-0 flex-col items-end gap-1">
             <span className="chat-time text-[11px] tabular-nums text-muted-foreground/80">{chat.timeText}</span>
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className="icon-btn chat-menu-btn flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
-                aria-label={menuAriaLabel(language, chat.name)}
-              >⋯</DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  className="text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+                  aria-label={menuAriaLabel(language, chat.name)}
+                >⋯</Button>
+              </DropdownMenuTrigger>
               <DropdownMenuContent side="bottom" align="end">
                 <DropdownMenuItem onSelect={() => renameChat(chat)}>{ui('编辑名称')}</DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => {

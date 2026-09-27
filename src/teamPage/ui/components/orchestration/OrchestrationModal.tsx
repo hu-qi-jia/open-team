@@ -702,7 +702,7 @@ export function OrchestrationModal() {
                 <div id="orchestration-stage-settings" className="orchestration-stage-settings" key={selectedStage.id}>
                   <div className="orchestration-node-editor-header">
                     <h3>{selectedStage.kind === 'review' ? ui('审核节点') : ui('执行节点')}</h3>
-                    <button className="icon-btn orchestration-node-editor-close" type="button" aria-label={ui('关闭节点设置')} onClick={clearSelectedStage}>×</button>
+                    <Button className="text-lg" size="icon-sm" type="button" variant="ghost" aria-label={ui('关闭节点设置')} onClick={clearSelectedStage}>×</Button>
                   </div>
                   <label className="field">
                     {ui('节点类型')}

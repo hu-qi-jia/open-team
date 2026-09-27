@@ -53,9 +53,11 @@ export function QuickCreateChatTrigger() {
   const t = useT()
   const { open, openPopover } = useQuickCreateChat()
   return (
-    <button
+    <Button
       id="quick-create-chat"
-      className="icon-btn flex size-7 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      variant="outline"
+      size="icon-sm"
+      className="size-7"
       type="button"
       aria-label={t('新建群聊')}
       aria-controls="chat-create-popover"
@@ -63,7 +65,7 @@ export function QuickCreateChatTrigger() {
       onClick={openPopover}
     >
       <Plus className="size-4" aria-hidden="true" />
-    </button>
+    </Button>
   )
 }
 

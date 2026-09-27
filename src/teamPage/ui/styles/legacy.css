@@ -534,60 +534,6 @@ h3 {
   font-size: 12px;
 }
 
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 36px;
-  border: 1px solid rgba(113, 113, 122, 0.2);
-  border-radius: 8px;
-  padding: 0 14px;
-  background: rgba(113, 113, 122, 0.1);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 720;
-  transition: 0.16s ease;
-}
-
-.btn:hover:not(:disabled) {
-  border-color: rgba(161, 161, 170, 0.42);
-  background: rgba(161, 161, 170, 0.12);
-}
-
-.btn-primary {
-  border-color: rgba(161, 161, 170, 0.44);
-  background: linear-gradient(135deg, rgba(161, 161, 170, 0.88), rgba(113, 113, 122, 0.88));
-  color: #e4e4e7;
-  box-shadow: 0 0 18px rgba(161, 161, 170, 0.16) inset;
-}
-
-.btn-primary:hover:not(:disabled) {
-  filter: brightness(1.08);
-}
-
-.btn-danger {
-  border-color: rgba(255, 138, 165, 0.22);
-  background: rgba(255, 138, 165, 0.12);
-  color: #ffd6df;
-}
-
-.btn-ghost {
-  background: transparent;
-  color: var(--muted);
-}
-
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.48;
-}
-
-.icon-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 .settings-menu {
   position: absolute;
   left: 52px;
@@ -845,20 +791,6 @@ select:focus {
   border: 2px solid #18181b;
   border-radius: 999px;
   background: #ff4d4f;
-}
-
-.chat-menu-btn {
-  width: 22px;
-  height: 22px;
-  border-radius: 7px;
-  color: var(--muted);
-  opacity: 0;
-}
-
-.chat-item:hover .chat-menu-btn,
-.chat-item.active .chat-menu-btn,
-.chat-item:focus-within .chat-menu-btn {
-  opacity: 1;
 }
 
 .chat-item:hover,
@@ -1349,13 +1281,6 @@ select:focus {
 .orchestration-status-window-actions .orchestration-status-actions {
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.orchestration-status-window-actions .btn {
-  min-height: 26px;
-  border-radius: 7px;
-  padding: 0 8px;
-  font-size: 12px;
 }
 
 .orchestration-status-collapse {
@@ -2091,12 +2016,6 @@ select:focus {
   white-space: nowrap;
 }
 
-.reference-draft .btn {
-  min-height: 24px;
-  flex: 0 0 auto;
-  padding: 0 8px;
-}
-
 .mention-panel {
   position: absolute;
   left: 12px;
@@ -2269,10 +2188,6 @@ select:focus {
 
 .notes-panel.dragging .notes-panel-header {
   cursor: grabbing;
-}
-
-.notes-panel-header .icon-btn {
-  cursor: pointer;
 }
 
 .notes-resize-handle {
@@ -2586,14 +2501,6 @@ select:focus {
 .mark-menu .mark-color-btn[aria-pressed="true"] {
   border-color: #ffffff;
   box-shadow: inset 0 0 0 2px rgba(8, 16, 24, 0.82), 0 0 0 2px rgba(161, 161, 170, 0.34);
-}
-
-.drawer-summary {
-  min-height: 30px;
-  border-color: transparent;
-  background: rgba(255, 255, 255, 0.045);
-  color: var(--muted);
-  white-space: nowrap;
 }
 
 .role-card,
@@ -2930,33 +2837,6 @@ select:focus {
   margin-top: 12px;
 }
 
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 9;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(1, 5, 12, 0.58);
-  backdrop-filter: blur(10px);
-}
-
-.modal-backdrop[hidden] {
-  display: none;
-}
-
-.modal {
-  position: relative;
-  width: min(820px, 100%);
-  max-height: min(760px, calc(100vh - 48px));
-  overflow: auto;
-  border: 1px solid rgba(113, 113, 122, 0.24);
-  border-radius: 16px;
-  padding: 20px;
-  background: rgba(9, 9, 11, 0.98);
-  box-shadow: var(--shadow), var(--glow);
-}
-
 .people-library-modal {
   display: grid;
   height: min(760px, calc(100vh - 48px));
@@ -3086,33 +2966,10 @@ select:focus {
   white-space: pre-wrap;
 }
 
-.modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-  padding-right: 42px;
-}
-
 .modal-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 2;
-  background: rgba(113, 113, 122, 0.1);
-  color: #d4d4d8;
-}
-
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
 }
 
 .modal-grid {
@@ -3589,10 +3446,6 @@ select:focus {
   overflow: hidden;
 }
 
-.orchestration-modal .modal-header {
-  padding-bottom: 2px;
-}
-
 .orchestration-task-strip {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -3751,10 +3604,6 @@ select:focus {
   color: #d4d4d8;
   font-size: 10px;
   font-weight: 760;
-}
-
-.modal-backdrop-secondary {
-  background: rgba(63, 63, 70, 0.5);
 }
 
 .orchestration-auto-modal {
@@ -4119,14 +3968,6 @@ select:focus {
   gap: 8px;
 }
 
-.orchestration-node-editor-close {
-  flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
-  font-size: 18px;
-  line-height: 1;
-}
-
 .orchestration-note {
   margin: 0;
   line-height: 1.55;
@@ -4252,7 +4093,7 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .modal, :root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create, :root[data-theme="light"] .mention-panel, :root[data-theme="light"] .role-site-menu, :root[data-theme="light"] .mark-menu {
+:root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create, :root[data-theme="light"] .mention-panel, :root[data-theme="light"] .role-site-menu, :root[data-theme="light"] .mark-menu {
   border-color: rgba(113, 113, 122, 0.2);
   background: #ffffff;
   box-shadow: var(--shadow), var(--glow);
@@ -4367,7 +4208,6 @@ select:focus {
   color: #27272a;
 }
 
-:root[data-theme="light"] .btn:hover:not(:disabled),
 :root[data-theme="light"] .mention-option:hover,
 :root[data-theme="light"] .mention-option.active,
 :root[data-theme="light"] .role-site-option:hover,
@@ -4390,19 +4230,6 @@ select:focus {
   background: #f4f4f5;
   color: #3f3f46;
   box-shadow: inset 3px 0 0 #52525b;
-}
-
-:root[data-theme="light"] .btn-primary {
-  border-color: rgba(113, 113, 122, 0.42);
-  background: linear-gradient(135deg, rgba(113, 113, 122, 0.92), rgba(63, 63, 70, 0.92));
-  color: #ffffff;
-  box-shadow: 0 0 18px rgba(113, 113, 122, 0.12) inset;
-}
-
-:root[data-theme="light"] .btn-danger {
-  border-color: rgba(198, 56, 85, 0.2);
-  background: #ffffff;
-  color: #a32644;
 }
 
 :root[data-theme="light"] .field {
@@ -4711,24 +4538,6 @@ select:focus {
 :root[data-theme="light"] .mark-menu .mark-color-btn[aria-pressed="true"] {
   border-color: #27272a;
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.82), 0 0 0 2px rgba(113, 113, 122, 0.28);
-}
-
-:root[data-theme="light"] .modal-backdrop {
-  background: rgba(17, 24, 39, 0.24);
-}
-
-:root[data-theme="light"] .modal-backdrop-secondary {
-  background: rgba(17, 24, 39, 0.18);
-}
-
-:root[data-theme="light"] .modal-close {
-  background: #ffffff;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .modal-close:hover {
-  background: #ffffff;
-  color: #27272a;
 }
 
 :root[data-theme="light"] .template-prompt-preview {

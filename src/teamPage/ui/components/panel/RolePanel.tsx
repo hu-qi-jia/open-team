@@ -29,6 +29,7 @@ import {
 } from '../ui/alert-dialog'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
+import { Button } from '../ui/button'
 
 /*
  * 成员抽屉（原 rolePanelView 整体 React 化，P3；#add-role-form 提交于
@@ -166,24 +167,28 @@ export function RolePanel() {
         </div>
         {/* 原 renderRolePanelActions 将登录按钮包进 .role-panel-actions */}
         <div className="role-panel-actions">
-          <button
+          <Button
             id="open-gemini-login"
-            className="icon-btn flex size-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            variant="outline"
+            size="icon-sm"
+            className="text-muted-foreground"
             type="button"
             aria-label={ui('AI 站点登录')}
             onClick={() => services.openAiSiteLogin()}
-          >◇</button>
+          >◇</Button>
         </div>
       </div>
       <div className="role-scroll">
         <div className="section-title flex items-center justify-between px-4 pb-1.5 pt-3">
           <h3 className="text-xs font-medium text-muted-foreground">{ui('当前群聊人员')}</h3>
-          <button
+          <Button
             id="close-people-drawer"
-            className="btn h-7 cursor-pointer rounded-md border border-border bg-transparent px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            variant="outline"
+            size="sm"
+            className="h-7 px-2.5 text-xs text-muted-foreground"
             type="button"
             onClick={closePeopleDrawer}
-          >{ui('收起')}</button>
+          >{ui('收起')}</Button>
         </div>
         <div id="role-list" className="role-list grid gap-2 px-3 py-2">
           {!view.chat ? (
@@ -240,10 +245,11 @@ export function RolePanel() {
               <option key={template.id} value={template.id}>{localizeRoleTemplate(template, language).name}</option>
             ))}
           </select>
-          <button
-            className="btn btn-primary mt-2.5 h-8 w-full cursor-pointer rounded-md bg-none bg-primary text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          <Button
+            className="mt-2.5 w-full"
+            size="sm"
             type="submit"
-          >{ui('添加人员')}</button>
+          >{ui('添加人员')}</Button>
         </form>
       </div>
 
