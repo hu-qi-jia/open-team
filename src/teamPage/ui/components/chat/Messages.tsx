@@ -20,7 +20,7 @@ import { imageCache } from './ImageGrid'
 import { MarkMenu } from './MarkMenu'
 import { MessageItem } from './MessageItem'
 import { ReplyControlBubble } from './ReplyControlBubble'
-import { OrchestrationStatusSlot } from '../containers/OrchestrationStatusSlot'
+import { OrchestrationStatusCard } from '../orchestration/OrchestrationStatusCard'
 
 interface TimeDividerEntry {
   kind: 'time'
@@ -170,7 +170,7 @@ export function Messages() {
 
   return (
     <section id="messages" className="messages" aria-live="polite" ref={scrollRef}>
-      <OrchestrationStatusSlot />
+      <OrchestrationStatusCard />
       {view.messages.length === 0 && (view.roles.length === 0 ? (
         <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。">
           <button

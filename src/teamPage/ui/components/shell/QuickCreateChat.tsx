@@ -24,8 +24,8 @@ function useQuickCreateChat(): QuickCreateChatContextValue {
  * 原地把 #chat-list 往下推，不用浮层）。因此拆成复合组件经 context 共享状态。
  *
  * 已知偏差（后续用户重设计时再换 Popover）：原交互就是原位展开，非浮层。
- * 「从模板中创建」经 uiBus 发给 vanilla 侧 teamUiController.openGroupTemplate；
- * 模板确认后 vanilla 经 'close-create-chat-popover' 命令收回本表单。
+ * 「从模板中创建」经 uiBus 打开 <GroupTemplateModal/>（P4d 起 React 侧
+ * 直连）；模板确认后弹窗经 'close-create-chat-popover' 命令收回本表单。
  */
 export function QuickCreateChatProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false)

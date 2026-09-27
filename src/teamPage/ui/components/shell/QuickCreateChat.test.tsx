@@ -86,7 +86,7 @@ describe('QuickCreateChat', () => {
     expect((screen.getByLabelText('群聊名称') as HTMLInputElement).value).toBe('')
   })
 
-  it('asks the vanilla side to open the group template picker via uiBus', async () => {
+  it('opens the group template picker via uiBus', async () => {
     const user = userEvent.setup()
     const { services } = renderQuickCreate()
     const emit = vi.spyOn(services.uiBus, 'emit')
@@ -97,14 +97,14 @@ describe('QuickCreateChat', () => {
     expect(emit).toHaveBeenCalledWith('open-group-template-create')
   })
 
-  it('closes when the vanilla template flow emits close-create-chat-popover', async () => {
+  it('closes when the template modal emits close-create-chat-popover', async () => {
     const user = userEvent.setup()
     const { services } = renderQuickCreate()
 
     await user.click(screen.getByRole('button', { name: '新建群聊' }))
     expect(document.querySelector('#create-chat-form')).toBeTruthy()
 
-    // teamUiController 模板确认后的回程路径（closeCreateChatPopover dep → uiBus）
+    // GroupTemplateModal 确认创建后的回程路径（React 侧直连）
     services.uiBus.emit('close-create-chat-popover')
 
     await waitFor(() => expect(document.querySelector('#create-chat-form')).toBeNull())

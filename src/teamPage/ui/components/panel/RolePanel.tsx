@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { GroupRole } from '../../../../group/types'
-import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
+import { getAllRoleTemplates } from '../../../../group/roleTemplates'
+import { localizeRoleTemplate, normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
@@ -30,11 +31,17 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
 /*
- * 成员抽屉（原 rolePanelView 整体 React 化，P3）。aside.panel.role-panel
- * 及内部 id（#role-summary / #role-list / #role-template-select /
- * #add-role-form / #open-gemini-login / #close-people-drawer）全部保留：
- * 抽屉开合、添加人员表单与 AI 登录按钮仍由 vanilla（teamUiController /
- * peopleLibraryView，P4 收编）按 id 绑定。
+ * 成员抽屉（原 rolePanelView 整体 React 化，P3；#add-role-form 提交于
+ * P4a 收编为 uiBus 'open-add-person'）。aside.panel.role-panel 及内部 id
+ * （#role-summary / #role-list / #role-template-select /
+ * #add-role-form / #open-gemini-login / #close-people-drawer）全部保留。
+ * 抽屉开合与 AI 登录按钮原由 vanilla（teamUiController）绑定，P4d 起自持：
+ * - 「收起」翻转 appState.peopleDrawerOpen；抽屉打开时的 document 外点
+ *   关闭逻辑原样保留（Radix 站点菜单的传送层不算「抽屉外」）
+ * - ◇ 登录按钮经 services.openAiSiteLogin（chrome.tabs.create 留在
+ *   装配层，组件树保持零 chrome 依赖）
+ * #role-template-select 为遗留隐藏位，其值全工程无人读取，选项仅
+ * 按 store 版本填充以保留 DOM 契约。
  * 与原实现的对译关系：
  * - 站点菜单 → DropdownMenu（受控单开；原 .role-site-menu 的 document
  *   关闭逻辑由 Radix 外点/Escape 接管，roleSiteMenuRoleId 状态删除）
@@ -42,8 +49,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
  * - 提示词详情 → Dialog（原 .role-prompt-modal 手工挂 body 对译）
  * - 卡片选中 → state.selectedRoleId + notifyAppState
  * - 提及捷径：头像/名称点击与右键均插入 @（insertMention 经消息动作组）
- * 数据全部由 useStoreSelector 从 appStore 派生；外部 vanilla 翻转
- * peopleDrawerOpen 后经 notifyAppState 回流。
+ * 数据全部由 useStoreSelector 从 appStore 派生。
  */
 export function RolePanel() {
   const services = useServices()
@@ -52,6 +58,7 @@ export function RolePanel() {
   const selectedChatId = useStoreSelector(state => state.selectedChatId)
   const peopleDrawerOpen = useStoreSelector(state => state.peopleDrawerOpen)
   const selectedRoleId = useStoreSelector(state => state.selectedRoleId)
+  const drawerRef = useRef<HTMLElement>(null)
 
   const [openSiteMenuRoleId, setOpenSiteMenuRoleId] = useState<string | undefined>(undefined)
   const [promptDetailRole, setPromptDetailRole] = useState<GroupRole | undefined>(undefined)
@@ -78,6 +85,30 @@ export function RolePanel() {
   useEffect(() => {
     setOpenSiteMenuRoleId(undefined)
   }, [selectedChatId])
+
+  // 抽屉外点关闭（原 teamUiController document click 对译）：Radix 站点
+  // 菜单（DropdownMenu）内容传送至 body，不算「抽屉外」
+  useEffect(() => {
+    function onDocumentClick(event: MouseEvent): void {
+      const state = getAppState()
+      if (!state.peopleDrawerOpen) return
+      const target = event.target as Element | null
+      if (!target) return
+      if (drawerRef.current?.contains(target)) return
+      if (document.getElementById('toggle-people-drawer')?.contains(target)) return
+      if (target.closest('[data-radix-popper-content-wrapper]')) return
+      state.peopleDrawerOpen = false
+      notifyAppState()
+    }
+    document.addEventListener('click', onDocumentClick)
+    return () => document.removeEventListener('click', onDocumentClick)
+  }, [])
+
+  function closePeopleDrawer(): void {
+    const state = getAppState()
+    state.peopleDrawerOpen = false
+    notifyAppState()
+  }
 
   function selectRole(role: GroupRole): void {
     const state = getAppState()
@@ -124,7 +155,7 @@ export function RolePanel() {
   const summaryText = ui(`${view.roles.length} 人员${view.selectedRole ? ` · 当前：${view.selectedRole.name}` : ''}`)
 
   return (
-    <aside className={`panel role-panel${peopleDrawerOpen ? ' open' : ''}`}>
+    <aside ref={drawerRef} className={`panel role-panel${peopleDrawerOpen ? ' open' : ''}`}>
       <div className="panel-header">
         <div>
           <h2>{ui('群聊成员与人员')}</h2>
@@ -132,13 +163,13 @@ export function RolePanel() {
         </div>
         {/* 原 renderRolePanelActions 将登录按钮包进 .role-panel-actions */}
         <div className="role-panel-actions">
-          <button id="open-gemini-login" className="icon-btn" type="button" aria-label="AI 站点登录">◇</button>
+          <button id="open-gemini-login" className="icon-btn" type="button" aria-label={ui('AI 站点登录')} onClick={() => services.openAiSiteLogin()}>◇</button>
         </div>
       </div>
       <div className="role-scroll">
         <div className="section-title">
           <h3>{ui('当前群聊人员')}</h3>
-          <button id="close-people-drawer" className="btn" type="button">{ui('收起')}</button>
+          <button id="close-people-drawer" className="btn" type="button" onClick={closePeopleDrawer}>{ui('收起')}</button>
         </div>
         <div id="role-list" className="role-list">
           {!view.chat ? (
@@ -176,11 +207,25 @@ export function RolePanel() {
           ))}
         </div>
 
-        <form id="add-role-form" className="editor-card role-form">
+        <form
+          id="add-role-form"
+          className="editor-card role-form"
+          onSubmit={event => {
+            event.preventDefault()
+            // 原 addRoleFormEl submit → openAddPersonDialog；弹窗本体在
+            // <AddPersonModal/>（无当前群聊时由其自行忽略）
+            services.uiBus.emit('open-add-person')
+          }}
+        >
           <h3>{ui('添加人员')}</h3>
           <p className="tiny">{ui('从人员库批量选择，或临时添加只属于当前群聊的人员。')}</p>
-          {/* 选项由 peopleLibraryView 命令式填充（P4 收编前保留） */}
-          <select id="role-template-select" hidden></select>
+          {/* 遗留隐藏位：值无人读取，选项按 store 版本填充保留 DOM 契约 */}
+          <select id="role-template-select" hidden>
+            <option value="">{ui('不使用人员库，手动创建')}</option>
+            {getAllRoleTemplates(view.store).map(template => (
+              <option key={template.id} value={template.id}>{localizeRoleTemplate(template, language).name}</option>
+            ))}
+          </select>
           <button className="btn btn-primary" type="submit">{ui('添加人员')}</button>
         </form>
       </div>

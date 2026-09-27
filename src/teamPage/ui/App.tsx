@@ -2,15 +2,21 @@ import { Toaster } from '@/teamPage/ui/components/ui/sonner'
 import { ChatHeader } from './components/chat/ChatHeader'
 import { Messages } from './components/chat/Messages'
 import { Composer } from './components/composer/Composer'
+import { ExternalModelsModal } from './components/models/ExternalModelsModal'
 import { AllNotesModal } from './components/notes/AllNotesModal'
 import { NotesPanel } from './components/notes/NotesPanel'
+import { OrchestrationModal } from './components/orchestration/OrchestrationModal'
 import { RolePanel } from './components/panel/RolePanel'
+import { AddPersonModal } from './components/people/AddPersonModal'
+import { BuiltinTemplateDetailModal } from './components/people/BuiltinTemplateDetailModal'
+import { PeopleLibraryModal } from './components/people/PeopleLibraryModal'
+import { PersonTemplateModal } from './components/people/PersonTemplateModal'
+import { TemporaryPersonModal } from './components/people/TemporaryPersonModal'
 import { FloatingWindowChrome } from './components/shell/FloatingWindowChrome'
+import { GroupTemplateModal } from './components/shell/GroupTemplateModal'
 import { IframeLayer } from './components/shell/IframeLayer'
 import { LanguageSync } from './components/shell/LanguageSync'
 import { Rail } from './components/shell/Rail'
-import { LegacySlot } from './components/shell/LegacySlot'
-import { MODALS_INNER_HTML } from './components/shell/legacyMarkup'
 import { Sidebar } from './components/shell/Sidebar'
 
 /*
@@ -23,9 +29,11 @@ import { Sidebar } from './components/shell/Sidebar'
  *   参与 body 布局，fragment 顺序即 DOM 顺序。
  * - `.app-shell` 自带 transform 定位，modals / notes / iframe-host 必须留在
  *   #app 之外（transform 会创建包含块，fixed 后代会被劫持）。
- * - LegacySlot 区域（弹窗群）尚未 React 化，由 vanilla 视图按 id 写入，slot
- *   永不重渲（role-panel 已于 P3 由 <RolePanel/>、notes 面板与全部笔记
- *   弹窗由 <NotesPanel/> / <AllNotesModal/> 接管）。
+ * - 弹窗群已全部 React 化（role-panel 已于 P3 由 <RolePanel/>、notes 面板
+ *   与全部笔记弹窗由 <NotesPanel/> / <AllNotesModal/> 接管；人员库 5 弹窗
+ *   已于 P4a 由 people/ 下组件接管，外部模型弹窗已于 P4b 由
+ *   <ExternalModelsModal/> 接管，编排三弹窗已于 P4c 由 <OrchestrationModal/>
+ *   接管，群模板弹窗已于 P4d 由 <GroupTemplateModal/> 接管）。
  * - workspace 内的 ChatHeader / Messages / Composer 与 aside RolePanel 是
  *   真组件（P2a / P2b / P2c / P3 落地）。
  */
@@ -51,7 +59,14 @@ export function App() {
       <button id="window-launcher" className="launcher" type="button" aria-label="打开 OpenTeam" hidden>⌁</button>
 
       <AllNotesModal />
-      <LegacySlot html={MODALS_INNER_HTML} />
+      <PeopleLibraryModal />
+      <PersonTemplateModal />
+      <BuiltinTemplateDetailModal />
+      <AddPersonModal />
+      <TemporaryPersonModal />
+      <ExternalModelsModal />
+      <OrchestrationModal />
+      <GroupTemplateModal />
 
       <IframeLayer />
       <div id="error" className="toast" hidden></div>

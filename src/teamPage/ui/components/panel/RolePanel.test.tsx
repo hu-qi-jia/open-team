@@ -3,7 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import userEvent from '@testing-library/user-event'
-import { act, waitFor } from '@testing-library/react'
+import { act, fireEvent, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
 import type { GroupChat, GroupRole, OpenTeamStore } from '../../../../group/types'
@@ -32,9 +32,10 @@ describe('team page role panel boundary', () => {
     expect(entrySource).not.toContain('renderRolePanel')
     expect(existsSync(resolve(process.cwd(), 'src/teamPage/rolePanelView.ts'))).toBe(false)
     expect(existsSync(resolve(process.cwd(), 'src/teamPage/rolePanelView.test.ts'))).toBe(false)
-    // 抽屉的添加人员表单与登录按钮仍由 vanilla 按 id 绑定（P4 收编前）
-    expect(entrySource).toContain('roleTemplateSelectEl')
-    expect(entrySource).toContain('addRoleFormEl')
+    // P4a 起添加人员表单由 RolePanel 自管（uiBus 'open-add-person'），
+    // 人员库视图模块不应再被入口引用
+    expect(entrySource).not.toContain('createPeopleLibraryView')
+    expect(entrySource).not.toContain('renderAddPersonDialog')
   })
 })
 
@@ -171,6 +172,60 @@ describe('team page role panel cards', () => {
     const refresh = document.querySelector<HTMLButtonElement>('[data-role-refresh="role-1"]')
     expect(refresh?.disabled).toBe(true)
     expect(refresh?.title).toBe('API 成员无需刷新窗口')
+  })
+})
+
+describe('team page role panel drawer chrome', () => {
+  it('closes the drawer from the collapse button', async () => {
+    const user = userEvent.setup()
+    const { state } = renderPanel()
+    act(() => {
+      state.peopleDrawerOpen = true
+      notifyAppState()
+    })
+    await waitFor(() => expect(document.querySelector('aside.role-panel')?.className).toContain('open'))
+
+    await user.click(document.querySelector<HTMLButtonElement>('#close-people-drawer')!)
+
+    expect(state.peopleDrawerOpen).toBe(false)
+    await waitFor(() => expect(document.querySelector('aside.role-panel')?.className).not.toContain('open'))
+  })
+
+  it('keeps the drawer open for clicks inside it, on the toggle, and inside radix portals', async () => {
+    const { state } = renderPanel()
+    act(() => {
+      state.peopleDrawerOpen = true
+      notifyAppState()
+    })
+    await waitFor(() => expect(document.querySelector('aside.role-panel')?.className).toContain('open'))
+
+    // 开关按钮属于 ChatHeader，本组件单独渲染时手动补一枚
+    const toggle = document.createElement('button')
+    toggle.id = 'toggle-people-drawer'
+    document.body.append(toggle)
+    const radixPortal = document.createElement('div')
+    radixPortal.setAttribute('data-radix-popper-content-wrapper', '')
+    document.body.append(radixPortal)
+
+    fireEvent.click(document.querySelector('aside.role-panel')!)
+    fireEvent.click(toggle)
+    fireEvent.click(radixPortal)
+    expect(state.peopleDrawerOpen).toBe(true)
+
+    fireEvent.click(document.body)
+    await waitFor(() => expect(state.peopleDrawerOpen).toBe(false))
+    toggle.remove()
+    radixPortal.remove()
+  })
+
+  it('opens the AI site login page through the services bridge', async () => {
+    const user = userEvent.setup()
+    const { services } = renderPanel()
+
+    const login = document.querySelector<HTMLButtonElement>('#open-gemini-login')
+    expect(login?.getAttribute('aria-label')).toBe('AI 站点登录')
+    await user.click(login!)
+    expect(services.openAiSiteLogin).toHaveBeenCalledTimes(1)
   })
 })
 

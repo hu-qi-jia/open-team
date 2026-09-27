@@ -1,7 +1,8 @@
 import { createContext, useContext, type ReactNode } from 'react'
 import type { createIframeHost } from '../../iframeHost'
+import type { LoadX6 } from '../../orchestrationCanvas'
 import type { TeamPageRuntimeClient } from '../../runtimeClient'
-import type { GroupChat, GroupMessage, GroupRole } from '../../../group/types'
+import type { GroupChat, GroupMessage, GroupRole, OpenTeamStore } from '../../../group/types'
 import type { ImageAttachmentRepository } from '../../../shared/imageAttachmentRepository'
 import type { OpenTeamLogger } from '../../../shared/logger'
 import type { UiBus } from '../lib/uiBus'
@@ -34,6 +35,25 @@ export interface TeamPageServices {
   }
   /** 发送前自动恢复人员连接（roleRecoveryController.reconnectRolesForSend） */
   reconnectRolesForSend(chat: GroupChat, roles: GroupRole[]): Promise<void>
+  /**
+   * 打开当前选中人员对应 AI 站点的登录页（成员抽屉 ◇ 按钮，P4d 起自
+   * teamUiController 收编）。站点在装配层取「选中人员的 chatSite，缺省
+   * 回 settings.defaultChatSite」，chrome.tabs.create 保持在组件树之外。
+   */
+  openAiSiteLogin(): void
+  /**
+   * 应用 background 随命令响应一并返回的完整 store（index.applyStore）。
+   * 文档化的例外入口：正常数据流是 background 推送 applyStore，组件只读；
+   * 仅当命令响应自带新 store（模板建人 GROUP_ROLES_CREATE_BATCH、自动编排
+   * GROUP_ORCHESTRATION_AUTO_GENERATE）且组件需要立刻读到新角色时使用——
+   * 与推送同源同语义，不引入第二写方。
+   */
+  applyStore(store: OpenTeamStore): void
+  /**
+   * X6 动态加载器（orchestrationCanvas.LoadX6）。生产环境保持 undefined
+   * （画布走真实动态 import）；仅 RTL 测试注入 MockGraph。
+   */
+  loadX6?: LoadX6
   /**
    * 输入区桥（P2c）：Composer 挂载后注册命令式 API（插入提及 / 设置引用），
    * 供 messageActions 与未迁移的 vanilla 视图（rolePanelView）复用。
@@ -75,8 +95,6 @@ export interface TeamPageServices {
     stopRoleReply(role: GroupRole): Promise<void>
     /** 跳转到角色原始 iframe（roleRecoveryController.focusRoleFrame） */
     focusRoleFrame(chatId: string, roleId: string | undefined): void
-    /** 编排状态浮层（orchestrationStatusView 工厂，P4 收编前保留） */
-    renderOrchestrationStatus(): HTMLElement | undefined
   }
 }
 

@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import type { GroupChat, RoomMode } from '../../../../group/types'
+import type { GroupChat, GroupRole, RoomMode } from '../../../../group/types'
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import type { TeamPageState } from '../../../appState'
 import { useServices } from '../../context/ServicesContext'
@@ -9,14 +9,14 @@ import { showError } from '../../lib/toast'
 
 /*
  * 聊天头（原 chatHeaderView 整体 React 化）。区域分两种：
- * - 响应区：标题 / 副标题 / 状态 / 免@ / 成员抽屉开关 / 笔记开关 /
- *   编排显隐——全部由 selector 驱动；成员抽屉的点击仍在 vanilla
- *   （teamUiController），其 render() 会经 notifyAppState 回流到本组件
- *   的 aria 状态。笔记开关（P3 起）直接翻转 appState.notesPanelOpen，
- *   aria-expanded 与 <NotesPanel/> 同源。
- * - 静态控制区（memo-true）：主题切换 / 恢复会话——vanilla 模块在启动时
- *   对它们绑事件并写属性（themeController 写 aria-pressed），React 永不
- *   重渲染这一块，避免覆写。
+ * - 响应区：标题 / 副标题 / 状态 / 免@ / 恢复会话 / 成员抽屉开关 / 笔记
+ *   开关 / 编排显隐——全部由 selector 驱动、React 自持事件（P4d 起
+ *   成员抽屉开关与恢复会话从 teamUiController 收编：前者翻转
+ *   appState.peopleDrawerOpen，后者走 services.iframeHost.restoreChat +
+ *   GROUP_ROLE_RECOVER，与原 controller 逐行同义）。笔记开关（P3 起）
+ *   直接翻转 appState.notesPanelOpen，aria-expanded 与 <NotesPanel/> 同源。
+ * - 静态控制区（memo-true）：主题切换——themeController 在启动时对它绑
+ *   事件并写属性（aria-pressed），React 永不重渲染这一块，避免覆写。
  * 免@ 为新增 React 事件（原按钮由 chatHeaderView 动态插入）。
  */
 export function ChatHeader() {
@@ -52,6 +52,29 @@ export function ChatHeader() {
     notifyAppState()
   }
 
+  function togglePeopleDrawer(): void {
+    const state = getAppState()
+    state.peopleDrawerOpen = !state.peopleDrawerOpen
+    notifyAppState()
+  }
+
+  // 原teamUiController #restore-chat：重摆全部站点人员 iframe，未分配到
+  // 窗口的走 GROUP_ROLE_RECOVER 补救（API 成员不参与）
+  function restoreChat(): void {
+    const state = getAppState()
+    const chat = state.selectedChatId ? state.store.chatsById[state.selectedChatId] : undefined
+    if (!chat) return
+    const roles = chat.roleIds
+      .map(roleId => state.store.rolesById[roleId])
+      .filter((role): role is GroupRole => Boolean(role) && role.modelSource !== 'external')
+    services.log.info('ui:restore-chat', { chatId: chat.id, roleIds: roles.map(role => role.id) })
+    const restoredFrames = services.iframeHost.restoreChat({ ...chat, roleIds: roles.map(role => role.id) }, roles)
+    const assignedRoleIds = new Set(restoredFrames.filter(frame => frame.status === 'assigned').map(frame => frame.roleId))
+    const rolesToRecover = roles.filter(role => !assignedRoleIds.has(role.id))
+    Promise.all(rolesToRecover.map(role => services.runCommand('GROUP_ROLE_RECOVER', { chatId: chat.id, roleId: role.id })))
+      .catch(error => showError(error instanceof Error ? error.message : String(error)))
+  }
+
   return (
     <header className="chat-header">
       <div className="chat-title-block">
@@ -65,7 +88,20 @@ export function ChatHeader() {
       <div className="chat-row">
         <HeaderStaticControls />
 
-        <button id="open-orchestration" className="btn drawer-summary" type="button" hidden={chatMode !== 'collaborative'}>
+        <button
+          id="restore-chat"
+          className="btn"
+          type="button"
+          onClick={restoreChat}
+        >{ui('恢复会话')}</button>
+
+        <button
+          id="open-orchestration"
+          className="btn drawer-summary"
+          type="button"
+          hidden={chatMode !== 'collaborative'}
+          onClick={() => services.uiBus.emit('open-orchestration')}
+        >
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
             <path d="M5 7.5h4.5v4H5z" />
             <path d="M14.5 4.5H19v4h-4.5z" />
@@ -95,6 +131,7 @@ export function ChatHeader() {
           disabled={chatMode === undefined}
           aria-label={ui(drawerOpen ? '收起成员面板' : '打开成员面板')}
           aria-expanded={drawerOpen}
+          onClick={togglePeopleDrawer}
         >{ui(`成员 ${roleCount}`)}</button>
 
         <button
@@ -115,26 +152,22 @@ export function ChatHeader() {
 }
 
 /*
- * 主题切换 / 恢复会话：id 与原 team.html 一致，vanilla 模块
- * （themeController / teamUiController）按 id 绑事件并写属性，
- * memo(..., () => true) 保证 React 重渲永不触碰这块 DOM。
- * 笔记开关已移出（P3 起由上方响应区渲染，aria-expanded 随 store）。
+ * 主题切换：id 与原 team.html 一致，themeController 按 id 绑事件并写
+ * 属性（aria-pressed），memo(..., () => true) 保证 React 重渲永不触碰
+ * 这块 DOM。恢复会话已移出（P4d 起由上方响应区渲染并自持事件）。
  */
 const HeaderStaticControls = memo(function HeaderStaticControls() {
   return (
-    <>
-      <div id="theme-switch" className="theme-switch" role="group" aria-label="界面模式">
-        <button id="theme-light" className="theme-option" type="button" aria-pressed="false" title="浅色模式">
-          <span aria-hidden="true">☼</span>
-          <span>浅色</span>
-        </button>
-        <button id="theme-dark" className="theme-option" type="button" aria-pressed="true" title="深色模式">
-          <span aria-hidden="true">☾</span>
-          <span>深色</span>
-        </button>
-      </div>
-      <button id="restore-chat" className="btn" type="button">恢复会话</button>
-    </>
+    <div id="theme-switch" className="theme-switch" role="group" aria-label="界面模式">
+      <button id="theme-light" className="theme-option" type="button" aria-pressed="false" title="浅色模式">
+        <span aria-hidden="true">☼</span>
+        <span>浅色</span>
+      </button>
+      <button id="theme-dark" className="theme-option" type="button" aria-pressed="true" title="深色模式">
+        <span aria-hidden="true">☾</span>
+        <span>深色</span>
+      </button>
+    </div>
   )
 }, () => true)
 

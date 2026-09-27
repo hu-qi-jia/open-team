@@ -3,10 +3,9 @@ import { useT } from '../../hooks/useT'
 import { SettingsMenu } from './SettingsMenu'
 
 /*
- * 左侧导航栏。#open-all-notes（P3 起）点击经 uiBus 触发 <AllNotesModal/>
- * 打开；#open-people-library / #open-external-models 仍由 vanilla 视图注册
- * 事件（peopleLibraryView / externalModelsView 的 registerXEvents 按 id
- * 查找），id 与 SVG 必须与原 team.html 逐字一致；底部设置钮已由
+ * 左侧导航栏。#open-all-notes（P3 起）、#open-people-library（P4a 起）与
+ * #open-external-models（P4b 起）点击经 uiBus 触发对应 React 弹窗，
+ * id 与 SVG 必须与原 team.html 逐字一致；底部设置钮已由
  * <SettingsMenu/> 接管。
  */
 export function Rail() {
@@ -29,13 +28,13 @@ export function Rail() {
             <rect x="14" y="14" width="5" height="5" rx="1" />
           </svg>
         </button>
-        <button id="open-people-library" className="rail-btn" type="button" aria-label={t('打开人员库')} data-tooltip={t('人员库')}>
+        <button id="open-people-library" className="rail-btn" type="button" aria-label={t('打开人员库')} data-tooltip={t('人员库')} onClick={() => services.uiBus.emit('open-people-library')}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
             <path d="M12 12.2a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z" />
             <path d="M5.7 19.2c.65-3.3 2.82-5.15 6.3-5.15s5.65 1.85 6.3 5.15" />
           </svg>
         </button>
-        <button id="open-external-models" className="rail-btn" type="button" aria-label={t('添加大模型')} data-tooltip={t('添加大模型')}>
+        <button id="open-external-models" className="rail-btn" type="button" aria-label={t('添加大模型')} data-tooltip={t('添加大模型')} onClick={() => services.uiBus.emit('open-external-models')}>
           <svg aria-hidden="true" viewBox="0 0 24 24" fill="none">
             <path d="m12 4.5 6.2 3.55v7.1L12 18.7l-6.2-3.55v-7.1L12 4.5Z" />
             <path d="m5.95 8.25 6.05 3.45 6.05-3.45" />

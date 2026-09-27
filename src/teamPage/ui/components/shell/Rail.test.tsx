@@ -11,11 +11,11 @@ afterEach(() => {
 })
 
 /*
- * Rail 中间三钮仍由 vanilla 视图按 id 绑定（allNotes / peopleLibrary /
- * externalModels 的 registerXEvents），这里锁 id 与语义标签的契约。
+ * Rail 中间三钮点击经 uiBus 打开对应 React 弹窗（P3/P4a/P4b 起），
+ * 这里锁 id 与语义标签的契约。
  */
 describe('Rail', () => {
-  it('renders the chat button plus the three vanilla-bound rail buttons', () => {
+  it('renders the chat button plus the three uiBus rail buttons', () => {
     renderWithServices(<Rail />, {})
 
     expect(screen.getByRole('button', { name: '群聊' })).toBeTruthy()

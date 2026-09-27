@@ -7,6 +7,9 @@ export interface FloatingPanelGeometryOptions {
   minWidth: number
   minHeight: number
   margin: number
+  /** 缩放尺寸硬上限（如编排状态卡的 720×620；不传保持仅视口约束） */
+  maxWidth?: number
+  maxHeight?: number
   /** 拖拽/缩放起止回调：组件用它切 dragging / resizing 类（原 classList 对译） */
   onDraggingChange?(dragging: boolean): void
   onResizingChange?(resizing: boolean): void
@@ -174,9 +177,11 @@ function movePanelTo(panel: HTMLElement, margin: number, left: number, top: numb
   panel.style.bottom = 'auto'
 }
 
-function resizePanelTo(panel: HTMLElement, options: Pick<FloatingPanelGeometryOptions, 'minWidth' | 'minHeight' | 'margin'>, width: number, height: number, left: number, top: number): void {
-  const maxWidth = Math.max(options.minWidth, window.innerWidth - left - options.margin)
-  const maxHeight = Math.max(options.minHeight, window.innerHeight - top - options.margin)
+function resizePanelTo(panel: HTMLElement, options: Pick<FloatingPanelGeometryOptions, 'minWidth' | 'minHeight' | 'maxWidth' | 'maxHeight' | 'margin'>, width: number, height: number, left: number, top: number): void {
+  const viewportMaxWidth = Math.max(options.minWidth, window.innerWidth - left - options.margin)
+  const viewportMaxHeight = Math.max(options.minHeight, window.innerHeight - top - options.margin)
+  const maxWidth = options.maxWidth !== undefined ? Math.min(viewportMaxWidth, Math.max(options.minWidth, options.maxWidth)) : viewportMaxWidth
+  const maxHeight = options.maxHeight !== undefined ? Math.min(viewportMaxHeight, Math.max(options.minHeight, options.maxHeight)) : viewportMaxHeight
   panel.style.width = `${Math.min(Math.max(options.minWidth, width), maxWidth)}px`
   panel.style.height = `${Math.min(Math.max(options.minHeight, height), maxHeight)}px`
   panel.style.right = 'auto'

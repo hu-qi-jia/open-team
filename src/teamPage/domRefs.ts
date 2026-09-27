@@ -3,100 +3,9 @@ export interface TeamPageDomRefs {
   closeWindowEl: HTMLButtonElement
   toggleWindowSizeEl: HTMLButtonElement
   toggleFullscreenEl: HTMLButtonElement
-  roleTemplateSelectEl: HTMLSelectElement
-  templateListEl: HTMLElement
   errorEl: HTMLElement
-  templateNameEl: HTMLInputElement
-  templateDescriptionEl: HTMLTextAreaElement
-  templatePromptEl: HTMLTextAreaElement
-  templateAiDescriptionEl: HTMLTextAreaElement
-  generateTemplatePersonaEl: HTMLButtonElement
-  templatePersonaGenerationStatusEl: HTMLElement
-  templateFormTitleEl: HTMLElement
   themeLightEl: HTMLButtonElement
   themeDarkEl: HTMLButtonElement
-  openPeopleLibraryEl: HTMLButtonElement
-  openExternalModelsEl: HTMLButtonElement
-  openOrchestrationEl: HTMLButtonElement
-  closeOrchestrationEl: HTMLButtonElement
-  orchestrationModalEl: HTMLElement
-  orchestrationAutoModalEl: HTMLElement
-  orchestrationTaskEl: HTMLTextAreaElement
-  autoOrchestrationEl: HTMLButtonElement
-  openOrchestrationTemplateEl: HTMLButtonElement
-  orchestrationTemplateModalEl: HTMLElement
-  closeOrchestrationTemplateEl: HTMLButtonElement
-  orchestrationTemplateContentEl: HTMLElement
-  closeAutoOrchestrationEl: HTMLButtonElement
-  orchestrationAutoContentEl: HTMLElement
-  orchestrationPeopleListEl: HTMLElement
-  arrangeOrchestrationEl: HTMLButtonElement
-  orchestrationCanvasEl: HTMLElement
-  orchestrationHintEl: HTMLElement
-  orchestrationStageSettingsEl: HTMLElement
-  orchestrationReviewSettingsEl: HTMLElement
-  orchestrationMaxRoundsEl: HTMLInputElement
-  saveOrchestrationEl: HTMLButtonElement
-  runOrchestrationEl: HTMLButtonElement
-  closeExternalModelsEl: HTMLButtonElement
-  externalModelsModalEl: HTMLElement
-  externalModelsListEl: HTMLElement
-  externalModelFormEl: HTMLFormElement
-  externalModelIdEl: HTMLInputElement
-  externalModelNameEl: HTMLInputElement
-  externalModelFormatEl: HTMLSelectElement
-  externalModelBaseUrlEl: HTMLInputElement
-  externalModelApiKeyEl: HTMLInputElement
-  externalModelModelNameEl: HTMLInputElement
-  resetExternalModelFormEl: HTMLButtonElement
-  closePeopleLibraryEl: HTMLButtonElement
-  peopleLibraryModalEl: HTMLElement
-  personTemplateModalEl: HTMLElement
-  addPersonModalEl: HTMLElement
-  temporaryPersonModalEl: HTMLElement
-  peopleLibrarySummaryEl: HTMLElement
-  peopleLibraryListEl: HTMLElement
-  peopleLibraryPaginationEl: HTMLElement
-  peopleLibrarySearchEl: HTMLInputElement
-  peopleLibraryCategoryFilterEl: HTMLElement
-  peopleLibraryBuiltinTabEl: HTMLButtonElement
-  peopleLibraryCustomTabEl: HTMLButtonElement
-  addLibraryPeopleListEl: HTMLElement
-  addPersonSearchEl: HTMLInputElement
-  addPersonCategoryFilterEl: HTMLElement
-  addPersonBuiltinTabEl: HTMLButtonElement
-  addPersonCustomTabEl: HTMLButtonElement
-  builtinTemplateDetailModalEl: HTMLElement
-  builtinTemplateDetailTitleEl: HTMLElement
-  builtinTemplateDetailMetaEl: HTMLElement
-  builtinTemplateDetailPromptEl: HTMLElement
-  closeBuiltinTemplateDetailEl: HTMLButtonElement
-  newTemplateEl: HTMLButtonElement
-  closePersonTemplateEl: HTMLButtonElement
-  closeAddPersonEl: HTMLButtonElement
-  openTemporaryPersonEl: HTMLButtonElement
-  closeTemporaryPersonEl: HTMLButtonElement
-  addRoleFormEl: HTMLFormElement
-  addLibraryPeopleFormEl: HTMLFormElement
-  addTemporaryPersonFormEl: HTMLFormElement
-  peopleLibraryFormEl: HTMLFormElement
-  templateSiteGeminiEl: HTMLInputElement
-  templateSiteChatGptEl: HTMLInputElement
-  templateSiteClaudeEl: HTMLInputElement
-  templateSiteDeepSeekEl: HTMLInputElement
-  templateSiteGrokEl: HTMLInputElement
-  templateSiteExternalEl: HTMLInputElement
-  templateExternalModelFieldEl: HTMLElement
-  templateExternalModelSelectEl: HTMLSelectElement
-  templateChatGptGptsFieldEl: HTMLElement
-  templateChatGptGptsUrlEl: HTMLInputElement
-  templateGrokProjectFieldEl: HTMLElement
-  templateGrokProjectUrlEl: HTMLInputElement
-  temporaryPersonNameEl: HTMLInputElement
-  temporaryPersonDescriptionEl: HTMLTextAreaElement
-  temporaryPersonPromptEl: HTMLTextAreaElement
-  togglePeopleDrawerEl: HTMLButtonElement
-  rolePanelEl: HTMLElement
   windowLauncherEl: HTMLButtonElement
   windowResizeHandleEl: HTMLButtonElement
   iframeHostEl: HTMLElement
@@ -108,106 +17,19 @@ export function requireElement<T extends Element>(selector: string): T {
   return element
 }
 
+// P4a 起人员库 5 弹窗、P4b 起外部模型弹窗、P4c 起编排弹窗与状态浮层、
+// P4d 起群模板弹窗/成员抽屉开关/恢复会话由 React 组件持有 DOM，不再进
+// domRefs；剩余条目全部是仍由 vanilla 命令式模块（floatingWindow /
+// themeController / iframeHost）直接驱动的元素。
 export function createTeamPageDomRefs(): TeamPageDomRefs {
   return {
     appShellEl: requireElement<HTMLElement>('#app'),
     closeWindowEl: requireElement<HTMLButtonElement>('#close-window'),
     toggleWindowSizeEl: requireElement<HTMLButtonElement>('#toggle-window-size'),
     toggleFullscreenEl: requireElement<HTMLButtonElement>('#toggle-fullscreen'),
-    roleTemplateSelectEl: requireElement<HTMLSelectElement>('#role-template-select'),
-    templateListEl: requireElement<HTMLElement>('#template-list'),
     errorEl: requireElement<HTMLElement>('#error'),
-    templateNameEl: requireElement<HTMLInputElement>('#template-name'),
-    templateDescriptionEl: requireElement<HTMLTextAreaElement>('#template-description'),
-    templatePromptEl: requireElement<HTMLTextAreaElement>('#template-prompt'),
-    templateAiDescriptionEl: requireElement<HTMLTextAreaElement>('#template-ai-description'),
-    generateTemplatePersonaEl: requireElement<HTMLButtonElement>('#generate-template-persona'),
-    templatePersonaGenerationStatusEl: requireElement<HTMLElement>('#template-persona-generation-status'),
-    templateFormTitleEl: requireElement<HTMLElement>('#template-form-title'),
     themeLightEl: requireElement<HTMLButtonElement>('#theme-light'),
     themeDarkEl: requireElement<HTMLButtonElement>('#theme-dark'),
-    openPeopleLibraryEl: requireElement<HTMLButtonElement>('#open-people-library'),
-    openExternalModelsEl: requireElement<HTMLButtonElement>('#open-external-models'),
-    openOrchestrationEl: requireElement<HTMLButtonElement>('#open-orchestration'),
-    closeOrchestrationEl: requireElement<HTMLButtonElement>('#close-orchestration'),
-    orchestrationModalEl: requireElement<HTMLElement>('#orchestration-modal'),
-    orchestrationAutoModalEl: requireElement<HTMLElement>('#orchestration-auto-modal'),
-    orchestrationTaskEl: requireElement<HTMLTextAreaElement>('#orchestration-task'),
-    autoOrchestrationEl: requireElement<HTMLButtonElement>('#auto-orchestration'),
-    openOrchestrationTemplateEl: requireElement<HTMLButtonElement>('#open-orchestration-template'),
-    orchestrationTemplateModalEl: requireElement<HTMLElement>('#orchestration-template-modal'),
-    closeOrchestrationTemplateEl: requireElement<HTMLButtonElement>('#close-orchestration-template'),
-    orchestrationTemplateContentEl: requireElement<HTMLElement>('#orchestration-template-content'),
-    closeAutoOrchestrationEl: requireElement<HTMLButtonElement>('#close-auto-orchestration'),
-    orchestrationAutoContentEl: requireElement<HTMLElement>('#orchestration-auto-content'),
-    orchestrationPeopleListEl: requireElement<HTMLElement>('#orchestration-people-list'),
-    arrangeOrchestrationEl: requireElement<HTMLButtonElement>('#arrange-orchestration'),
-    orchestrationCanvasEl: requireElement<HTMLElement>('#orchestration-stage-canvas'),
-    orchestrationHintEl: requireElement<HTMLElement>('#orchestration-empty-hint'),
-    orchestrationStageSettingsEl: requireElement<HTMLElement>('#orchestration-stage-settings'),
-    orchestrationReviewSettingsEl: requireElement<HTMLElement>('#orchestration-review-settings'),
-    orchestrationMaxRoundsEl: requireElement<HTMLInputElement>('#orchestration-max-rounds'),
-    saveOrchestrationEl: requireElement<HTMLButtonElement>('#save-orchestration'),
-    runOrchestrationEl: requireElement<HTMLButtonElement>('#run-orchestration'),
-    closeExternalModelsEl: requireElement<HTMLButtonElement>('#close-external-models'),
-    externalModelsModalEl: requireElement<HTMLElement>('#external-models-modal'),
-    externalModelsListEl: requireElement<HTMLElement>('#external-models-list'),
-    externalModelFormEl: requireElement<HTMLFormElement>('#external-model-form'),
-    externalModelIdEl: requireElement<HTMLInputElement>('#external-model-id'),
-    externalModelNameEl: requireElement<HTMLInputElement>('#external-model-name'),
-    externalModelFormatEl: requireElement<HTMLSelectElement>('#external-model-format'),
-    externalModelBaseUrlEl: requireElement<HTMLInputElement>('#external-model-base-url'),
-    externalModelApiKeyEl: requireElement<HTMLInputElement>('#external-model-api-key'),
-    externalModelModelNameEl: requireElement<HTMLInputElement>('#external-model-model-name'),
-    resetExternalModelFormEl: requireElement<HTMLButtonElement>('#reset-external-model-form'),
-    closePeopleLibraryEl: requireElement<HTMLButtonElement>('#close-people-library'),
-    peopleLibraryModalEl: requireElement<HTMLElement>('#people-library-modal'),
-    personTemplateModalEl: requireElement<HTMLElement>('#person-template-modal'),
-    addPersonModalEl: requireElement<HTMLElement>('#add-person-modal'),
-    temporaryPersonModalEl: requireElement<HTMLElement>('#temporary-person-modal'),
-    peopleLibrarySummaryEl: requireElement<HTMLElement>('#people-library-summary'),
-    peopleLibraryListEl: requireElement<HTMLElement>('#people-library-list'),
-    peopleLibraryPaginationEl: requireElement<HTMLElement>('#people-library-pagination'),
-    peopleLibrarySearchEl: requireElement<HTMLInputElement>('#people-library-search'),
-    peopleLibraryCategoryFilterEl: requireElement<HTMLElement>('#people-library-category-filter'),
-    peopleLibraryBuiltinTabEl: requireElement<HTMLButtonElement>('#people-library-tab-builtin'),
-    peopleLibraryCustomTabEl: requireElement<HTMLButtonElement>('#people-library-tab-custom'),
-    addLibraryPeopleListEl: requireElement<HTMLElement>('#add-library-people-list'),
-    addPersonSearchEl: requireElement<HTMLInputElement>('#add-person-search'),
-    addPersonCategoryFilterEl: requireElement<HTMLElement>('#add-person-category-filter'),
-    addPersonBuiltinTabEl: requireElement<HTMLButtonElement>('#add-person-tab-builtin'),
-    addPersonCustomTabEl: requireElement<HTMLButtonElement>('#add-person-tab-custom'),
-    builtinTemplateDetailModalEl: requireElement<HTMLElement>('#builtin-template-detail-modal'),
-    builtinTemplateDetailTitleEl: requireElement<HTMLElement>('#builtin-template-detail-title'),
-    builtinTemplateDetailMetaEl: requireElement<HTMLElement>('#builtin-template-detail-meta'),
-    builtinTemplateDetailPromptEl: requireElement<HTMLElement>('#builtin-template-detail-prompt'),
-    closeBuiltinTemplateDetailEl: requireElement<HTMLButtonElement>('#close-builtin-template-detail'),
-    newTemplateEl: requireElement<HTMLButtonElement>('#new-template'),
-    closePersonTemplateEl: requireElement<HTMLButtonElement>('#close-person-template'),
-    closeAddPersonEl: requireElement<HTMLButtonElement>('#close-add-person'),
-    openTemporaryPersonEl: requireElement<HTMLButtonElement>('#open-temporary-person'),
-    closeTemporaryPersonEl: requireElement<HTMLButtonElement>('#close-temporary-person'),
-    addRoleFormEl: requireElement<HTMLFormElement>('#add-role-form'),
-    addLibraryPeopleFormEl: requireElement<HTMLFormElement>('#add-library-people-form'),
-    addTemporaryPersonFormEl: requireElement<HTMLFormElement>('#add-temporary-person-form'),
-    peopleLibraryFormEl: requireElement<HTMLFormElement>('#people-library-form'),
-    templateSiteGeminiEl: requireElement<HTMLInputElement>('#template-site-gemini'),
-    templateSiteChatGptEl: requireElement<HTMLInputElement>('#template-site-chatgpt'),
-    templateSiteClaudeEl: requireElement<HTMLInputElement>('#template-site-claude'),
-    templateSiteDeepSeekEl: requireElement<HTMLInputElement>('#template-site-deepseek'),
-    templateSiteGrokEl: requireElement<HTMLInputElement>('#template-site-grok'),
-    templateSiteExternalEl: requireElement<HTMLInputElement>('#template-site-external'),
-    templateExternalModelFieldEl: requireElement<HTMLElement>('#template-external-model-field'),
-    templateExternalModelSelectEl: requireElement<HTMLSelectElement>('#template-external-model-select'),
-    templateChatGptGptsFieldEl: requireElement<HTMLElement>('#template-chatgpt-gpts-field'),
-    templateChatGptGptsUrlEl: requireElement<HTMLInputElement>('#template-chatgpt-gpts-url'),
-    templateGrokProjectFieldEl: requireElement<HTMLElement>('#template-grok-project-field'),
-    templateGrokProjectUrlEl: requireElement<HTMLInputElement>('#template-grok-project-url'),
-    temporaryPersonNameEl: requireElement<HTMLInputElement>('#temporary-person-name'),
-    temporaryPersonDescriptionEl: requireElement<HTMLTextAreaElement>('#temporary-person-description'),
-    temporaryPersonPromptEl: requireElement<HTMLTextAreaElement>('#temporary-person-prompt'),
-    togglePeopleDrawerEl: requireElement<HTMLButtonElement>('#toggle-people-drawer'),
-    rolePanelEl: requireElement<HTMLElement>('.role-panel'),
     windowLauncherEl: requireElement<HTMLButtonElement>('#window-launcher'),
     windowResizeHandleEl: requireElement<HTMLButtonElement>('#window-resize-handle'),
     iframeHostEl: requireElement<HTMLElement>('#iframe-host'),

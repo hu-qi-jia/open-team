@@ -2,9 +2,10 @@ import { render, type RenderOptions } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { vi } from 'vitest'
 import { createTeamPageState, type TeamPageState } from '../../appState'
+import type { OpenTeamStore } from '../../../group/types'
 import type { ImageAttachmentRepository } from '../../../shared/imageAttachmentRepository'
 import { ServicesProvider, type TeamPageServices } from '../context/ServicesContext'
-import { bindAppState } from '../lib/appStore'
+import { bindAppState, notifyAppState } from '../lib/appStore'
 import { createUiBus } from '../lib/uiBus'
 
 /*
@@ -32,6 +33,15 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
       deleteChat: vi.fn(async () => undefined),
     },
     reconnectRolesForSend: vi.fn(async () => undefined),
+    openAiSiteLogin: vi.fn(),
+    // 与生产 applyStore 同语义：整引用替换 .store 并通知订阅者。调用期
+    // 才解引用 appState，因此晚于 renderWithServices 的 bindAppState 也成立。
+    applyStore: (nextStore: OpenTeamStore) => {
+      const state = boundState()
+      if (!state) return
+      state.store = nextStore
+      notifyAppState()
+    },
     composerBridge: {
       register: vi.fn(),
     },
@@ -46,10 +56,20 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
       retryRoleReply: vi.fn(async () => undefined),
       stopRoleReply: vi.fn(async () => undefined),
       focusRoleFrame: vi.fn(),
-      renderOrchestrationStatus: vi.fn((): HTMLElement | undefined => undefined),
     },
     ...overrides,
   }
+}
+
+let lastBoundState: TeamPageState | undefined
+
+/** 供 applyStore 假实现读取当前隔离 state（bindAppState 后才有值）。 */
+export function noteBoundStateForFakes(state: TeamPageState): void {
+  lastBoundState = state
+}
+
+function boundState(): TeamPageState | undefined {
+  return lastBoundState
 }
 
 export interface RenderWithServicesOptions extends RenderOptions {
@@ -66,6 +86,7 @@ export function renderWithServices(ui: ReactElement, options: RenderWithServices
   // 语言切换行为由 SettingsMenu 的专用用例显式覆盖。
   state.store.settings.language = language
   bindAppState(state)
+  noteBoundStateForFakes(state)
   const utils = render(
     <ServicesProvider services={services}>{ui}</ServicesProvider>,
     renderOptions,

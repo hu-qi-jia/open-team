@@ -8,8 +8,8 @@ import { App } from './App'
  *
  * - 明确不启用 StrictMode：开发期双挂载会初始化两遍命令式模块
  *   （iframeHost 会加载两次 AI 角色页、TipTap 重复挂载），代价过高。
- * - flushSync：P1 起 React 要先渲染 LegacySlot 占位容器（携带原 id），
- *   随后的 createTeamPageDomRefs() 才能取到全部元素；同步渲染保证时序。
+ * - flushSync：React 要先同步渲染出骨架 DOM（携带 domRefs 需要的全部
+ *   id），随后的 createTeamPageDomRefs() 才能取到元素；同步渲染保证时序。
  */
 export function mountTeamPageApp(services: TeamPageServices): void {
   const container = document.getElementById('root')

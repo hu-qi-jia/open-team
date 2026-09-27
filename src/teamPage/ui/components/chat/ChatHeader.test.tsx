@@ -7,7 +7,8 @@ import { cleanup } from '@testing-library/react'
 import type { GroupChat, GroupMessage, GroupRole } from '../../../../group/types'
 import { createTeamPageState } from '../../../appState'
 import { ChatHeader } from './ChatHeader'
-import { renderWithServices } from '../../test/TestProviders'
+import type { TeamPageServices } from '../../context/ServicesContext'
+import { createFakeServices, renderWithServices } from '../../test/TestProviders'
 import { notifyAppState } from '../../lib/appStore'
 
 afterEach(() => {
@@ -63,7 +64,8 @@ describe('ChatHeader', () => {
     await waitFor(() => expect(toggle.getAttribute('aria-pressed')).toBe('true'))
   })
 
-  it('reflects the vanilla-driven people drawer state through aria-expanded', async () => {
+  it('toggles the people drawer through appState and tracks it in aria-expanded', async () => {
+    const user = userEvent.setup()
     const { state } = renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
 
     const drawerToggle = document.querySelector<HTMLButtonElement>('#toggle-people-drawer')!
@@ -71,14 +73,18 @@ describe('ChatHeader', () => {
     expect(drawerToggle.disabled).toBe(false)
     expect(drawerToggle.getAttribute('aria-expanded')).toBe('false')
 
-    // teamUiController 的 vanilla 点击处理翻 peopleDrawerOpen 后调 render() → notifyAppState
-    state.peopleDrawerOpen = true
-    notifyAppState()
+    await user.click(drawerToggle)
 
+    expect(state.peopleDrawerOpen).toBe(true)
     await waitFor(() => {
       expect(drawerToggle.getAttribute('aria-expanded')).toBe('true')
       expect(drawerToggle.getAttribute('aria-label')).toBe('收起成员面板')
     })
+
+    await user.click(drawerToggle)
+
+    expect(state.peopleDrawerOpen).toBe(false)
+    await waitFor(() => expect(drawerToggle.getAttribute('aria-expanded')).toBe('false'))
   })
 
   it('renders the empty state when no chat is selected', () => {
@@ -93,13 +99,58 @@ describe('ChatHeader', () => {
     expect(document.querySelector<HTMLButtonElement>('#open-orchestration')?.hidden).toBe(true)
   })
 
-  it('keeps the vanilla-bound static controls mounted (theme switch, restore)', () => {
+  it('keeps the theme-switch static block mounted for themeController (restore moved out)', () => {
     renderWithServices(<ChatHeader />, { state: makeState('collaborative') })
 
     expect(document.querySelector('#theme-switch')).toBeTruthy()
     expect(document.querySelector('#theme-light')).toBeTruthy()
     expect(document.querySelector('#theme-dark')).toBeTruthy()
     expect(document.querySelector('#restore-chat')).toBeTruthy()
+  })
+
+  it('restores site-role frames and skips recovery for roles with an assigned iframe', async () => {
+    const user = userEvent.setup()
+    const restoreChat = vi.fn(() => [
+      makeFrame('role-1', 'assigned'),
+      makeFrame('role-2', 'assigned'),
+    ])
+    const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
+    const { state } = renderWithServices(<ChatHeader />, { services, state: makeStateWithRoles() })
+
+    await user.click(document.querySelector<HTMLButtonElement>('#restore-chat')!)
+
+    expect(restoreChat).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'chat-1', roleIds: ['role-1', 'role-2'] }),
+      [state.store.rolesById['role-1'], state.store.rolesById['role-2']],
+    )
+    expect(vi.mocked(services.log.info)).toHaveBeenCalledWith('ui:restore-chat', { chatId: 'chat-1', roleIds: ['role-1', 'role-2'] })
+    expect(vi.mocked(services.runCommand)).not.toHaveBeenCalledWith('GROUP_ROLE_RECOVER', expect.anything())
+  })
+
+  it('sends GROUP_ROLE_RECOVER for roles whose iframe did not come back assigned', async () => {
+    const user = userEvent.setup()
+    const restoreChat = vi.fn(() => [
+      makeFrame('role-1', 'assigned'),
+      makeFrame('role-2', 'recovering'),
+    ])
+    const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
+    renderWithServices(<ChatHeader />, { services, state: makeStateWithRoles() })
+
+    await user.click(document.querySelector<HTMLButtonElement>('#restore-chat')!)
+
+    await waitFor(() => expect(vi.mocked(services.runCommand)).toHaveBeenCalledWith('GROUP_ROLE_RECOVER', { chatId: 'chat-1', roleId: 'role-2' }))
+  })
+
+  it('keeps restore-chat inert without a selected chat', async () => {
+    const user = userEvent.setup()
+    const restoreChat = vi.fn(() => [])
+    const services = createFakeServices({ iframeHost: { restoreChat } as unknown as TeamPageServices['iframeHost'] })
+    renderWithServices(<ChatHeader />, { services })
+
+    await user.click(document.querySelector<HTMLButtonElement>('#restore-chat')!)
+
+    expect(restoreChat).not.toHaveBeenCalled()
+    expect(vi.mocked(services.runCommand)).not.toHaveBeenCalled()
   })
 
   it('toggles the notes panel through appState and tracks it in aria-expanded', async () => {
@@ -161,6 +212,25 @@ function makeChat(mode: 'collaborative' | 'independent'): GroupChat {
 
 function makeRole(): GroupRole {
   return { id: 'role-1', chatId: 'chat-1', name: 'Engineer', status: 'ready', contextCursor: 0, createdAt: 1, updatedAt: 1 }
+}
+
+function makeStateWithRoles() {
+  const state = makeState('collaborative')
+  state.store.rolesById['role-1'] = makeRole()
+  state.store.rolesById['role-2'] = { ...makeRole(), id: 'role-2', name: 'Reviewer' }
+  state.store.chatsById['chat-1'].roleIds = ['role-1', 'role-2']
+  return state
+}
+
+function makeFrame(roleId: string, status: 'assigned' | 'recovering') {
+  return {
+    chatId: 'chat-1',
+    roleId,
+    src: 'https://gemini.google.com/',
+    active: true,
+    status,
+    assignmentAttempts: 1,
+  }
 }
 
 function makeMessage(): GroupMessage {
