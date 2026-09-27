@@ -4,8 +4,9 @@ export const THEME_STORAGE_KEY = 'openteam.theme'
 
 export interface ThemeControllerDependencies {
   root: HTMLElement
-  lightButton: HTMLButtonElement
-  darkButton: HTMLButtonElement
+  /** 头部主题按钮（已退役）：仅兼容旧装配传入；缺省时只写 <html data-theme> */
+  lightButton?: HTMLButtonElement
+  darkButton?: HTMLButtonElement
   storage?: Storage
 }
 
@@ -31,6 +32,7 @@ export function createThemeController(deps: ThemeControllerDependencies): ThemeC
 
   function registerThemeEvents(): void {
     if (registered) return
+    if (!deps.lightButton || !deps.darkButton) return
     registered = true
     deps.lightButton.addEventListener('click', () => setTheme('light'))
     deps.darkButton.addEventListener('click', () => setTheme('dark'))
@@ -43,8 +45,8 @@ export function createThemeController(deps: ThemeControllerDependencies): ThemeC
   function applyTheme(theme: TeamTheme, persist: boolean): void {
     currentTheme = theme
     deps.root.dataset.theme = theme
-    deps.lightButton.setAttribute('aria-pressed', String(theme === 'light'))
-    deps.darkButton.setAttribute('aria-pressed', String(theme === 'dark'))
+    if (deps.lightButton) deps.lightButton.setAttribute('aria-pressed', String(theme === 'light'))
+    if (deps.darkButton) deps.darkButton.setAttribute('aria-pressed', String(theme === 'dark'))
     if (persist) safeSetStoredTheme(storage, theme)
   }
 

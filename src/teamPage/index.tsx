@@ -29,7 +29,7 @@ let store: OpenTeamStore = appState.store
 const log = createLogger('team-page')
 
 // P5 起骨架元素查询内联在本模块（domRefs 已删）：仅剩仍由 vanilla
-// 命令式模块（floatingWindow / themeController / iframeHost）驱动的元素。
+// 命令式模块（floatingWindow / iframeHost）驱动的元素。
 function requireElement<T extends HTMLElement>(selector: string): T {
   const element = document.querySelector<T>(selector)
   if (!element) throw new Error(`Missing element: ${selector}`)
@@ -57,7 +57,6 @@ const runCommand = runtimeClient.runCommand
 // （runtime 监听器在 boot 里注册；React 组件经 services 闭包事件期调用；
 // 渲染期只经 composerBridge / notesBridge 回填 no-op 之外的实现，见下），
 // 不会碰到未赋值的 let。不要把这些改回「渲染期直接解构」（P1 白屏教训）。
-let themeController: ReturnType<typeof createThemeController>
 let iframeHost: ReturnType<typeof createIframeHost>
 let primaryCoordinator: ReturnType<typeof createTeamPagePrimaryCoordinator>
 let setWindowMinimized: (minimized: boolean) => void
@@ -66,12 +65,20 @@ let chatSwitcher: ReturnType<typeof createChatSwitcher>
 let chatListActions: ReturnType<typeof createChatListActions>
 let roleRecoveryController: ReturnType<typeof createRoleRecoveryController>
 
+// 主题控制器只依赖 <html>（root-only）：创建期零 DOM 查询，因此先于 React
+// 挂载创建并直接挂到 services（SettingsMenu 主题组经 services.theme.setTheme
+// 切主题；当前主题经 useHtmlTheme 读 <html data-theme> 回显）。头部
+// #theme-light/#theme-dark 按钮已退役，主题入口移入设置菜单。
+const theme = createThemeController({ root: document.documentElement })
+theme.initializeTheme()
+
 const teamPageServices: TeamPageServices = {
   imageAttachmentRepository,
   uiBus,
   log,
   runCommand,
   sendRuntimeMessage,
+  theme,
   get iframeHost() { return iframeHost },
   switchChat: chatId => chatSwitcher.switchChat(chatId),
   chatOperations: {
@@ -120,20 +127,11 @@ mountTeamPageApp(teamPageServices).then(() => {
   const closeWindowEl = requireElement<HTMLButtonElement>('#close-window')
   const toggleWindowSizeEl = requireElement<HTMLButtonElement>('#toggle-window-size')
   const toggleFullscreenEl = requireElement<HTMLButtonElement>('#toggle-fullscreen')
-  const themeLightEl = requireElement<HTMLButtonElement>('#theme-light')
-  const themeDarkEl = requireElement<HTMLButtonElement>('#theme-dark')
   const windowLauncherEl = requireElement<HTMLButtonElement>('#window-launcher')
   const windowResizeHandleEl = requireElement<HTMLButtonElement>('#window-resize-handle')
   const windowResizeHandleRightEl = requireElement<HTMLButtonElement>('#window-resize-handle-right')
   const windowResizeHandleBottomEl = requireElement<HTMLButtonElement>('#window-resize-handle-bottom')
   const iframeHostEl = requireElement<HTMLElement>('#iframe-host')
-
-  themeController = createThemeController({
-    root: document.documentElement,
-    lightButton: themeLightEl,
-    darkButton: themeDarkEl,
-  })
-  themeController.initializeTheme()
 
   iframeHost = createIframeHost({
     visibleHost: iframeHostEl,
@@ -365,7 +363,7 @@ async function boot(): Promise<void> {
   await primaryCoordinator.start()
   window.addEventListener('pagehide', () => primaryCoordinator.dispose(), { once: true })
   registerRuntimePush()
-  themeController.registerThemeEvents()
+  theme.registerThemeEvents()
   registerFloatingWindowControls()
   notifyAppState()
   await refreshStore(false)

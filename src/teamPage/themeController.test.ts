@@ -33,6 +33,23 @@ describe('theme controller', () => {
     expect(harness.lightButton.getAttribute('aria-pressed')).toBe('false')
     expect(harness.darkButton.getAttribute('aria-pressed')).toBe('true')
   })
+
+  it('未提供按钮依赖时 setTheme 只写 root 且不抛错', () => {
+    const store = new Map<string, string>()
+    const storage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+      clear: () => store.clear(),
+      key: () => null,
+      length: 0,
+    } as Storage
+    const root = document.createElement('html')
+    const controller = createThemeController({ root, storage })
+    controller.setTheme('light')
+    expect(root.dataset.theme).toBe('light')
+    expect(controller.getTheme()).toBe('light')
+  })
 })
 
 function createHarness(savedTheme: TeamTheme) {

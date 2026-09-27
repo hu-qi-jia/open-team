@@ -2,6 +2,7 @@ import { createContext, useContext, type ReactNode } from 'react'
 import type { createIframeHost } from '../../iframeHost'
 import type { LoadX6 } from '../../orchestrationCanvas'
 import type { TeamPageRuntimeClient } from '../../runtimeClient'
+import type { ThemeController } from '../../themeController'
 import type { GroupChat, GroupMessage, GroupRole, OpenTeamStore } from '../../../group/types'
 import type { ImageAttachmentRepository } from '../../../shared/imageAttachmentRepository'
 import type { OpenTeamLogger } from '../../../shared/logger'
@@ -22,6 +23,12 @@ type IframeHostInstance = ReturnType<typeof createIframeHost>
 export interface TeamPageServices {
   runCommand: TeamPageRuntimeClient['runCommand']
   sendRuntimeMessage: TeamPageRuntimeClient['sendRuntimeMessage']
+  /**
+   * 主题控制器（themeController，root-only 所以创建期可用）：设置菜单主题
+   * 组的事件期出口（setTheme）；当前主题经 useHtmlTheme 读 <html data-theme>
+   * 回显，不在此解构 getTheme。头部 #theme-light/#theme-dark 已退役。
+   */
+  theme: ThemeController
   iframeHost: IframeHostInstance
   imageAttachmentRepository: ImageAttachmentRepository
   uiBus: UiBus

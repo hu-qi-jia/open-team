@@ -23,6 +23,12 @@ export function createFakeServices(overrides: Partial<TeamPageServices> = {}): T
   return {
     runCommand: vi.fn(async () => undefined),
     sendRuntimeMessage: vi.fn(async () => ({ ok: true })) as TeamPageServices['sendRuntimeMessage'],
+    theme: {
+      getTheme: () => 'dark' as const,
+      setTheme: vi.fn(),
+      initializeTheme: vi.fn(),
+      registerThemeEvents: vi.fn(),
+    },
     iframeHost: {} as TeamPageServices['iframeHost'],
     imageAttachmentRepository: {} as ImageAttachmentRepository,
     uiBus: createUiBus(),

@@ -18,16 +18,28 @@ function renderMenu(overrides = {}) {
 }
 
 describe('SettingsMenu', () => {
-  it('opens from the rail settings trigger and offers language / agent control entries', async () => {
+  it('opens from the rail settings trigger and offers theme / language / agent control entries', async () => {
     const user = userEvent.setup()
     renderMenu()
 
     await user.click(screen.getByRole('button', { name: '设置' }))
 
-    expect(await screen.findByRole('menuitemradio', { name: 'English' })).toBeTruthy()
+    expect(await screen.findByRole('menuitemradio', { name: '浅色' })).toBeTruthy()
+    expect(screen.getByRole('menuitemradio', { name: '深色' })).toBeTruthy()
+    expect(screen.getByRole('menuitemradio', { name: 'English' })).toBeTruthy()
     expect(screen.getByRole('menuitemradio', { name: '中文' })).toBeTruthy()
     expect(screen.getByRole('menuitemcheckbox', { name: '本机智能体控制' })).toBeTruthy()
     expect(screen.getByText('端口 19305，仅允许本机连接。开启后本机工具可创建群聊并发送任务。')).toBeTruthy()
+  })
+
+  it('issues the theme change through services.theme', async () => {
+    const user = userEvent.setup()
+    const { services } = renderMenu()
+
+    await user.click(screen.getByRole('button', { name: '设置' }))
+    await user.click(await screen.findByRole('menuitemradio', { name: '浅色' }))
+
+    expect(vi.mocked(services.theme.setTheme)).toHaveBeenCalledWith('light')
   })
 
   it('switches language optimistically and issues GROUP_SETTINGS_UPDATE', async () => {

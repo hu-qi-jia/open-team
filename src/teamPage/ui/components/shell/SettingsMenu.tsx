@@ -1,7 +1,9 @@
 import { normalizeLanguage, type TeamLanguage } from '../../../../shared/i18n'
+import type { TeamTheme } from '../../../themeController'
 import { Settings as SettingsIcon } from 'lucide-react'
 import { agentControlStatusState, agentControlStatusText } from '../../lib/agentControlStatus'
 import { useServices } from '../../context/ServicesContext'
+import { useHtmlTheme } from '../../hooks/useHtmlTheme'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { useT } from '../../hooks/useT'
 import { applyDocumentLanguage } from '../../lib/documentLanguage'
@@ -20,6 +22,8 @@ import {
 
 /*
  * 设置菜单（原 #settings-button + #settings-menu 整体 React 化）：
+ * - 主题：RadioGroup，当前值经 useHtmlTheme 读 <html data-theme> 回显，
+ *   切换走 services.theme.setTheme（头部 #theme-light/#theme-dark 退役后的入口）
  * - 语言：RadioGroup + 乐观 pending（pendingLanguage 语义见 languageOverride）
  * - 本机智能体控制：CheckboxItem → GROUP_SETTINGS_UPDATE
  * - 状态行：agentControlStatusState/Text 纯函数（同 index.tsx 原 renderAgentControlSettings）
@@ -31,6 +35,7 @@ export function SettingsMenu() {
   // 不在渲染期解构服务方法：services 字段保持事件期访问，组件不依赖
   // index.tsx 的装配顺序（见 ServicesContext 的约定说明）。
   const services = useServices()
+  const htmlTheme = useHtmlTheme()
 
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
   const agentControlEnabled = useStoreSelector(state => state.store.settings.agentControlEnabled)
@@ -68,6 +73,12 @@ export function SettingsMenu() {
         <SettingsIcon className="size-[18px]" aria-hidden="true" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="right" align="end" className="w-56">
+        <DropdownMenuLabel>{t('主题')}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={htmlTheme} onValueChange={value => services.theme.setTheme(value as TeamTheme)}>
+          <DropdownMenuRadioItem value="light">{t('浅色')}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="dark">{t('深色')}</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
         <DropdownMenuLabel>{t('语言')}</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={effectiveLanguage} onValueChange={value => updateLanguage(value as TeamLanguage)}>
           <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
