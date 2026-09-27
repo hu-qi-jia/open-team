@@ -124,6 +124,8 @@ mountTeamPageApp(teamPageServices).then(() => {
   const themeDarkEl = requireElement<HTMLButtonElement>('#theme-dark')
   const windowLauncherEl = requireElement<HTMLButtonElement>('#window-launcher')
   const windowResizeHandleEl = requireElement<HTMLButtonElement>('#window-resize-handle')
+  const windowResizeHandleRightEl = requireElement<HTMLButtonElement>('#window-resize-handle-right')
+  const windowResizeHandleBottomEl = requireElement<HTMLButtonElement>('#window-resize-handle-bottom')
   const iframeHostEl = requireElement<HTMLElement>('#iframe-host')
 
   themeController = createThemeController({
@@ -155,6 +157,8 @@ mountTeamPageApp(teamPageServices).then(() => {
     toggleFullscreenEl,
     windowLauncherEl,
     windowResizeHandleEl,
+    windowResizeHandleRightEl,
+    windowResizeHandleBottomEl,
   })
   setWindowMinimized = floatingWindowControls.setWindowMinimized
   registerFloatingWindowControls = floatingWindowControls.registerFloatingWindowControls

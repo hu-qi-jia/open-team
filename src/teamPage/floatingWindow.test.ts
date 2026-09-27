@@ -5,6 +5,12 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createFloatingWindowControls } from './floatingWindow'
 
+function mockShellRect(el: HTMLElement, width: number, height = 600): void {
+  el.getBoundingClientRect = () => ({
+    width, height, left: 0, top: 0, right: width, bottom: height, x: 0, y: 0, toJSON: () => ({}),
+  } as DOMRect)
+}
+
 describe('team page floating window boundary', () => {
   it('keeps drag and minimize controls outside the entrypoint', () => {
     const entrySource = readFileSync(resolve(process.cwd(), 'src/teamPage/index.tsx'), 'utf8')
@@ -212,8 +218,35 @@ describe('team page floating window boundary', () => {
     windowResizeHandleEl.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 1000, clientY: 700, pointerId: 1, bubbles: true }))
     windowResizeHandleEl.dispatchEvent(new PointerEvent('pointermove', { clientX: 500, clientY: 320, pointerId: 1, bubbles: true }))
 
-    expect(appShellEl.style.width).toBe('760px')
-    expect(appShellEl.style.height).toBe('520px')
+    expect(appShellEl.style.width).toBe('520px')
+    expect(appShellEl.style.height).toBe('480px')
     expect(appShellEl.classList.contains('resizing')).toBe(true)
+  })
+})
+
+describe('data-app-size 同步', () => {
+  it('syncAppSizeTier 按壳宽写入档位', () => {
+    // 沿用上方用例的内联 deps 构造方式
+    const appShellEl = document.createElement('main')
+    const toggleWindowSizeEl = document.createElement('button')
+    const toggleFullscreenEl = document.createElement('button')
+    const windowLauncherEl = document.createElement('button')
+
+    const controls = createFloatingWindowControls({
+      appShellEl,
+      toggleWindowSizeEl,
+      toggleFullscreenEl,
+      windowLauncherEl,
+    })
+
+    mockShellRect(appShellEl, 900)
+    controls.syncAppSizeTier()
+    expect(appShellEl.dataset.appSize).toBe('medium')
+    mockShellRect(appShellEl, 640)
+    controls.syncAppSizeTier()
+    expect(appShellEl.dataset.appSize).toBe('compact')
+    mockShellRect(appShellEl, 1200)
+    controls.syncAppSizeTier()
+    expect(appShellEl.dataset.appSize).toBe('wide')
   })
 })

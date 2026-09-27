@@ -12,6 +12,8 @@ export function FloatingWindowChrome() {
         <button id="toggle-fullscreen" className="icon-btn window-dot window-dot-fullscreen" type="button" aria-pressed="false" aria-label="全屏窗口" title="全屏窗口">⛶</button>
       </div>
       <button id="window-resize-handle" className="window-resize-handle" type="button" aria-label="调整窗口大小" title="调整窗口大小"></button>
+      <button id="window-resize-handle-right" className="window-resize-handle window-resize-handle-right" type="button" aria-label="调整窗口宽度" title="调整窗口宽度"></button>
+      <button id="window-resize-handle-bottom" className="window-resize-handle window-resize-handle-bottom" type="button" aria-label="调整窗口高度" title="调整窗口高度"></button>
     </>
   )
 }

@@ -20,6 +20,8 @@ const VANILLA_MODULE_IDS = [
   'theme-dark',
   'window-launcher',
   'window-resize-handle',
+  'window-resize-handle-right',
+  'window-resize-handle-bottom',
   'iframe-host',
 ] as const
 

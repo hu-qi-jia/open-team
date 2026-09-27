@@ -1,3 +1,8 @@
+// 最小 520×480 由 clampShellSize 内的 MIN_SHELL_WIDTH / MIN_SHELL_HEIGHT 兜底，
+// 本模块不再自带 min 常量（原 760×520 已随几何规则下沉 shellGeometry 而删除）。
+import { clampShellPoint, clampShellSize, readShellGeometry, writeShellGeometry, type ShellGeometry } from './shellGeometry'
+import { deriveAppSizeTier } from './appSizeTier'
+
 export interface FloatingWindowDependencies {
   appShellEl: HTMLElement
   closeWindowEl?: HTMLButtonElement
@@ -5,18 +10,21 @@ export interface FloatingWindowDependencies {
   toggleFullscreenEl: HTMLButtonElement
   windowLauncherEl: HTMLButtonElement
   windowResizeHandleEl?: HTMLButtonElement
+  windowResizeHandleRightEl?: HTMLButtonElement
+  windowResizeHandleBottomEl?: HTMLButtonElement
 }
 
 export interface FloatingWindowControls {
   registerFloatingWindowControls(): void
   setWindowMinimized(minimized: boolean): void
+  syncAppSizeTier(): void
 }
 
 export function createFloatingWindowControls(deps: FloatingWindowDependencies): FloatingWindowControls {
   const dragZoneHeight = 52
-  const margin = 8
-  const minShellWidth = 760
-  const minShellHeight = 520
+  let activeResizeDirection: 'corner' | 'right' | 'bottom' = 'corner'
+  let activeResizePointerId: number | undefined
+  let persistTimer: number | undefined
 
   function ensureShellPositioned(): DOMRect {
     const rect = deps.appShellEl.getBoundingClientRect()
@@ -28,18 +36,19 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
 
   function moveShellTo(left: number, top: number): void {
     const rect = deps.appShellEl.getBoundingClientRect()
-    const maxLeft = Math.max(margin, window.innerWidth - Math.min(rect.width, window.innerWidth - margin * 2) - margin)
-    const maxTop = Math.max(margin, window.innerHeight - Math.min(rect.height, window.innerHeight - margin * 2) - margin)
-    deps.appShellEl.style.left = `${Math.min(Math.max(margin, left), maxLeft)}px`
-    deps.appShellEl.style.top = `${Math.min(Math.max(margin, top), maxTop)}px`
+    const clamped = clampShellPoint({ x: left, y: top }, { width: rect.width, height: rect.height },
+      { width: window.innerWidth, height: window.innerHeight })
+    deps.appShellEl.style.left = `${clamped.x}px`
+    deps.appShellEl.style.top = `${clamped.y}px`
     deps.appShellEl.style.transform = 'none'
   }
 
   function resizeShellTo(width: number, height: number): void {
-    const maxWidth = Math.max(minShellWidth, window.innerWidth - margin * 2)
-    const maxHeight = Math.max(minShellHeight, window.innerHeight - margin * 2)
-    deps.appShellEl.style.width = `${Math.min(Math.max(minShellWidth, width), maxWidth)}px`
-    deps.appShellEl.style.height = `${Math.min(Math.max(minShellHeight, height), maxHeight)}px`
+    const clamped = clampShellSize(width, height, window.innerWidth, window.innerHeight)
+    deps.appShellEl.style.width = `${clamped.width}px`
+    deps.appShellEl.style.height = `${clamped.height}px`
+    syncAppSizeTier()
+    persistShellGeometry()
     window.requestAnimationFrame(clampShellPosition)
   }
 
@@ -51,6 +60,22 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     moveShellTo(rect.left, rect.top)
   }
 
+  function syncAppSizeTier(): void {
+    const width = deps.appShellEl.getBoundingClientRect().width
+    deps.appShellEl.dataset.appSize = deriveAppSizeTier(Math.round(width))
+  }
+
+  function currentGeometry(): ShellGeometry {
+    const rect = deps.appShellEl.getBoundingClientRect()
+    return { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+  }
+
+  function persistShellGeometry(): void {
+    if (deps.appShellEl.classList.contains('fullscreen')) return
+    window.clearTimeout(persistTimer)
+    persistTimer = window.setTimeout(() => writeShellGeometry(window.localStorage, currentGeometry()), 300)
+  }
+
   function setWindowMinimized(minimized: boolean): void {
     if (minimized) setWindowFullscreen(false)
     if (!minimized && deps.appShellEl.style.transform !== 'none') ensureShellPositioned()
@@ -59,6 +84,7 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     deps.toggleWindowSizeEl.textContent = minimized ? '□' : '−'
     deps.toggleWindowSizeEl.setAttribute('aria-expanded', String(!minimized))
     if (!minimized) window.requestAnimationFrame(clampShellPosition)
+    syncAppSizeTier()
   }
 
   function setWindowFullscreen(fullscreen: boolean): void {
@@ -70,15 +96,24 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       deps.windowLauncherEl.hidden = true
       deps.toggleWindowSizeEl.textContent = '−'
       deps.toggleWindowSizeEl.setAttribute('aria-expanded', 'true')
+      syncAppSizeTier()
     }
     deps.appShellEl.classList.toggle('fullscreen', fullscreen)
     deps.toggleFullscreenEl.textContent = fullscreen ? '⤡' : '⛶'
     deps.toggleFullscreenEl.setAttribute('aria-pressed', String(fullscreen))
     deps.toggleFullscreenEl.setAttribute('aria-label', fullscreen ? '退出全屏' : '全屏窗口')
     deps.toggleFullscreenEl.title = fullscreen ? '退出全屏' : '全屏窗口'
+    syncAppSizeTier()
   }
 
   function registerFloatingWindowControls(): void {
+    const restored = readShellGeometry(window.localStorage)
+    if (restored && !deps.appShellEl.classList.contains('fullscreen')) {
+      resizeShellTo(restored.width, restored.height)
+      moveShellTo(restored.left, restored.top)
+    }
+    syncAppSizeTier()
+
     let dragOffsetX = 0
     let dragOffsetY = 0
     let activePointerId: number | undefined
@@ -86,7 +121,6 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     let resizeStartY = 0
     let resizeStartWidth = 0
     let resizeStartHeight = 0
-    let activeResizePointerId: number | undefined
 
     deps.appShellEl.addEventListener('pointerdown', event => {
       if (event.button !== 0) return
@@ -112,11 +146,13 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       activePointerId = undefined
       deps.appShellEl.classList.remove('dragging')
       if (deps.appShellEl.hasPointerCapture(event.pointerId)) deps.appShellEl.releasePointerCapture(event.pointerId)
+      persistShellGeometry()
     }
 
     deps.appShellEl.addEventListener('pointerup', stopDragging)
     deps.appShellEl.addEventListener('pointercancel', stopDragging)
-    deps.windowResizeHandleEl?.addEventListener('pointerdown', event => {
+
+    function beginResize(direction: 'corner' | 'right' | 'bottom', handle: HTMLButtonElement, event: PointerEvent): void {
       if (event.button !== 0) return
       if (deps.appShellEl.classList.contains('fullscreen') || deps.appShellEl.classList.contains('minimized')) return
 
@@ -125,32 +161,47 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       resizeStartY = event.clientY
       resizeStartWidth = rect.width
       resizeStartHeight = rect.height
+      activeResizeDirection = direction
       activeResizePointerId = event.pointerId
       deps.appShellEl.classList.add('resizing')
-      deps.windowResizeHandleEl?.setPointerCapture(event.pointerId)
+      handle.setPointerCapture(event.pointerId)
       event.preventDefault()
       event.stopPropagation()
-    })
-    deps.windowResizeHandleEl?.addEventListener('pointermove', event => {
-      if (activeResizePointerId !== event.pointerId) return
-      resizeShellTo(resizeStartWidth + event.clientX - resizeStartX, resizeStartHeight + event.clientY - resizeStartY)
-    })
+    }
 
-    function stopResizing(event: PointerEvent): void {
+    function stopResizing(handle: HTMLButtonElement, event: PointerEvent): void {
       if (activeResizePointerId !== event.pointerId) return
       activeResizePointerId = undefined
       deps.appShellEl.classList.remove('resizing')
-      if (deps.windowResizeHandleEl?.hasPointerCapture(event.pointerId)) deps.windowResizeHandleEl.releasePointerCapture(event.pointerId)
+      if (handle.hasPointerCapture(event.pointerId)) handle.releasePointerCapture(event.pointerId)
+      persistShellGeometry()
     }
 
-    deps.windowResizeHandleEl?.addEventListener('pointerup', stopResizing)
-    deps.windowResizeHandleEl?.addEventListener('pointercancel', stopResizing)
+    function bindResizeHandle(handle: HTMLButtonElement, direction: 'corner' | 'right' | 'bottom'): void {
+      handle.addEventListener('pointerdown', event => beginResize(direction, handle, event))
+      handle.addEventListener('pointermove', event => {
+        if (activeResizePointerId !== event.pointerId) return
+        resizeShellTo(
+          activeResizeDirection === 'bottom' ? resizeStartWidth : resizeStartWidth + event.clientX - resizeStartX,
+          activeResizeDirection === 'right' ? resizeStartHeight : resizeStartHeight + event.clientY - resizeStartY,
+        )
+      })
+      handle.addEventListener('pointerup', event => stopResizing(handle, event))
+      handle.addEventListener('pointercancel', event => stopResizing(handle, event))
+    }
+    if (deps.windowResizeHandleEl) bindResizeHandle(deps.windowResizeHandleEl, 'corner')
+    if (deps.windowResizeHandleRightEl) bindResizeHandle(deps.windowResizeHandleRightEl, 'right')
+    if (deps.windowResizeHandleBottomEl) bindResizeHandle(deps.windowResizeHandleBottomEl, 'bottom')
+
     deps.closeWindowEl?.addEventListener('click', () => setWindowMinimized(true))
     deps.toggleWindowSizeEl.addEventListener('click', () => setWindowMinimized(!deps.appShellEl.classList.contains('minimized')))
     deps.toggleFullscreenEl.addEventListener('click', () => setWindowFullscreen(!deps.appShellEl.classList.contains('fullscreen')))
     setWindowFullscreen(deps.appShellEl.classList.contains('fullscreen'))
     deps.windowLauncherEl.addEventListener('click', () => setWindowMinimized(false))
-    window.addEventListener('resize', clampShellPosition)
+    window.addEventListener('resize', () => {
+      clampShellPosition()
+      syncAppSizeTier()
+    })
   }
 
   function isTopChromeDragEvent(event: PointerEvent): boolean {
@@ -160,5 +211,5 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     return event.clientY - rect.top <= dragZoneHeight
   }
 
-  return { registerFloatingWindowControls, setWindowMinimized }
+  return { registerFloatingWindowControls, setWindowMinimized, syncAppSizeTier }
 }
