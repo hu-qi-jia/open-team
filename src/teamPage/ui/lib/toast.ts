@@ -1,9 +1,8 @@
 import { toast as sonnerToast } from 'sonner'
 
 /*
- * React 组件的错误/成功出口（sonner 宿主由 App 挂载）。
- * 与 vanilla 侧 #error presenter（teamPageServices.createErrorPresenter）并存；
- * P5 清理阶段 vanilla presenter 退役后二者合一。
+ * 全页错误/成功出口（P5 起 vanilla #error presenter 已退役，统一走
+ * sonner；宿主由 App 挂载，index.tsx 的装配/运行时错误同样经此提示）。
  */
 export function showError(message: string): void {
   sonnerToast.error(message)

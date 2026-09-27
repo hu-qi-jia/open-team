@@ -14,6 +14,11 @@ export interface RoleReadyWaiter {
   pollTimeoutId?: number
 }
 
+// P5 收敛后的共享可变状态：仅保留「跨组件 / 保留 vanilla 模块仍读写」
+// 的条目。纯组件内 UI 态（搜索词、分类 tab、分页等）自 P4 起已下沉到
+// 各 React 组件的本地 state；selectedTemplateId / previewTemplateId /
+// temporaryPersonDrafts / addPersonSiteByKey 是弹窗间的既定传输约定
+// （见 ui/lib/uiBus.ts 注释），peopleDrawerOpen 由 chatSwitcher 翻转。
 export interface TeamPageState {
   store: OpenTeamStore
   controlStatus: OpenTeamControlConnectionStatus
@@ -23,20 +28,10 @@ export interface TeamPageState {
   selectedReference?: MessageReference
   hostTabId?: number
   peopleDrawerOpen: boolean
-  addPersonSiteMenuId?: string
   notesPanelOpen: boolean
   activeNoteScope: 'global' | 'chat'
-  peopleLibraryPage: number
-  peopleLibraryTemplateType: 'builtin' | 'custom'
-  peopleLibrarySearchQuery: string
-  peopleLibraryCategory: string
   previewTemplateId?: string
-  addPersonTemplateType: 'builtin' | 'custom'
-  addPersonSearchQuery: string
-  addPersonCategory: string
   pendingSwitchAnimationFrame?: number
-  thinkingTimeoutTimers: number[]
-  loggedThinkingTimeoutRoleIds: Set<string>
   messageNodeCache: Map<string, CachedMessageNode>
   preserveNextMessageScroll: boolean
   reconnectingRoleKeys: Set<string>
@@ -51,8 +46,6 @@ export function createTeamPageState(): TeamPageState {
     store: createDefaultStore(),
     controlStatus: { state: 'disabled', port: OPENTEAM_CONTROL_DEFAULT_PORT },
     peopleDrawerOpen: false,
-    thinkingTimeoutTimers: [],
-    loggedThinkingTimeoutRoleIds: new Set<string>(),
     messageNodeCache: new Map<string, CachedMessageNode>(),
     preserveNextMessageScroll: false,
     reconnectingRoleKeys: new Set<string>(),
@@ -60,13 +53,6 @@ export function createTeamPageState(): TeamPageState {
     temporaryPersonDrafts: [],
     addPersonSiteByKey: new Map<string, Set<string>>(),
     addPersonSelectedKeys: new Set<string>(),
-    peopleLibraryPage: 0,
-    peopleLibraryTemplateType: 'custom',
-    peopleLibrarySearchQuery: '',
-    peopleLibraryCategory: '全部',
-    addPersonTemplateType: 'custom',
-    addPersonSearchQuery: '',
-    addPersonCategory: '全部',
     notesPanelOpen: false,
     activeNoteScope: 'chat',
   }

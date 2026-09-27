@@ -3,7 +3,7 @@ import { agentControlStatusState, agentControlStatusText } from '../../lib/agent
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { useT } from '../../hooks/useT'
-import { applyTeamLanguage } from '../../../languageController'
+import { applyDocumentLanguage } from '../../lib/documentLanguage'
 import { clearPendingLanguage, getPendingLanguage, setPendingLanguage } from '../../lib/languageOverride'
 import { showError } from '../../lib/toast'
 import {
@@ -41,12 +41,12 @@ export function SettingsMenu() {
   function updateLanguage(next: TeamLanguage): void {
     if (effectiveLanguage === next) return
     setPendingLanguage(next)
-    applyTeamLanguage(next)
+    applyDocumentLanguage(next)
     services.runCommand('GROUP_SETTINGS_UPDATE', { language: next })
       .then(() => clearPendingLanguage(next))
       .catch(error => {
         clearPendingLanguage(next)
-        applyTeamLanguage(effectiveLanguage)
+        applyDocumentLanguage(effectiveLanguage)
         showError(error instanceof Error ? error.message : String(error))
       })
   }

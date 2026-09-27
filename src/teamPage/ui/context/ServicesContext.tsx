@@ -16,7 +16,7 @@ type IframeHostInstance = ReturnType<typeof createIframeHost>
  *
  * 访问纪律：服务方法（runCommand / sendRuntimeMessage 等）只在事件处理器与
  * effect 中调用，不在渲染期解构——index.tsx 的 services 对 iframeHost 用
- * getter 延迟解引用（其创建依赖 domRefs），渲染期解构 getter 字段会因
+ * getter 延迟解引用（其创建依赖 React 骨架提交），渲染期解构 getter 字段会因
  * TDZ 直接崩掉首帧（P1 白屏根因）。mountOrder 边界测试锁住装配顺序。
  */
 export interface TeamPageServices {

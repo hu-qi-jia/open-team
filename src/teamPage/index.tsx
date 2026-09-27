@@ -1,22 +1,22 @@
 import type { ChatSite, GroupChat, GroupMessage, GroupRole, OpenTeamStore } from '../group/types'
 import { getDefaultChatSiteUrl } from '../group/conversationUrl'
 import { createDefaultStore } from '../group/store'
+import { createLogger } from '../shared/logger'
 import { createTeamPageState, pickSelectedChatId } from './appState'
 import { createChatListActions } from './chatListActions'
 import { createChatSwitcher } from './chatSwitcher'
-import { createTeamPageDomRefs } from './domRefs'
 import { createFloatingWindowControls } from './floatingWindow'
 import { createIframeHost } from './iframeHost'
 import { createRoleRecoveryController } from './roleRecoveryController'
 import { createTeamPageRuntimeClient, type StorePushMessage } from './runtimeClient'
 import { createTeamPagePrimaryCoordinator } from './teamPagePrimary'
-import { createErrorPresenter, teamPageLog } from './teamPageServices'
 import { createThemeController } from './themeController'
 import { createIndexedDbImageAttachmentRepository } from '../shared/imageAttachmentRepository'
 import './ui/styles/globals.css'
 import { bindAppState, notifyAppState } from './ui/lib/appStore'
 import { applyOrchestrationAutoStreamChunk } from './ui/lib/orchestrationStreamStore'
 import { createUiBus } from './ui/lib/uiBus'
+import { showError } from './ui/lib/toast'
 import { mountTeamPageApp } from './ui/mount'
 import type { TeamPageServices } from './ui/context/ServicesContext'
 
@@ -26,15 +26,22 @@ bindAppState(appState)
 const uiBus = createUiBus()
 
 let store: OpenTeamStore = appState.store
-const log = teamPageLog
+const log = createLogger('team-page')
+
+// P5 起骨架元素查询内联在本模块（domRefs 已删）：仅剩仍由 vanilla
+// 命令式模块（floatingWindow / themeController / iframeHost）驱动的元素。
+function requireElement<T extends HTMLElement>(selector: string): T {
+  const element = document.querySelector<T>(selector)
+  if (!element) throw new Error(`Missing element: ${selector}`)
+  return element
+}
 
 // runtimeClient 只依赖模块内提升的函数声明（applyStore / refreshStore）与 log，
 // 创建期零副作用，因此先于 React 挂载创建。services 直接持有实例值而非 getter：
 // 组件在渲染期解构 services 字段是惯用写法，若这里沿用「挂载后再声明 + getter」，
-// 首帧解构即触发 TDZ ReferenceError → flushSync 抛出 → 整页只剩背景
-// （P1 验收白屏的根因）。唯一保留 getter 的是 iframeHost——它依赖 domRefs
-// 产出的容器，而 domRefs 必须等 React 渲染出骨架 DOM 才能创建；全工程无组件
-// 在渲染期访问 iframeHost，仅事件期经 services 转交（mountOrder 边界测试锁此约定）。
+// 首帧解构即触发 TDZ ReferenceError（P1 验收白屏的根因）。唯一保留 getter 的是
+// iframeHost——它依赖 React 骨架提交后才存在的容器；全工程无组件在渲染期访问
+// iframeHost，仅事件期经 services 转交（mountOrder 边界测试锁此约定）。
 const runtimeClient = createTeamPageRuntimeClient({
   getHostTabId: () => appState.hostTabId,
   applyStore,
@@ -44,12 +51,21 @@ const runtimeClient = createTeamPageRuntimeClient({
 const sendRuntimeMessage = runtimeClient.sendRuntimeMessage
 const runCommand = runtimeClient.runCommand
 
-// React 先同步挂载出全部骨架 DOM（携带 domRefs 需要的全部 id），
-// 之后的 createTeamPageDomRefs() 才能查询到它们。
-// chatOperations 依赖 domRefs 之后才创建的 vanilla 模块
-// （showError / iframeHost），这里用闭包把解引用推迟到
-// 调用时（事件期）——不要改回 getter（P1 白屏教训：渲染期解构 getter 字段
-// 会 TDZ 崩掉首帧），也不要改成渲染期直接解构。
+// P5 起挂载改为普通并发渲染：mount() 返回的 Promise 在 AppShell 骨架
+// （#app）提交后 resolve，依赖 DOM 的 vanilla 模块在 then() 内装配，
+// 对应绑定在这里声明为 let。所有跨界访问都发生在事件期 / boot 期
+// （runtime 监听器在 boot 里注册；React 组件经 services 闭包事件期调用；
+// 渲染期只经 composerBridge / notesBridge 回填 no-op 之外的实现，见下），
+// 不会碰到未赋值的 let。不要把这些改回「渲染期直接解构」（P1 白屏教训）。
+let themeController: ReturnType<typeof createThemeController>
+let iframeHost: ReturnType<typeof createIframeHost>
+let primaryCoordinator: ReturnType<typeof createTeamPagePrimaryCoordinator>
+let setWindowMinimized: (minimized: boolean) => void
+let registerFloatingWindowControls: () => void
+let chatSwitcher: ReturnType<typeof createChatSwitcher>
+let chatListActions: ReturnType<typeof createChatListActions>
+let roleRecoveryController: ReturnType<typeof createRoleRecoveryController>
+
 const teamPageServices: TeamPageServices = {
   imageAttachmentRepository,
   uiBus,
@@ -62,7 +78,7 @@ const teamPageServices: TeamPageServices = {
     clearMessages: chatId => chatListActions.clearChatMessages(chatId),
     deleteChat: chatId => chatListActions.deleteChat(chatId),
   },
-  reconnectRolesForSend: (chat, roles) => reconnectRolesForSend(chat, roles),
+  reconnectRolesForSend: (chat, roles) => roleRecoveryController.reconnectRolesForSend(chat, roles),
   // 成员抽屉 ◇ 登录按钮（P4d 起 React 自持）：站点取「选中人员的
   // chatSite，缺省回默认站点」，chrome.tabs.create 留在组件树之外
   openAiSiteLogin: () => openAiSiteLogin(),
@@ -84,99 +100,99 @@ const teamPageServices: TeamPageServices = {
     insertMention: role => insertMention(role),
     setReference: message => setReference(message),
     insertTextIntoActiveNote: text => insertTextIntoActiveNote(text),
-    resyncMessageReply: message => resyncMessageReply(message),
-    retryRoleReply: (role, messageId) => retryRoleReply(role, messageId),
-    stopRoleReply: role => stopRoleReply(role),
-    focusRoleFrame: (chatId, roleId) => focusRoleFrame(chatId, roleId),
+    resyncMessageReply: message => roleRecoveryController.resyncMessageReply(message),
+    retryRoleReply: (role, messageId) => roleRecoveryController.retryRoleReply(role, messageId),
+    stopRoleReply: role => roleRecoveryController.stopRoleReply(role),
+    focusRoleFrame: (chatId, roleId) => roleRecoveryController.focusRoleFrame(chatId, roleId),
   },
 }
 // Composer / NotesPanel（P2c、P3 起 React 化）挂载后分别经
 // services.composerBridge / notesBridge 回填实现；messageActions 在事件期
-// 调用这些闭包。声明必须在 mountTeamPageApp 之前：flushSync 会同步冲刷
-// passive effect，两个组件的 mount effect 在模块求值期间就会调用
-// register 回填
+// 调用这些闭包。声明必须在 mountTeamPageApp 之前：挂载 effect 在骨架
+// 提交时就会调用 register 回填（此时 then() 尚未排队）。
 let insertMention = (_role: GroupRole): void => {}
 let setReference = (_message: GroupMessage): void => {}
 let insertTextIntoActiveNote = (_text: string): void => {}
 
-mountTeamPageApp(teamPageServices)
+mountTeamPageApp(teamPageServices).then(() => {
+  // 骨架已提交：查询仍由 vanilla 命令式模块驱动的元素
+  const appShellEl = requireElement<HTMLElement>('#app')
+  const closeWindowEl = requireElement<HTMLButtonElement>('#close-window')
+  const toggleWindowSizeEl = requireElement<HTMLButtonElement>('#toggle-window-size')
+  const toggleFullscreenEl = requireElement<HTMLButtonElement>('#toggle-fullscreen')
+  const themeLightEl = requireElement<HTMLButtonElement>('#theme-light')
+  const themeDarkEl = requireElement<HTMLButtonElement>('#theme-dark')
+  const windowLauncherEl = requireElement<HTMLButtonElement>('#window-launcher')
+  const windowResizeHandleEl = requireElement<HTMLButtonElement>('#window-resize-handle')
+  const iframeHostEl = requireElement<HTMLElement>('#iframe-host')
 
-const teamDomRefs = createTeamPageDomRefs()
-const { appShellEl, closeWindowEl, toggleWindowSizeEl, toggleFullscreenEl } = teamDomRefs
-const { errorEl } = teamDomRefs
-const { themeLightEl, themeDarkEl } = teamDomRefs
-const { windowLauncherEl, windowResizeHandleEl } = teamDomRefs
-const showError = createErrorPresenter(errorEl)
-const themeController = createThemeController({
-  root: document.documentElement,
-  lightButton: themeLightEl,
-  darkButton: themeDarkEl,
-})
-themeController.initializeTheme()
+  themeController = createThemeController({
+    root: document.documentElement,
+    lightButton: themeLightEl,
+    darkButton: themeDarkEl,
+  })
+  themeController.initializeTheme()
 
-const iframeHost = createIframeHost({
-  visibleHost: teamDomRefs.iframeHostEl,
-  onEvent(event) {
-    log.debug(`iframe-host:${event.type}`, event)
-  },
-})
-const primaryCoordinator = createTeamPagePrimaryCoordinator({
-  navigator,
-  window,
-  onPrimaryChange: handlePrimaryModeChange,
-  log,
-})
+  iframeHost = createIframeHost({
+    visibleHost: iframeHostEl,
+    onEvent(event) {
+      log.debug(`iframe-host:${event.type}`, event)
+    },
+  })
+  primaryCoordinator = createTeamPagePrimaryCoordinator({
+    navigator,
+    window,
+    onPrimaryChange: handlePrimaryModeChange,
+    log,
+  })
 
-// 编排状态浮层（P4c 起 OrchestrationStatusCard 自渲）；floatingWindow 与
-// iframeHost 仍由本模块持有
-const floatingWindowControls = createFloatingWindowControls({
-  appShellEl,
-  closeWindowEl,
-  toggleWindowSizeEl,
-  toggleFullscreenEl,
-  windowLauncherEl,
-  windowResizeHandleEl,
-})
-const setWindowMinimized = floatingWindowControls.setWindowMinimized
-const registerFloatingWindowControls = floatingWindowControls.registerFloatingWindowControls
-// 成员抽屉 / 笔记面板 / 全部笔记弹窗（P3 起 React 化）：外部翻转 appState
-// 或 uiBus 命令后经 notifyAppState / uiBus 通知，组件自行重渲
-const chatSwitcher = createChatSwitcher({
-  state: appState,
-  runCommand,
-  showError,
-})
-const switchChat = chatSwitcher.switchChat
-const chatListActions = createChatListActions({
-  state: appState,
-  getStore: () => store,
-  applyStore,
-  iframeHost,
-  runCommand,
-  sendRuntimeMessage,
-  log,
-  showError,
-})
-const roleRecoveryController = createRoleRecoveryController({
-  state: appState,
-  getStore: () => store,
-  getCurrentRoles,
-  refreshStore,
-  switchChat,
-  // React 输入区自行订阅 store 版本；这里只需触发一次 React 通知
-  renderComposerState: () => notifyAppState(),
-  setWindowMinimized,
-  iframeHost,
-  runCommand,
-  showError,
-  log,
-})
-const notifyRoleReadyWaiters = roleRecoveryController.notifyRoleReadyWaiters
-const reconnectRolesForSend = roleRecoveryController.reconnectRolesForSend
-const focusRoleFrame = roleRecoveryController.focusRoleFrame
-const resyncMessageReply = roleRecoveryController.resyncMessageReply
-const retryRoleReply = roleRecoveryController.retryRoleReply
-const stopRoleReply = roleRecoveryController.stopRoleReply
+  // 编排状态浮层（P4c 起 OrchestrationStatusCard 自渲）；floatingWindow 与
+  // iframeHost 仍由本模块持有
+  const floatingWindowControls = createFloatingWindowControls({
+    appShellEl,
+    closeWindowEl,
+    toggleWindowSizeEl,
+    toggleFullscreenEl,
+    windowLauncherEl,
+    windowResizeHandleEl,
+  })
+  setWindowMinimized = floatingWindowControls.setWindowMinimized
+  registerFloatingWindowControls = floatingWindowControls.registerFloatingWindowControls
+  // 成员抽屉 / 笔记面板 / 全部笔记弹窗（P3 起 React 化）：外部翻转 appState
+  // 或 uiBus 命令后经 notifyAppState / uiBus 通知，组件自行重渲
+  chatSwitcher = createChatSwitcher({
+    state: appState,
+    runCommand,
+    showError,
+  })
+  const switchChat = chatSwitcher.switchChat
+  chatListActions = createChatListActions({
+    state: appState,
+    getStore: () => store,
+    applyStore,
+    iframeHost,
+    runCommand,
+    sendRuntimeMessage,
+    log,
+    showError,
+  })
+  roleRecoveryController = createRoleRecoveryController({
+    state: appState,
+    getStore: () => store,
+    getCurrentRoles,
+    refreshStore,
+    switchChat,
+    // React 输入区自行订阅 store 版本；这里只需触发一次 React 通知
+    renderComposerState: () => notifyAppState(),
+    setWindowMinimized,
+    iframeHost,
+    runCommand,
+    showError,
+    log,
+  })
+
+  boot().catch(error => showError(error instanceof Error ? error.message : String(error)))
+}, (error: unknown) => showError(error instanceof Error ? error.message : String(error)))
 
 // 成员抽屉 ◇ 登录按钮的站点解析（原 teamUiController deps.getSelectedLoginSite）
 function selectedLoginSite(): ChatSite {
@@ -217,8 +233,7 @@ function applyStore(nextStore: OpenTeamStore): void {
     appState.selectedReference = undefined
   }
   syncIframeHost()
-  render()
-  notifyRoleReadyWaiters()
+  roleRecoveryController.notifyRoleReadyWaiters()
   notifyAppState()
 }
 
@@ -268,12 +283,6 @@ function handlePrimaryModeChange(isPrimary: boolean): void {
 
   log.warn('team-page-primary:passive', { hostTabId: appState.hostTabId })
   showError('已检测到另一个 OpenTeam 页面正在运行。当前页面已暂停 AI iframe，避免两个页面同时加载导致卡死。')
-}
-
-function render(): void {
-  // 人员库 5 弹窗（P4a）、外部模型弹窗（P4b）、编排弹窗与状态浮层（P4c）
-  // 已由 React 组件自渲；本函数只负责把数据变化回流给 React
-  notifyAppState()
 }
 
 function registerRuntimePush(): void {
@@ -330,7 +339,7 @@ function handleRoleRecoveryRequest(message: Extract<StorePushMessage, { type: 'G
     chatSite: role.chatSite,
     reason: message.reason,
   })
-  reconnectRolesForSend(chat, [role])
+  roleRecoveryController.reconnectRolesForSend(chat, [role])
     .then(() => {
       log.warn('orchestration-diagnostic:role-recovery:ready', {
         chatId: chat.id,
@@ -354,8 +363,6 @@ async function boot(): Promise<void> {
   registerRuntimePush()
   themeController.registerThemeEvents()
   registerFloatingWindowControls()
-  render()
+  notifyAppState()
   await refreshStore(false)
 }
-
-boot().catch(error => showError(error instanceof Error ? error.message : String(error)))

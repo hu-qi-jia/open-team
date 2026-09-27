@@ -22,7 +22,7 @@ import { Sidebar } from './components/shell/Sidebar'
 /*
  * 壳层全量接管（P1 起，P2a 工作区头部落地）。原始 body 的子级顺序在此逐一复刻：
  *   #app → #notes-panel → 隐藏位（template-summary/list、window-launcher）
- *   → 弹窗群 → #iframe-host → #error
+ *   → 弹窗群 → #iframe-host
  * 关键约束：
  * - `.app-shell.minimized + .notes-panel`（legacy.css）要求 #app 与
  *   #notes-panel 相邻——#root 以 display:contents 让本组件的子元素直接
@@ -69,7 +69,6 @@ export function App() {
       <GroupTemplateModal />
 
       <IframeLayer />
-      <div id="error" className="toast" hidden></div>
 
       <LanguageSync />
       <Toaster position="top-center" />

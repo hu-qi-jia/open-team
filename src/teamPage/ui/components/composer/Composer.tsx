@@ -21,7 +21,7 @@ import { MentionPicker, createMentionOptions } from './MentionPicker'
  *   restoreComposerDraft 对译）
  * #composer / #target-preview / #busy-preview / #message-input /
  * #send-message / #reference-draft / #mention-panel 的 id 保持不变
- * （domRefs 语义、legacy.css 选择器与 E2E 依赖）。
+ * （React 骨架 id 契约、legacy.css 选择器与 E2E 依赖）。
  */
 
 const NOOP_COMPOSER_API: ComposerApi = {
