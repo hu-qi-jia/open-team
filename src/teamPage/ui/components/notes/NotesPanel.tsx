@@ -161,6 +161,9 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
   const panelClassName = [
     'panel',
     'notes-panel',
+    // V4 zinc 化：边框/底色/圆角/阴影走 utilities 压过 legacy 青色渐变；
+    // 定位（fixed top/right 与拖拽内联样式）、grid 行结构仍由 legacy/几何钩子提供
+    'overflow-hidden rounded-xl border border-border bg-card shadow-2xl',
     open ? 'open' : '',
     interaction === 'dragging' ? 'dragging' : '',
     interaction === 'resizing' ? 'resizing' : '',
@@ -168,17 +171,29 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
 
   return (
     <aside ref={panelRef} id="notes-panel" className={panelClassName} aria-label={t('笔记面板')}>
-      <div ref={dragHandleRef} id="notes-drag-handle" className="panel-header notes-panel-header" title={t('拖动笔记')} onPointerDown={geometry.onDragPointerDown}>
-        <div>
-          <h2>{t('笔记')}</h2>
-          <p className="tiny">{t('手动记录或收集 Mark 内容。')}</p>
+      <div
+        ref={dragHandleRef}
+        id="notes-drag-handle"
+        className="panel-header notes-panel-header flex cursor-grab select-none items-center justify-between gap-3 border-b border-border px-4 pb-3 pt-3.5"
+        title={t('拖动笔记')}
+        onPointerDown={geometry.onDragPointerDown}
+      >
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-semibold tracking-tight">{t('笔记')}</h2>
+          <p className="tiny mt-0.5 truncate text-xs text-muted-foreground">{t('手动记录或收集 Mark 内容。')}</p>
         </div>
-        <button id="close-notes-panel" className="icon-btn" type="button" aria-label={t('关闭笔记')} onClick={closePanel}>×</button>
+        <button
+          id="close-notes-panel"
+          className="icon-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          type="button"
+          aria-label={t('关闭笔记')}
+          onClick={closePanel}
+        >×</button>
       </div>
-      <div className="note-scope-tabs" role="tablist" aria-label={t('笔记范围')}>
+      <div className="note-scope-tabs flex gap-1 px-3 pt-2.5" role="tablist" aria-label={t('笔记范围')}>
         <button
           id="chat-note-tab"
-          className={`note-scope-tab${view.effectiveScope === 'chat' ? ' active' : ''}`}
+          className={`note-scope-tab h-7 flex-1 rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:text-foreground${view.effectiveScope === 'chat' ? ' active border-border bg-accent text-accent-foreground' : ''}`}
           type="button"
           data-note-scope="chat"
           disabled={!view.chat}
@@ -186,25 +201,25 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
         >{t('当前群聊')}</button>
         <button
           id="global-note-tab"
-          className={`note-scope-tab${view.effectiveScope === 'global' ? ' active' : ''}`}
+          className={`note-scope-tab h-7 flex-1 rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:text-foreground${view.effectiveScope === 'global' ? ' active border-border bg-accent text-accent-foreground' : ''}`}
           type="button"
           data-note-scope="global"
           onClick={() => selectScope('global')}
         >{t('全局笔记')}</button>
       </div>
-      <div className="note-toolbar" aria-label={t('富文本工具栏')}>
+      <div className="note-toolbar flex items-center gap-0.5 px-3 py-2" aria-label={t('富文本工具栏')}>
         {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
-          <button key={id} id={id} className="note-tool-btn" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</button>
+          <button key={id} id={id} className="note-tool-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</button>
         ))}
-        <span className="note-toolbar-spacer"></span>
-        <button id="note-undo" className="note-tool-btn" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</button>
-        <button id="note-redo" className="note-tool-btn" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</button>
+        <span className="note-toolbar-spacer flex-1"></span>
+        <button id="note-undo" className="note-tool-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</button>
+        <button id="note-redo" className="note-tool-btn flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</button>
       </div>
-      <div ref={editorElementRef} id="notes-editor" className="notes-editor" aria-label={t('富文本笔记编辑器')}></div>
+      <div ref={editorElementRef} id="notes-editor" className="notes-editor min-h-0 bg-transparent px-3.5 pb-2.5 text-sm" aria-label={t('富文本笔记编辑器')}></div>
       <button
         ref={resizeHandleRef}
         id="notes-resize-handle"
-        className="notes-resize-handle"
+        className="notes-resize-handle absolute bottom-2 right-2 size-5 cursor-nwse-resize rounded-md text-muted-foreground transition-colors hover:bg-accent"
         type="button"
         aria-label={t('调整笔记大小')}
         title={t('调整笔记大小')}

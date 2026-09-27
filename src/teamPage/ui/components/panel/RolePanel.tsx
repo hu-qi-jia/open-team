@@ -155,35 +155,49 @@ export function RolePanel() {
   const summaryText = ui(`${view.roles.length} 人员${view.selectedRole ? ` · 当前：${view.selectedRole.name}` : ''}`)
 
   return (
-    <aside ref={drawerRef} className={`panel role-panel${peopleDrawerOpen ? ' open' : ''}`}>
-      <div className="panel-header">
-        <div>
-          <h2>{ui('群聊成员与人员')}</h2>
-          <p id="role-summary" className="tiny">{summaryText}</p>
+    <aside
+      ref={drawerRef}
+      className={`panel role-panel flex min-h-0 flex-col border-l border-border bg-popover shadow-2xl${peopleDrawerOpen ? ' open' : ''}`}
+    >
+      <div className="panel-header flex items-center justify-between gap-3 border-b border-border px-4 pb-3 pt-3.5">
+        <div className="min-w-0">
+          <h2 className="truncate text-sm font-semibold tracking-tight">{ui('群聊成员与人员')}</h2>
+          <p id="role-summary" className="tiny mt-0.5 truncate text-xs text-muted-foreground">{summaryText}</p>
         </div>
         {/* 原 renderRolePanelActions 将登录按钮包进 .role-panel-actions */}
         <div className="role-panel-actions">
-          <button id="open-gemini-login" className="icon-btn" type="button" aria-label={ui('AI 站点登录')} onClick={() => services.openAiSiteLogin()}>◇</button>
+          <button
+            id="open-gemini-login"
+            className="icon-btn flex size-8 cursor-pointer items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            type="button"
+            aria-label={ui('AI 站点登录')}
+            onClick={() => services.openAiSiteLogin()}
+          >◇</button>
         </div>
       </div>
       <div className="role-scroll">
-        <div className="section-title">
-          <h3>{ui('当前群聊人员')}</h3>
-          <button id="close-people-drawer" className="btn" type="button" onClick={closePeopleDrawer}>{ui('收起')}</button>
+        <div className="section-title flex items-center justify-between px-4 pb-1.5 pt-3">
+          <h3 className="text-xs font-medium text-muted-foreground">{ui('当前群聊人员')}</h3>
+          <button
+            id="close-people-drawer"
+            className="btn h-7 cursor-pointer rounded-md border border-border bg-transparent px-2.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            type="button"
+            onClick={closePeopleDrawer}
+          >{ui('收起')}</button>
         </div>
-        <div id="role-list" className="role-list">
+        <div id="role-list" className="role-list grid gap-2 px-3 py-2">
           {!view.chat ? (
-            <div className="empty-state">
-              <div className="empty-card">
-                <h3>{ui('未选择群聊')}</h3>
-                <p className="muted">{ui('选择群聊后可添加、查看、恢复和唤醒人员。')}</p>
+            <div className="empty-state px-1 py-4">
+              <div className="empty-card rounded-lg border border-dashed border-border p-4 text-center">
+                <h3 className="text-sm font-medium">{ui('未选择群聊')}</h3>
+                <p className="muted mt-1 text-xs leading-relaxed text-muted-foreground">{ui('选择群聊后可添加、查看、恢复和唤醒人员。')}</p>
               </div>
             </div>
           ) : view.roles.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-card">
-                <h3>{ui('暂无人员')}</h3>
-                <p className="muted">{ui('点击添加人员，可从人员库批量加入或临时添加。')}</p>
+            <div className="empty-state px-1 py-4">
+              <div className="empty-card rounded-lg border border-dashed border-border p-4 text-center">
+                <h3 className="text-sm font-medium">{ui('暂无人员')}</h3>
+                <p className="muted mt-1 text-xs leading-relaxed text-muted-foreground">{ui('点击添加人员，可从人员库批量加入或临时添加。')}</p>
               </div>
             </div>
           ) : view.roles.map(role => (
@@ -209,7 +223,7 @@ export function RolePanel() {
 
         <form
           id="add-role-form"
-          className="editor-card role-form"
+          className="editor-card role-form mx-3 mb-3 rounded-lg border border-border bg-card p-3"
           onSubmit={event => {
             event.preventDefault()
             // 原 addRoleFormEl submit → openAddPersonDialog；弹窗本体在
@@ -217,8 +231,8 @@ export function RolePanel() {
             services.uiBus.emit('open-add-person')
           }}
         >
-          <h3>{ui('添加人员')}</h3>
-          <p className="tiny">{ui('从人员库批量选择，或临时添加只属于当前群聊的人员。')}</p>
+          <h3 className="text-sm font-medium">{ui('添加人员')}</h3>
+          <p className="tiny mt-0.5 text-xs text-muted-foreground">{ui('从人员库批量选择，或临时添加只属于当前群聊的人员。')}</p>
           {/* 遗留隐藏位：值无人读取，选项按 store 版本填充保留 DOM 契约 */}
           <select id="role-template-select" hidden>
             <option value="">{ui('不使用人员库，手动创建')}</option>
@@ -226,7 +240,10 @@ export function RolePanel() {
               <option key={template.id} value={template.id}>{localizeRoleTemplate(template, language).name}</option>
             ))}
           </select>
-          <button className="btn btn-primary" type="submit">{ui('添加人员')}</button>
+          <button
+            className="btn btn-primary mt-2.5 h-8 w-full cursor-pointer rounded-md bg-none bg-primary text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            type="submit"
+          >{ui('添加人员')}</button>
         </form>
       </div>
 
@@ -295,21 +312,27 @@ function RoleCard(props: RoleCardProps) {
   }
 
   return (
-    <section className={`role-card${active ? ' active' : ''}`} onClick={props.onSelect}>
-      <div className={`role-avatar ${roleToneClass(role.name)} mention-shortcut`} {...mentionShortcutHandlers}>
+    <section
+      className={`role-card relative grid cursor-pointer grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg border bg-card p-3 text-left transition-colors${active ? ' active border-ring bg-accent/50' : ' border-border hover:bg-accent/30'}`}
+      onClick={props.onSelect}
+    >
+      <div
+        className={`role-avatar ${roleToneClass(role.name)} mention-shortcut flex size-10 select-none items-center justify-center rounded-md bg-none bg-secondary text-sm font-medium text-secondary-foreground`}
+        {...mentionShortcutHandlers}
+      >
         {roleAvatarLabel(role.name)}
       </div>
-      <div className="role-card-main">
-        <div className="role-row">
-          <div className="role-name mention-shortcut" {...mentionShortcutHandlers}>{role.name}</div>
-          <span className={`status-pill status-${role.status}`}>{ui(roleStatusLabel(role.status))}</span>
+      <div className="role-card-main min-w-0">
+        <div className="role-row flex items-center gap-2">
+          <div className="role-name mention-shortcut truncate text-[13px] font-medium" {...mentionShortcutHandlers}>{role.name}</div>
+          <span className={`status-pill status-${role.status} inline-flex h-5 shrink-0 items-center rounded-full border border-border bg-none px-2 text-[10px] text-muted-foreground`}>{ui(roleStatusLabel(role.status))}</span>
         </div>
-        <div className="role-description">{role.description || ui('未填写人员描述')}</div>
-        <div className="chat-row tiny role-meta">
+        <div className="role-description mt-0.5 line-clamp-2 text-xs text-muted-foreground">{role.description || ui('未填写人员描述')}</div>
+        <div className="chat-row tiny role-meta mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
           <div className="role-site-control">
             <DropdownMenu open={props.siteMenuOpen} onOpenChange={props.onSiteMenuOpenChange}>
               <DropdownMenuTrigger
-                className={`site-pill ${model.className}`}
+                className={`site-pill ${model.className} inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-none bg-muted px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground`}
                 aria-expanded={props.siteMenuOpen}
                 onClick={event => event.stopPropagation()}
               >{model.label}</DropdownMenuTrigger>
@@ -319,7 +342,7 @@ function RoleCard(props: RoleCardProps) {
                   return (
                     <DropdownMenuItem
                       key={option.key}
-                      className={`role-site-option${activeOption ? ' active' : ''}`}
+                      className={`role-site-option${activeOption ? ' active bg-accent/60' : ''}`}
                       onSelect={() => {
                         props.onSiteMenuOpenChange(false)
                         if (activeOption) return
@@ -331,17 +354,17 @@ function RoleCard(props: RoleCardProps) {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <span className="role-meta-item">{roleContextProgressText(role, ui)}</span>
-          <span className="role-meta-item">{roleConnectionStatusText(role, ui)}</span>
+          <span className="role-meta-item truncate">{roleContextProgressText(role, ui)}</span>
+          <span className="role-meta-item shrink-0">{roleConnectionStatusText(role, ui)}</span>
         </div>
         {role.status === 'error' && (
-          <div className="reference-box">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
+          <div className="reference-box mt-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
         )}
       </div>
-      <div className="role-card-actions">
+      <div className="role-card-actions flex flex-col gap-0.5">
         <button
           type="button"
-          className="role-prompt-detail"
+          className="role-prompt-detail flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           data-role-prompt-detail={role.id}
           aria-label={language === 'en' ? `View ${role.name}'s prompt` : `查看 ${role.name} 的提示词`}
           title={ui('查看提示词')}
@@ -352,7 +375,7 @@ function RoleCard(props: RoleCardProps) {
         ><PromptDetailIcon /></button>
         <button
           type="button"
-          className="role-refresh"
+          className="role-refresh flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
           data-role-refresh={role.id}
           aria-label={language === 'en' ? `Refresh ${role.name}'s member window` : `刷新 ${role.name} 的成员窗口`}
           title={role.modelSource === 'external' ? ui('API 成员无需刷新窗口') : ui('刷新成员窗口')}
@@ -364,7 +387,7 @@ function RoleCard(props: RoleCardProps) {
         >↻</button>
         <button
           type="button"
-          className="role-jump"
+          className="role-jump flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           aria-label={language === 'en' ? `Jump to ${role.name}'s source window` : `跳转到 ${role.name} 的原始窗口`}
           title={ui('跳转到原始窗口')}
           onClick={event => {
@@ -374,7 +397,7 @@ function RoleCard(props: RoleCardProps) {
         >↗</button>
         <button
           type="button"
-          className="role-delete"
+          className="role-delete flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
           data-role-delete={role.id}
           aria-label={language === 'en' ? `Delete ${role.name}` : `删除 ${role.name}`}
           title={ui('删除成员')}
@@ -390,7 +413,7 @@ function RoleCard(props: RoleCardProps) {
 
 function TrashIcon(): React.ReactNode {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="size-3.5" fill="currentColor">
       <path d="M9 4h6l1 2h4v2H4V6h4l1-2Zm-2 6h10l-.7 9.1A2 2 0 0 1 14.3 21H9.7a2 2 0 0 1-2-1.9L7 10Zm3 2v6h1.6v-6H10Zm2.4 0v6H14v-6h-1.6Z" />
     </svg>
   )
@@ -402,6 +425,7 @@ function PromptDetailIcon(): React.ReactNode {
       viewBox="0 0 24 24"
       aria-hidden="true"
       focusable="false"
+      className="size-3.5"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.8"
