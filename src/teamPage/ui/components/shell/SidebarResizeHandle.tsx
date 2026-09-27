@@ -5,7 +5,8 @@ import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
  * 侧栏拖宽手柄（规格 §5.2 修订：官方 Resizable 组件只支持百分比约束，
  * 无法保证 200–320px 像素钳制，故自绘；仅 wide 档且侧栏展开时渲染）。
  * 拖拽调宽；双击重置 240px；宽度经 useSidebarPrefs 持久化。
- * 定位依赖 #app 的 transform（fixed 相对 #app 而非视口，见 globals.css）；
+ * absolute 相对 #app 定位（#app 自身 fixed，恒为包含块，与 floatingWindow
+ * 是否清掉 #app 的 transform 无关，见 globals.css）；
  * left 跟随 SidebarProvider 注入的 --sidebar-width。
  * aria-label/title 沿简报原文案，英文键已入 UI_TRANSLATIONS（同
  * FloatingWindowChrome 的 vanilla 铬件模式）。

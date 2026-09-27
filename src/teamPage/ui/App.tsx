@@ -7,6 +7,7 @@ import { ExternalModelsModal } from './components/models/ExternalModelsModal'
 import { AllNotesModal } from './components/notes/AllNotesModal'
 import { NotesPanel } from './components/notes/NotesPanel'
 import { OrchestrationModal } from './components/orchestration/OrchestrationModal'
+import { RolePanel } from './components/panel/RolePanel'
 import { AddPersonModal } from './components/people/AddPersonModal'
 import { BuiltinTemplateDetailModal } from './components/people/BuiltinTemplateDetailModal'
 import { PeopleLibraryModal } from './components/people/PeopleLibraryModal'
@@ -31,8 +32,9 @@ import { LanguageSync } from './components/shell/LanguageSync'
  *   #app 之外（transform 会创建包含块，fixed 后代会被劫持）。
  * - #app 内部：FloatingWindowChrome（vanilla floatingWindow 直写的铬件，
  *   React 侧保持静态）+ AppShellFrame（SidebarProvider 受控三态统一侧栏、
- *   自绘拖宽手柄、workspace 插槽）；data-app-size 为 floatingWindow 派生
- *   写入前的档位初值（useAppSizeTier 消费）。
+ *   自绘拖宽手柄、workspace 插槽）+ RolePanel（成员抽屉，P3 起 React 化，
+ *   一直是 #app 直接子级）；data-app-size 为 floatingWindow 派生写入前的
+ *   档位初值（useAppSizeTier 消费）。
  * - 弹窗群已全部 React 化（notes 面板与全部笔记弹窗由 <NotesPanel/> /
  *   <AllNotesModal/> 接管；人员库 5 弹窗由 people/ 下组件接管，外部模型
  *   弹窗由 <ExternalModelsModal/> 接管，编排三弹窗由 <OrchestrationModal/>
@@ -50,6 +52,10 @@ export function App() {
           <Messages />
           <Composer />
         </AppShellFrame>
+        {/* 成员抽屉常驻挂载（收起态靠 translateX(100%) 藏，非卸载）：
+        必须是 #app 直接子级——`.app-shell > *` 的 pointer-events 放行
+        只对直接子级生效（评审裁定 R1 恢复，Task 7 初版曾随简报遗漏） */}
+        <RolePanel />
       </div>
 
       <NotesPanel />

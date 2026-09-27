@@ -246,16 +246,19 @@
   }
   .app-shell > * { pointer-events: auto; }
 
-  /* SidebarProvider 官方包装层用 min-h-svh（视口高）；壳内必须随 #app 高度 */
+  /* SidebarProvider 官方包装层用 min-h-svh（视口高）；壳内必须随 #app 高度。
+     min-height 的矫正放文件末尾 utilities 层——官方 utility 恒胜 components，
+     在这里写 min-height:0 是死声明（构建产物已核实层序） */
   .app-shell [data-slot='sidebar-wrapper'] {
-    min-height: 0;
     height: 100%;
   }
 
-  /* 侧栏拖宽手柄（自绘，规格 §5.2 修订）：#app 有 transform，
-     fixed 相对 #app 定位；left 跟随 provider 注入的 --sidebar-width */
+  /* 侧栏拖宽手柄（自绘，规格 §5.2 修订）：absolute 相对 #app（#app 自身
+     fixed，恒为包含块——floatingWindow 在 boot 恢复几何/拖动/拉伸/取消
+     最小化时都会把 #app 的 transform 置 none，fixed 的包含块会漂回视口）；
+     left 跟随 provider 注入的 --sidebar-width */
   .sidebar-resize-handle {
-    position: fixed;
+    position: absolute;
     top: 0;
     bottom: 0;
     left: calc(var(--sidebar-width) - 2px);
@@ -275,12 +278,16 @@
 
   /*
    * 右缘/底缘窗口拉伸手柄（T4 引入的 DOM，定位规则此前缺失，此处补齐）：
-   * 与侧栏手柄同理，#app 有 transform 时 fixed 相对 #app 定位。
+   * 与侧栏手柄同理，absolute 相对 #app 定位，与 #app 的 transform 状态无关
+   * （floatingWindow.ts:113-119 boot 恢复持久几何、:134 拖动、:163 拉伸、
+   * :85 取消最小化都会把 #app 的 transform 置 none，届时 fixed 的包含块
+   * 漂回视口，手柄会画在窗外的鬼影位置——pre-T7 的角落把手本就是
+   * absolute，从无此缺陷）。
    * width/height 的 auto 是必需重置——共享类 .window-resize-handle 把
    * 两维都钉在 24px，不重置则 top:0;bottom:0 / left:0;right:0 拉不满整边。
    */
   #window-resize-handle-right {
-    position: fixed;
+    position: absolute;
     top: 0;
     bottom: 0;
     right: 0;
@@ -290,7 +297,7 @@
   }
 
   #window-resize-handle-bottom {
-    position: fixed;
+    position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
@@ -301,8 +308,9 @@
 
   /*
    * 以下壳层状态/铬件几何自 legacy.css 搬迁（S1 Task 7，搬迁项先复制后删）：
-   * 几何数值一字不改，颜色字面量换 zinc token；legacy 独有的
-   * .rail/.panel-header/.chat-header 死选择器随旧壳退役不再搬迁。
+   * 几何数值一字不改，颜色字面量换 zinc token；搬迁时剔除的死选择器
+   * （.rail、.chat-header，目标随旧壳退役）不再搬迁——.panel-header 仍是
+   * 活规则（RolePanel/NotesPanel 在用），留在 legacy 未动。
    */
   .app-shell.minimized {
     display: none;
@@ -403,5 +411,30 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--card);
+  }
+}
+
+/*
+ * 壳内 sidebar 原语矫正（utilities 层）。为什么不在 components 层写：
+ * utilities 层恒胜 components 层（层序 theme/base/legacy/components/
+ * utilities，构建产物 team.css 已核实 .fixed/.h-svh/.min-h-svh 全部晚于
+ * components 块输出），sidebar 原语（ui/sidebar.tsx）自带的
+ * min-h-svh / fixed / h-svh 在 components 层覆盖不掉。这里与官方 utility
+ * 同层，特异性（0-2-0 > 0-1-0）与源序双重取胜：
+ * - wrapper：min-height 归零——官方 min-h-svh 是视口高，壳内必须随 #app
+ *   高度，否则侧栏/workspace 顶破 #app 的 overflow:hidden；
+ * - container：fixed → absolute（#app 自身 fixed，恒为包含块，不受
+ *   floatingWindow 清 #app transform 影响，见上文手柄注释）；
+ *   height: 100%——官方 h-svh 固定视口高，即使包含块正确也会被
+ *   #app 的 overflow:hidden 裁掉 SidebarFooter。
+ */
+@layer utilities {
+  .app-shell [data-slot='sidebar-wrapper'] {
+    min-height: 0;
+  }
+
+  .app-shell [data-slot='sidebar-container'] {
+    position: absolute;
+    height: 100%;
   }
 }

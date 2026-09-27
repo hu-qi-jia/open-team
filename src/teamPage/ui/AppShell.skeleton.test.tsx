@@ -44,6 +44,9 @@ describe('App shell', () => {
     try {
       expect(document.querySelector('[data-sidebar="sidebar"]')).not.toBeNull()
       expect(document.querySelector('.rail')).toBeNull()
+      // 成员抽屉常驻挂载（收起态靠 translateX(100%) 藏）；开合行为由
+      // RolePanel.test.tsx 覆盖，这里只锁「在壳内」
+      expect(document.querySelector('.role-panel')).not.toBeNull()
       const app = document.getElementById('app')!
       expect(['compact', 'medium', 'wide']).toContain(app.dataset.appSize)
     } finally {
