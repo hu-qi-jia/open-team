@@ -3,6 +3,8 @@ import { BUILTIN_ORCHESTRATION_TEMPLATES, type BuiltinOrchestrationTemplate, typ
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { templateCapabilityLabel, templateCategoryLabel } from '../../lib/orchestrationDraft'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 
 export interface OrchestrationTemplatePickerModalProps {
   open: boolean
@@ -14,9 +16,12 @@ export interface OrchestrationTemplatePickerModalProps {
 
 /*
  * 编排模板选择弹窗（原 renderTemplatePicker 对译，P4c）。
- * #orchestration-template-modal 与内部类名逐字保留；模板卡按
- * structure / scenario 分组，data-template-id 供测试与 applyTemplate 定位。
- * 打开后聚焦第一张模板卡（原 openTemplatePicker 的 focus 对译）。
+ * W1 起外壳换 Radix Dialog——#orchestration-template-modal id 移到
+ * DialogContent；与主弹窗同为「仅按钮可关」：Escape/背板点击/焦点外移
+ * 三 preventDefault + 无 onOpenChange。首开聚焦第一张模板卡改走
+ * onOpenAutoFocus（Radix 挂载内容晚于 open 翻转）。
+ * 模板卡按 structure / scenario 分组，data-template-id 供测试与
+ * applyTemplate 定位。
  */
 export function OrchestrationTemplatePickerModal({ open, disabled, onApply, onClose }: OrchestrationTemplatePickerModalProps) {
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
@@ -28,15 +33,26 @@ export function OrchestrationTemplatePickerModal({ open, disabled, onApply, onCl
   }, [open])
 
   return (
-    <div id="orchestration-template-modal" className="modal-backdrop modal-backdrop-secondary" hidden={!open}>
-      <section className="modal orchestration-template-modal" role="dialog" aria-modal="true" aria-labelledby="orchestration-template-title">
-        <div className="modal-header">
+    <Dialog open={open}>
+      <DialogContent
+        id="orchestration-template-modal"
+        aria-labelledby="orchestration-template-title"
+        showCloseButton={false}
+        className="orchestration-template-modal w-[min(760px,calc(100vw-42px))] max-w-none sm:max-w-none gap-3.5 bg-popover"
+        onEscapeKeyDown={event => event.preventDefault()}
+        onInteractOutside={event => event.preventDefault()}
+        onOpenAutoFocus={event => {
+          event.preventDefault()
+          document.querySelector<HTMLButtonElement>('.orchestration-template-card')?.focus()
+        }}
+      >
+        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
           <div>
-            <h2 id="orchestration-template-title">{ui('选择编排模板')}</h2>
-            <p className="tiny">{ui('先套用一套结构，再按当前任务微调人员和节点。')}</p>
+            <DialogTitle id="orchestration-template-title">{ui('选择编排模板')}</DialogTitle>
+            <DialogDescription className="tiny">{ui('先套用一套结构，再按当前任务微调人员和节点。')}</DialogDescription>
           </div>
-          <button id="close-orchestration-template" className="icon-btn modal-close" type="button" aria-label={ui('关闭模板选择')} onClick={onClose}>×</button>
-        </div>
+          <Button id="close-orchestration-template" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭模板选择')} onClick={onClose}>×</Button>
+        </DialogHeader>
         <div id="orchestration-template-content" className="orchestration-template-content">
           <section className="orchestration-template-panel">
             <div className="orchestration-template-heading">
@@ -69,8 +85,8 @@ export function OrchestrationTemplatePickerModal({ open, disabled, onApply, onCl
             ))}
           </section>
         </div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 

@@ -55,6 +55,8 @@ import {
 import { showError, showSuccess } from '../../lib/toast'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
 import { CanvasPortal } from '../containers/CanvasPortal'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { OrchestrationAutoModal } from './OrchestrationAutoModal'
 import { OrchestrationTemplatePickerModal } from './OrchestrationTemplatePickerModal'
 
@@ -86,8 +88,10 @@ interface OrchestrationCommandResponse {
  * - 套用模板的 window.confirm 以 AlertDialog 承接（pendingTemplate 暂存）；
  * - 模板/自动生成创建的人员 id 记入 templateManagedRoleIds（ref），再次套
  *   模板时先删后建（原 collectTemplateRoleIdsToDelete 对译）。
- * 本弹窗不响应 Escape/背板点击——原 teamUiController 的 Escape 处理只覆盖
- * 群模板弹窗，编排弹窗仅按钮可关（行为保真）。
+ * W1 起外壳换 Radix Dialog：本弹窗不响应 Escape/背板点击——原
+ * teamUiController 的 Escape 处理只覆盖群模板弹窗，编排弹窗仅按钮可关
+ * （行为保真：onEscapeKeyDown/onInteractOutside preventDefault + 无
+ * onOpenChange，首开聚焦走 onOpenAutoFocus）。
  */
 export function OrchestrationModal() {
   const services = useServices()
@@ -605,15 +609,26 @@ export function OrchestrationModal() {
 
   return (
     <>
-      <div id="orchestration-modal" className="modal-backdrop" hidden={!open}>
-        <section className="modal orchestration-modal" role="dialog" aria-modal="true" aria-labelledby="orchestration-title">
-          <div className="modal-header">
+      <Dialog open={open}>
+        <DialogContent
+          id="orchestration-modal"
+          aria-labelledby="orchestration-title"
+          showCloseButton={false}
+          className="orchestration-modal w-[min(1160px,calc(100vw-42px))] max-w-none sm:max-w-none gap-3.5 bg-popover"
+          onEscapeKeyDown={event => event.preventDefault()}
+          onInteractOutside={event => event.preventDefault()}
+          onOpenAutoFocus={event => {
+            event.preventDefault()
+            document.getElementById('orchestration-task')?.focus()
+          }}
+        >
+          <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
             <div>
-              <h2 id="orchestration-title">{ui('编排任务')}</h2>
-              <p className="tiny">{ui('画布节点按连线顺序执行；同一个节点内的多个人员会并行工作。')}</p>
+              <DialogTitle id="orchestration-title">{ui('编排任务')}</DialogTitle>
+              <DialogDescription className="tiny">{ui('画布节点按连线顺序执行；同一个节点内的多个人员会并行工作。')}</DialogDescription>
             </div>
-            <button id="close-orchestration" className="icon-btn modal-close" type="button" aria-label={ui('关闭编排任务')} onClick={close}>×</button>
-          </div>
+            <Button id="close-orchestration" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭编排任务')} onClick={close}>×</Button>
+          </DialogHeader>
           <div className="orchestration-task-strip">
             <label className="field" htmlFor="orchestration-task">{ui('任务')}</label>
             <div className="orchestration-task-input-row">
@@ -834,8 +849,8 @@ export function OrchestrationModal() {
               <button id="run-orchestration" className="btn btn-primary" type="button" disabled={busy} onClick={() => void runOrchestration()}>{ui('运行')}</button>
             </div>
           </div>
-        </section>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <OrchestrationAutoModal
         open={open && autoPanelOpen}

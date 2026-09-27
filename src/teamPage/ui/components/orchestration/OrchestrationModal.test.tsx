@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { act, cleanup, fireEvent, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDefaultStore } from '../../../../group/store'
@@ -160,7 +160,7 @@ describe('orchestration modal', () => {
     await openModal(harness)
 
     const modal = document.querySelector('#orchestration-modal') as HTMLElement
-    expect(modal.hidden).toBe(false)
+    expect(modal).not.toBeNull()
     expect((document.querySelector('#orchestration-empty-hint') as HTMLElement).hidden).toBe(false)
     expect((document.querySelector('#orchestration-max-rounds') as HTMLInputElement).value).toBe('50')
     const people = document.querySelector('#orchestration-people-list')!
@@ -181,7 +181,7 @@ describe('orchestration modal', () => {
     expect(runPayload.flow?.stages.map(stage => stage.roleIds)).toEqual([['role-1'], ['role-2']])
     expect(runPayload.flow?.graph?.edges).toEqual([])
     // 运行成功后自动收起弹窗（原 run 成功分支的 close 对译）
-    expect((document.querySelector('#orchestration-modal') as HTMLElement).hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#orchestration-modal')).toBeNull())
   })
 
   it('opens orchestration setup without redirecting to external model setup', async () => {
@@ -193,7 +193,7 @@ describe('orchestration modal', () => {
     await openModal(harness)
 
     expect(showError).not.toHaveBeenCalledWith('编排依赖外部模型 API，请先配置一个外部模型。')
-    expect((document.querySelector('#orchestration-modal') as HTMLElement).hidden).toBe(false)
+    expect(document.querySelector('#orchestration-modal')).not.toBeNull()
   })
 
   it('prompts users to configure an external API before running an already-open draft', async () => {
@@ -237,10 +237,10 @@ describe('orchestration modal', () => {
 
     const trigger = document.querySelector('#open-orchestration-template')!
     expect(trigger.textContent).toContain('模板')
-    expect((document.querySelector('#orchestration-template-modal') as HTMLElement).hidden).toBe(true)
+    expect(document.querySelector('#orchestration-template-modal')).toBeNull()
     await userEvent.click(trigger)
 
-    expect((document.querySelector('#orchestration-template-modal') as HTMLElement).hidden).toBe(false)
+    expect(document.querySelector('#orchestration-template-modal')).not.toBeNull()
     const content = document.querySelector('#orchestration-template-content')!
     expect(content.textContent).toContain('编排类型')
     expect(content.textContent).toContain('业务场景')
@@ -260,6 +260,8 @@ describe('orchestration modal', () => {
     })
     await openModal(harness)
 
+    // 模板选择改为 Radix Dialog：内容随 open 挂载，先点「模板」打开（原实现常驻 hidden DOM 可直接点卡片）
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="review-loop"]')!)
     await flushAsync()
 
@@ -270,7 +272,7 @@ describe('orchestration modal', () => {
         expect.objectContaining({ source: 'temporary', createdBy: 'orchestration-template', name: '审核员', chatSite: 'deepseek' }),
       ]),
     }))
-    expect((document.querySelector('#orchestration-template-modal') as HTMLElement).hidden).toBe(true)
+    await waitFor(() => expect(document.querySelector('#orchestration-template-modal')).toBeNull())
     expect(showSuccess).toHaveBeenLastCalledWith(expect.stringContaining('循环审核'))
     typeInto('#orchestration-task', '打磨一篇发布文案')
     await userEvent.click(document.querySelector('#save-orchestration')!)
@@ -295,6 +297,7 @@ describe('orchestration modal', () => {
     })
     await openModal(harness)
 
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="parallel-merge"]')!)
     await flushAsync()
 
@@ -309,6 +312,7 @@ describe('orchestration modal', () => {
     await openModal(harness)
     typeInto('#orchestration-task', '评估我们自己的 OpenTeam 模板体验。')
 
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="parallel-merge"]')!)
     await flushAsync()
 
@@ -333,9 +337,11 @@ describe('orchestration modal', () => {
     })
     await openModal(harness)
 
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="review-loop"]')!)
     await flushAsync()
-    // 画布已有节点：二次套模板先弹替换确认（原 window.confirm → AlertDialog）
+    // 套用后选择弹窗自动关闭，二次套模板重新打开；画布已有节点先弹替换确认（原 window.confirm → AlertDialog）
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="parallel-merge"]')!)
     await userEvent.click(within(document.body).getByRole('button', { name: '替换' }))
     await flushAsync()
@@ -368,6 +374,7 @@ describe('orchestration modal', () => {
     })
     await openModal(harness)
 
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="parallel-merge"]')!)
     await flushAsync()
 
@@ -397,8 +404,11 @@ describe('orchestration modal', () => {
     })
     await openModal(harness)
 
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="review-loop"]')!)
     await flushAsync()
+    // 套用后选择弹窗自动关闭，二次套模板重新打开（画布已有节点先弹替换确认）
+    await userEvent.click(document.querySelector('#open-orchestration-template')!)
     await userEvent.click(document.querySelector('[data-template-id="parallel-merge"]')!)
     await userEvent.click(within(document.body).getByRole('button', { name: '替换' }))
     await flushAsync()
@@ -697,7 +707,7 @@ describe('orchestration modal', () => {
     await userEvent.click(document.querySelector('#auto-orchestration')!)
     expect(harness.services.sendRuntimeMessage).not.toHaveBeenCalled()
     const autoModal = document.querySelector('#orchestration-auto-modal') as HTMLElement
-    expect(autoModal.hidden).toBe(false)
+    expect(autoModal).not.toBeNull()
     const chat = autoModal.querySelector<HTMLElement>('.orchestration-auto-chat')
     expect(chat).not.toBeNull()
     expect(chat?.querySelector('.orchestration-auto-task-preview')).toBeNull()
@@ -727,7 +737,7 @@ describe('orchestration modal', () => {
 
     expect(harness.services.sendRuntimeMessage).toHaveBeenCalledWith('GROUP_ORCHESTRATION_AUTO_GENERATE', expect.objectContaining({ chatId: 'chat-1', task: '写一篇文章', instruction: '先规划，再写作，最后审核', flowId: undefined, streamId: expect.any(String) }))
     expect(document.querySelector('#orchestration-people-list')!.textContent).toContain('写手')
-    expect((document.querySelector('#orchestration-auto-modal') as HTMLElement).hidden).toBe(false)
+    expect(document.querySelector('#orchestration-auto-modal')).not.toBeNull()
     expect(autoContent.querySelector('.orchestration-auto-chat')).not.toBeNull()
     expect(autoContent.textContent).toContain('已生成自动流程')
     expect(MockGraph.latest().nodes.find(node => node.id === 'stage-write')?.label).toContain('ChatGPT')
@@ -750,6 +760,9 @@ describe('orchestration modal', () => {
     await flushAsync()
     expect(harness.services.runCommand).toHaveBeenCalledWith('GROUP_ROLE_UPDATE', { roleId: 'role-new', patch: { systemPrompt: '新的写作人设' } })
 
+    // 自动编排为独立 Radix Dialog（覆盖主弹窗时主弹窗不可点）：保存前先关闭聊天面板，历史已回写流程
+    await userEvent.click(document.querySelector('#close-auto-orchestration')!)
+    await flushAsync()
     await userEvent.click(document.querySelector('#save-orchestration')!)
     await flushAsync()
     const savePayload = commandPayload(harness, 'GROUP_ORCHESTRATION_FLOW_SAVE') as { flow?: OrchestrationFlow }
@@ -771,7 +784,7 @@ describe('orchestration modal', () => {
 
     await userEvent.click(document.querySelector('#auto-orchestration')!)
 
-    expect((document.querySelector('#orchestration-auto-modal') as HTMLElement).hidden).toBe(false)
+    expect(document.querySelector('#orchestration-auto-modal')).not.toBeNull()
     expect(document.querySelector('.orchestration-auto-chat')).not.toBeNull()
     expect(document.querySelector('.orchestration-auto-panel-header')).toBeNull()
     expect(document.querySelector('[aria-label="关闭自动编排面板"]')).toBeNull()
@@ -851,6 +864,6 @@ describe('orchestration modal', () => {
 
     expect(document.querySelector('#orchestration-stage-canvas')).not.toBeNull()
     expect(document.querySelector('#orchestration-modal')!.contains(document.querySelector('#orchestration-stage-canvas'))).toBe(true)
-    expect((document.querySelector('#orchestration-auto-modal') as HTMLElement).hidden).toBe(true)
+    expect(document.querySelector('#orchestration-auto-modal')).toBeNull()
   })
 })

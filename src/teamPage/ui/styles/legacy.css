@@ -3580,7 +3580,6 @@ select:focus {
 }
 
 .orchestration-modal {
-  width: min(1160px, calc(100vw - 42px));
   height: min(760px, calc(100vh - 42px));
   max-height: calc(100vh - 42px);
   min-height: 0;
@@ -3640,7 +3639,6 @@ select:focus {
 }
 
 .orchestration-template-modal {
-  width: min(760px, calc(100vw - 42px));
   max-height: calc(100vh - 70px);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -3760,7 +3758,6 @@ select:focus {
 }
 
 .orchestration-auto-modal {
-  width: min(860px, calc(100vw - 42px));
   height: min(760px, calc(100vh - 70px));
   max-height: calc(100vh - 70px);
   display: grid;

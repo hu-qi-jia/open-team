@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import type { OrchestrationAutoPlanHistoryEntry } from '../../../../group/types'
 import { normalizeLanguage, translateUi } from '../../../../shared/i18n'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
+import { Button } from '../ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 
 export interface OrchestrationAutoModalProps {
   open: boolean
@@ -20,10 +22,14 @@ export interface OrchestrationAutoModalProps {
 
 /*
  * 自动编排弹窗（原 orchestrationModalView 的 renderAutoPanel 对译，P4c）。
- * #orchestration-auto-modal 与内部类名逐字保留。聊天区 = autoPlanHistory
- * （+ 生成中的「用户消息 / 流式助手回复」占位条目）；底部输入 Enter 直接
- * 发送（Shift+Enter 换行、IME 组合中不触发），发送后清空由父级回写。
- * 流式期间消息区贴底滚动（原 messages.scrollTop = scrollHeight）。
+ * W1 起外壳换 Radix Dialog——#orchestration-auto-modal id 移到
+ * DialogContent；与主弹窗同为「仅按钮可关」：Escape/背板点击/焦点外移
+ * 三 preventDefault + 无 onOpenChange。首开聚焦输入框改走
+ * onOpenAutoFocus（Radix 挂载内容晚于 open 翻转）。聊天区 =
+ * autoPlanHistory（+ 生成中的「用户消息 / 流式助手回复」占位条目）；底部
+ * 输入 Enter 直接发送（Shift+Enter 换行、IME 组合中不触发），发送后清空
+ * 由父级回写。流式期间消息区贴底滚动（原 messages.scrollTop =
+ * scrollHeight）。
  */
 export function OrchestrationAutoModal({ open, entries, instruction, busy, generating, inputPlaceholder, onInstructionChange, onSubmit, onClose }: OrchestrationAutoModalProps) {
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
@@ -35,22 +41,34 @@ export function OrchestrationAutoModal({ open, entries, instruction, busy, gener
     if (messages) messages.scrollTop = messages.scrollHeight
   })
 
-  // 打开即聚焦输入框（原 openAutoPanel 的 focus 对译；受控渲染后执行）
+  // 打开即聚焦输入框（原 openAutoPanel 的 focus 对译）。首开由下方
+  // onOpenAutoFocus 承担；弹窗已开时的再次触发由这里兜底
   useEffect(() => {
     if (!open) return
     queueMicrotask(() => document.querySelector<HTMLTextAreaElement>('.orchestration-auto-input')?.focus())
   }, [open])
 
   return (
-    <div id="orchestration-auto-modal" className="modal-backdrop modal-backdrop-secondary" hidden={!open}>
-      <section className="modal orchestration-auto-modal" role="dialog" aria-modal="true" aria-labelledby="orchestration-auto-title">
-        <div className="modal-header">
+    <Dialog open={open}>
+      <DialogContent
+        id="orchestration-auto-modal"
+        aria-labelledby="orchestration-auto-title"
+        showCloseButton={false}
+        className="orchestration-auto-modal w-[min(860px,calc(100vw-42px))] max-w-none sm:max-w-none gap-0 bg-popover"
+        onEscapeKeyDown={event => event.preventDefault()}
+        onInteractOutside={event => event.preventDefault()}
+        onOpenAutoFocus={event => {
+          event.preventDefault()
+          document.querySelector<HTMLTextAreaElement>('.orchestration-auto-input')?.focus()
+        }}
+      >
+        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
           <div>
-            <h2 id="orchestration-auto-title">{ui('自动编排')}</h2>
-            <p className="tiny">{ui('根据任务和你的补充描述生成或修改流程。')}</p>
+            <DialogTitle id="orchestration-auto-title">{ui('自动编排')}</DialogTitle>
+            <DialogDescription className="tiny">{ui('根据任务和你的补充描述生成或修改流程。')}</DialogDescription>
           </div>
-          <button id="close-auto-orchestration" className="icon-btn modal-close" type="button" aria-label={ui('关闭自动编排')} onClick={onClose}>×</button>
-        </div>
+          <Button id="close-auto-orchestration" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭自动编排')} onClick={onClose}>×</Button>
+        </DialogHeader>
         <div id="orchestration-auto-content" className="orchestration-auto-content">
           <section className="orchestration-auto-chat">
             <div className="orchestration-auto-messages" ref={messagesRef}>
@@ -89,7 +107,7 @@ export function OrchestrationAutoModal({ open, entries, instruction, busy, gener
             </form>
           </section>
         </div>
-      </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
