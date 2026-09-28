@@ -110,7 +110,9 @@ try {
   const exists = () => page.evaluate(() => document.getElementById('all-notes-modal') !== null)
 
   // ---- 打开全部笔记（Radix） ----
-  await page.click('#open-all-notes')
+  // #open-all-notes 是 uiBus 命令名，不是 DOM id：Rail 退役（5b14885）时入口钮
+  // 变成了 AppShellFrame 的 ToolButton（无 id，只有 aria-label）。仅换选择器。
+  await page.click('button[aria-label="全部笔记"]')
   await page.waitForSelector('#all-notes-modal', { timeout: 5000 })
   await sleep(500)
 
@@ -136,7 +138,7 @@ try {
   check('dialog closes on Escape', !(await exists()))
 
   // 重开：编辑器在新容器上重建（engine.destroy 后 ensureEditor）
-  await page.click('#open-all-notes')
+  await page.click('button[aria-label="全部笔记"]')
   await page.waitForSelector('#all-notes-modal', { timeout: 5000 })
   await sleep(500)
   const reopened = await probe()
@@ -151,7 +153,7 @@ try {
   check('dialog closes on overlay click', !(await exists()))
 
   // 内容区点击不关闭
-  await page.click('#open-all-notes')
+  await page.click('button[aria-label="全部笔记"]')
   await page.waitForSelector('#all-notes-modal', { timeout: 5000 })
   await sleep(400)
   await page.evaluate(() => { document.querySelector('.all-notes-workspace')?.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
@@ -163,7 +165,7 @@ try {
   await sleep(400)
   await page.click('#theme-light')
   await sleep(400)
-  await page.click('#open-all-notes')
+  await page.click('button[aria-label="全部笔记"]')
   await page.waitForSelector('#all-notes-modal', { timeout: 5000 })
   await sleep(400)
   const light = await probe()

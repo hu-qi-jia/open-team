@@ -196,7 +196,9 @@ try {
 
   // ---- 6. 全部笔记弹窗：列表 / 切目标 / Escape 关闭 ----
   await page.evaluate(() => document.getElementById('notes-panel')?.classList.add('shot-ignore'))
-  await page.click('#open-all-notes')
+  // #open-all-notes 是 uiBus 命令名，不是 DOM id：Rail 退役（5b14885）时入口钮
+  // 变成了 AppShellFrame 的 ToolButton（无 id，只有 aria-label）。仅换选择器。
+  await page.click('button[aria-label="全部笔记"]')
   await page.waitForSelector('#all-notes-modal:not([hidden])', { timeout: 5000 })
   await page.waitForSelector('#all-notes-editor .ProseMirror', { timeout: 10_000 })
   await new Promise(resolve => setTimeout(resolve, 400))
