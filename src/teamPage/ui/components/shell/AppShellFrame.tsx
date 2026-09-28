@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { Boxes, LayoutGrid, Search, Users } from 'lucide-react'
 import { useServices } from '../../context/ServicesContext'
 import { useT } from '../../hooks/useT'
@@ -31,6 +31,12 @@ export function AppShellFrame({ children }: { children: ReactNode }) {
 
   const collapsible = tier === 'compact' ? 'offcanvas' : 'icon'
   const open = sidebar.userOpen ?? tier === 'wide'
+
+  // 图标条形态下搜索框整行隐藏（见下方 group-data-[collapsible=icon]:hidden），
+  // 过滤词若不复位，用户会看到「群少了几个」却无从清除（S2 终审挂账）。
+  useEffect(() => {
+    if (collapsible === 'icon' && !open) setChatQuery('')
+  }, [collapsible, open])
 
   return (
     <SidebarProvider
