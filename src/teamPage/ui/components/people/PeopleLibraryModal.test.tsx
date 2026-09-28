@@ -208,6 +208,30 @@ describe('team page people library modal', () => {
     expect(document.querySelector('#builtin-template-detail-modal')).not.toBeNull()
     expect(document.querySelector('#builtin-template-detail-title')?.textContent).toBe('弗兰克尔')
     expect(document.querySelector('#builtin-template-detail-meta')?.textContent).toContain('内置人员')
+
+    // 外壳契约：宽度令牌 lg=720（.template-detail-modal 想写 720 却被原语
+    // 基类 sm:max-w-lg 钳成 512 的老问题随壳消失）、无 max-w-lg、壳的 p-0
+    const modal = document.querySelector<HTMLElement>('#builtin-template-detail-modal')!
+    expect(modal.classList.contains('w-[min(720px,calc(100vw-48px))]')).toBe(true)
+    expect(modal.classList.contains('max-w-lg')).toBe(false)
+    expect(modal.classList.contains('p-0')).toBe(true)
+    // 正文内边距由 bodyClassName 补回（本弹窗自己不带 padding）
+    const bodyRow = modal.lastElementChild as HTMLElement
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
+    // 描述 id 不再被显式 id 顶掉 Radix 自动 id：content 的 aria-describedby
+    // 必须指回弹窗内真实存在的那个描述节点
+    expect(modal.getAttribute('aria-describedby')).toBe('builtin-template-detail-meta')
+    expect(modal.querySelector('#builtin-template-detail-meta')).not.toBeNull()
+
+    // 提示词预览退役 legacy 规则后，换行/行距/凹槽底/前景色由 utilities 承担
+    const pre = bodyRow.querySelector<HTMLElement>('#builtin-template-detail-prompt')!
+    expect(pre.classList.contains('template-prompt-preview')).toBe(true)
+    expect(pre.classList.contains('whitespace-pre-wrap')).toBe(true)
+    expect(pre.classList.contains('leading-[1.65]')).toBe(true)
+    expect(pre.classList.contains('bg-background')).toBe(true)
+    expect(pre.classList.contains('text-foreground')).toBe(true)
+
     const prompt = document.querySelector('#builtin-template-detail-prompt')?.textContent ?? ''
     expect(prompt).toContain('弗兰克尔式意义顾问')
     expect(prompt).toContain('意义疗法')
@@ -246,5 +270,50 @@ describe('team page people library modal', () => {
     expect(document.querySelector('#person-template-modal')).not.toBeNull()
     expect(document.querySelector('#template-form-title')?.textContent).toContain('新建人员')
     expect(state.selectedTemplateId).toBeUndefined()
+  })
+
+  it('renders through the shared modal shell with the md width token', async () => {
+    const state = createTeamPageState()
+    state.store = makeStore([makeTemplate(1)])
+    const { services } = renderLibrary(state)
+
+    await openLibrary(services)
+
+    const modal = document.querySelector<HTMLElement>('#people-library-modal')
+    expect(modal).not.toBeNull()
+    // 宽度令牌由 AppModal 的 size="md" 承担（沟槽统一 48px），原语基类的
+    // max-w-[calc(100%-2rem)] sm:max-w-lg 必须被 max-w-none sm:max-w-none 抵掉
+    expect(modal!.classList.contains('w-[min(640px,calc(100vw-48px))]')).toBe(true)
+    expect(modal!.classList.contains('max-w-lg')).toBe(false)
+    expect(modal!.getAttribute('aria-labelledby')).toBe('people-library-title')
+    // p-0 是壳自己的贡献（抵掉原语基类 p-6）：内容节点确实由 AppModal
+    // 渲染，而不是还留着手写的 DialogContent——正文内边距因此必须由
+    // bodyClassName 显式补回来（见下一条用例）
+    expect(modal!.classList.contains('p-0')).toBe(true)
+  })
+
+  it('keeps the list scrollable inside a fixed-height shell', async () => {
+    const state = createTeamPageState()
+    state.store = makeStore([makeTemplate(1)])
+    const { services } = renderLibrary(state)
+
+    await openLibrary(services)
+
+    const modal = document.querySelector<HTMLElement>('#people-library-modal')!
+    // height="fixed" 的定高与「头部一行 + 内容一行」栅格
+    expect(modal.classList.contains('h-[min(760px,calc(100vh-48px))]')).toBe(true)
+    expect(modal.classList.contains('grid-rows-[auto_minmax(0,1fr)]')).toBe(true)
+
+    // 内容行（头部之后那一行）：fixed 模式自带 overflow-auto，必须被
+    // bodyClassName 的 overflow-hidden 抵回去——全弹窗唯一的滚动容器是
+    // #people-library-list，多一层滚动容器就会让「列表区可滚动」失准
+    const bodyRow = modal.lastElementChild as HTMLElement
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('overflow-hidden')).toBe(true)
+    expect(bodyRow.querySelector('#people-library-list')).not.toBeNull()
+
+    // 正文内边距：壳用 p-0 收掉了原语基类的 24px，这个弹窗自己不带任何
+    // padding，必须靠 bodyClassName 的 p-6 补回（jsdom 不算布局，只能断类）
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
   })
 })

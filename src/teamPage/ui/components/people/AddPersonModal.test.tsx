@@ -274,6 +274,56 @@ describe('team page add person modal', () => {
     expect(document.querySelector('#add-person-modal')).toBeNull()
   })
 
+  it('renders through the shared modal shell with the xl width token and keeps the row geometry', async () => {
+    const chat = makeChat('chat-1')
+    const template = makeTemplate(1)
+    const state = createTeamPageState()
+    state.store = makeStore([template], chat)
+    state.selectedChatId = chat.id
+    const { services } = renderAddPerson(state)
+
+    await openAddPerson(services)
+
+    const modal = document.querySelector<HTMLElement>('#add-person-modal')
+    expect(modal).not.toBeNull()
+    // 宽度令牌由 AppModal 的 size="xl" 承担（沟槽统一 48px），原语基类的
+    // sm:max-w-lg 必须被 max-w-none sm:max-w-none 抵掉
+    expect(modal!.classList.contains('w-[min(820px,calc(100vw-48px))]')).toBe(true)
+    expect(modal!.classList.contains('max-w-lg')).toBe(false)
+    // p-0 是壳自己的贡献（抵掉原语基类的 p-6）：内容节点确实由 AppModal
+    // 渲染，而不是还留着手写的 DialogContent
+    expect(modal!.classList.contains('p-0')).toBe(true)
+    // 正文内边距必须靠 bodyClassName 补回来（本弹窗自己不带任何 padding，
+    // jsdom 不算布局，漏了单测抓不到；只有 T6 的几何断言看得见）
+    const bodyRow = modal!.lastElementChild as HTMLElement
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
+
+    // 承重契约（screenshot-bugfix-acceptance.mjs 直接断言这一行的几何与取色）：
+    // 行容器 / 行内 checkbox / 站点 pill 结构全部原样
+    const list = bodyRow.querySelector('#add-library-people-list')
+    expect(list).not.toBeNull()
+    const row = list!.querySelector<HTMLElement>('.select-row')
+    expect(row).not.toBeNull()
+    expect(row!.classList.contains('select-row')).toBe(true)
+    const checkbox = row!.querySelector<HTMLInputElement>('input[type="checkbox"]')
+    expect(checkbox).not.toBeNull()
+    expect(checkbox!.classList.contains('size-4')).toBe(true)
+    expect(checkbox!.classList.contains('shrink-0')).toBe(true)
+    const pill = row!.querySelector<HTMLLabelElement>('label.site-pill.add-person-site-option')
+    expect(pill).not.toBeNull()
+    expect(pill!.querySelector<HTMLInputElement>('input[type="checkbox"]')).not.toBeNull()
+
+    // 搜索框换官方 Input 原语（不再靠 legacy 全局 input{} 塑形）
+    expect(document.querySelector('#add-person-search')?.getAttribute('data-slot')).toBe('input')
+
+    // 关闭钮的 id 生命转移到 AppModal 的 closeId
+    const close = document.querySelector<HTMLButtonElement>('#close-add-person')
+    expect(close).not.toBeNull()
+    await act(async () => { close!.click() })
+    await waitFor(() => expect(document.querySelector('#add-person-modal')).toBeNull())
+  })
+
   it('adds a temporary draft through the stacked dialog and submits it as a temporary role', async () => {
     const chat = makeChat('chat-1')
     const state = createTeamPageState()

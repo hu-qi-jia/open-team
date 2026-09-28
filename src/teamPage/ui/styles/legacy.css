@@ -278,44 +278,16 @@ h3 {
   line-height: 1.35;
 }
 
-.site-segmented {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 8px;
-  padding: 3px;
-  background: rgba(6, 13, 21, 0.72);
-}
-
-.site-segment {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 34px;
-  border-radius: 6px;
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 760;
-}
-
-.site-segment[hidden] {
-  display: none;
-}
-
-.site-segment input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.site-segment:has(input:checked) {
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-  box-shadow: inset 0 0 0 1px rgba(161, 161, 170, 0.42);
-}
+/*
+ * S4-T3：站点单选族退役——唯一使用者 PersonTemplateModal 已把视觉值翻成
+ * utilities（含 has-checked: 变体 + inset-ring 独立槽位）。退役项：
+ * .site-segmented / .site-segment / .site-segment[hidden] / .site-segment input
+ * / .site-segment:has(input:checked)（浅色组内的两条也一并摘除）。
+ * 注意 .site-segment[hidden] 不是「搬走」而是「不再需要」：原来它只为压掉
+ * .site-segment{display:grid} 对 UA [hidden]{display:none} 的覆盖，Tailwind v4
+ * preflight 的 [hidden]:where(:not([hidden=until-found])){display:none!important}
+ * 带 !important，压得住 utilities 层的 grid。
+ */
 
 .field {
   display: grid;
@@ -326,18 +298,13 @@ h3 {
   display: none;
 }
 
-.ai-persona-panel {
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(161, 161, 170, 0.18);
-  border-radius: 8px;
-  background: rgba(161, 161, 170, 0.06);
-}
-
-.template-ai-actions {
-  margin-top: 0;
-}
+/*
+ * S4-T3：AI 人设面板族退役——唯一使用者 PersonTemplateModal 已把视觉值翻成
+ * utilities（grid gap-2.5 rounded-lg border border-border bg-muted/40 p-3）。
+ * 退役项：.ai-persona-panel / .template-ai-actions（后者只有 margin-top:0，
+ * 实测该元素无默认外边距，不需要替代类名）。外层的 .template-actions 行由
+ * 共享规则继续提供（OrchestrationModal 仍在用 → S6）。
+ */
 
 #template-persona-generation-status {
   min-height: 16px;
@@ -1247,12 +1214,9 @@ select:focus {
  * 变量 + bg-[rgba(…)] utilities 消费，选中态换 ring-2 ring-ring。
  * 类名保留作选择器钩子。 */
 
-.modal-card {
-  border: 1px solid rgba(113, 113, 122, 0.14);
-  border-radius: 8px;
-  padding: 12px;
-  background: rgba(24, 24, 27, 0.54);
-}
+/* S4-T4：.modal-card 退役（唯一使用者 AddPersonModal，视觉翻成
+ * rounded-lg border border-border bg-card p-3——暗色 --card = rgb(24,24,27)，
+ * 与原 rgba(24,24,27,.54) 合成在 --popover 上的结果同值）。 */
 
 .template-card.active {
   border-color: rgba(161, 161, 170, 0.56);
@@ -1289,29 +1253,23 @@ select:focus {
 /* 动态色板 .role-tone-* / .site-pill* 已于 S3 Task 4 归位到 globals.css
  * components 层（含浅色变体，及 .add-person-site-option / .role-site-badge /
  * #iframe-host .role-frame-site / .orchestration-person-site 这几位「靠源序压过
- * 基类」的冲突伴侣——它们随色板同层搬迁）。仍留在本文件的相关声明只有浅色
- * :root[data-theme="light"] .add-person-site-option（长期被同特异性的浅色
- * .site-pill/.site-pill-* 压住，属人员库重写范围）。 */
+ * 基类」的冲突伴侣——它们随色板同层搬迁）。S4-T4 起该视觉族**已全部落在
+ * globals.css**（暗色 509–601 + 浅色 645 行的 .add-person-site-option.active），
+ * 本文件不再参与：原先留在本文件的浅色 :root[data-theme="light"]
+ * .add-person-site-option 已随站点 pill 族摘除。 */
 
-/* 共享族（不得随 role 卡族退役）：AddPersonModal 的站点多选行仍靠本规则
-   提供 display/position（.add-person-site-control 只补 gap/wrap/justify）。 */
+/* 共享族（不得随 role 卡族退役）：成员抽屉成员卡与 AddPersonModal 的站点行
+   都挂这个类——RolePanel 侧的站点菜单仍靠本规则提供 display:inline-flex 与
+   position:relative（screenshot-s3-acceptance.mjs 的存活断言也在用它）。 */
 .role-site-control {
   position: relative;
   display: inline-flex;
 }
 
-.add-person-site-control {
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.template-description {
-  margin-top: 2px;
-  color: var(--muted-foreground);
-  font-size: 12px;
-  line-height: 1.45;
-}
+/* S4-T4：.add-person-site-control（gap 6 / wrap / 右对齐）与 .template-description
+ * （mt 2 / 12px / 1.45 / --muted-foreground）退役——视觉翻成 utilities 写进
+ * AddPersonModal；两个类名都保留作钩子（bugfix 探针断言站点 pill 取色与描述
+ * 行对比度），但本文件不再有它们的规则。 */
 
 .modal-form {
   display: grid;
@@ -1319,137 +1277,34 @@ select:focus {
   margin-top: 12px;
 }
 
-.people-library-modal {
-  display: grid;
-  height: min(760px, calc(100vh - 48px));
-  min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
-}
+/*
+ * S4-T2：人员库弹窗这一族已退役——外壳交给公共组合壳 common/AppModal
+ * （height="fixed" 的 h-[min(760px,calc(100vh-48px))] +
+ * grid-rows-[auto_minmax(0,1fr)] + overflow-hidden 与 .people-library-modal
+ * 逐字等价），内容区样式翻成 utilities 写进 PeopleLibraryModal.tsx。
+ * 退役项：.people-library-modal / -content / -pane、#people-library-list、
+ * .people-library-toolbar、.pagination-bar(+:empty) / .pagination-label /
+ * .pagination-btn / .template-edit / .template-type-badge / -builtin /
+ * -custom。其中 .pagination-label / .pagination-btn / .template-edit /
+ * .template-type-badge / .template-type-<type> 的类名仍留在 JSX 上作探针钩子
+ * （.pagination-btn 与 .template-edit 的框体由 Button size="sm" 承担）。
+ */
 
-.people-library-content {
-  min-height: 0;
-  overflow: hidden;
-}
+/* S4-T5：外部模型弹窗的编辑器宽度类（原 `width: min(520px, 100%)`）退役——
+ * 唯一使用者 ExternalModelsModal 换上通用组合壳 common/AppModal，宽度改由
+ * size="sm" 的 w-[min(520px,calc(100vw-48px))] 承担（沟槽 48px），类名随手写
+ * DialogContent 一起消失，本文件里不再有对应规则。
+ * ⚠️ 上方的 .modal-form（1274）**保留**：T3/T4 只迁了视觉，三个已过审弹窗
+ * （PersonTemplateModal / TemporaryPersonModal / AddPersonModal）仍在消费它的
+ * display:grid; gap:12px; margin-top:12px，退役属于 S6/S7。 */
 
-.people-library-pane {
-  display: grid;
-  min-height: 0;
-  height: 100%;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-#people-library-list {
-  min-height: 0;
-  max-height: none;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.people-library-toolbar {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 42px;
-  padding-top: 12px;
-}
-
-.pagination-bar:empty {
-  display: none;
-}
-
-.pagination-label {
-  min-width: 54px;
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 760;
-  text-align: center;
-}
-
-.pagination-btn {
-  min-height: 30px;
-  padding: 0 10px;
-}
-
-.template-edit {
-  min-height: 30px;
-  padding: 0 10px;
-}
-
-.template-type-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 999px;
-  padding: 0 7px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 820;
-  line-height: 1;
-}
-
-.template-type-builtin {
-  border-color: rgba(161, 161, 170, 0.34);
-  background: rgba(161, 161, 170, 0.1);
-  color: #d4d4d8;
-}
-
-.template-type-custom {
-  border-color: rgba(113, 113, 122, 0.22);
-  background: rgba(113, 113, 122, 0.08);
-}
-
-.template-editor-modal {
-  width: min(520px, 100%);
-}
-
-.template-detail-modal {
-  width: min(720px, 100%);
-}
-
-.template-prompt-preview {
-  max-height: min(520px, calc(100vh - 190px));
-  margin: 0;
-  overflow: auto;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 8px;
-  padding: 14px;
-  background: rgba(3, 9, 14, 0.72);
-  color: #e4e4e7;
-  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.65;
-  white-space: pre-wrap;
-}
-
-.modal-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.modal-grid {
-  display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1.1fr);
-  gap: 14px;
-}
-
-.modal-grid.single-column {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.modal-grid-wide {
-  grid-column: 1 / -1;
-}
+/* S4-T4：.template-detail-modal / .template-prompt-preview / .modal-header-actions /
+ * .modal-grid(.single-column) / .modal-grid-wide 退役——两个 .template-detail-modal
+ * 使用者（内置详情、成员抽屉的提示词详情）都换上 common/AppModal（size="lg" 承担
+ * 宽度），.template-prompt-preview 的视觉翻成 utilities 写进两个调用点（含原规则
+ * 的 color: #e4e4e7 → text-foreground，浅色覆盖的 var(--text) 就是它的别名）。
+ * 类名 .template-prompt-preview / .modal-header-actions 保留作钩子
+ * （RolePanel.test.tsx 与 bugfix/T6 探针在用）。 */
 
 .group-template-modal {
   display: grid;
@@ -1653,86 +1508,26 @@ select:focus {
   padding-top: 14px;
 }
 
-.select-list {
-  display: grid;
-  gap: 8px;
-  max-height: 360px;
-  overflow: auto;
-}
+/* S4-T4：.select-list（grid / gap 8 / max-height 360 / overflow auto）与
+ * .add-person-toolbar（grid / gap 10）退役——两个独占用例都在 AddPersonModal，
+ * 视觉翻成 utilities 写进该文件。 */
 
-.add-person-toolbar {
-  display: grid;
-  gap: 10px;
-}
 
-.template-type-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
 
-.template-type-tab {
-  min-height: 34px;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 8px;
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 760;
-}
+/*
+ * S4-T2：.template-type-tabs / .template-type-tab(+.active) /
+ * .template-category-filter / .template-category-chip(+:hover/:focus-visible/
+ * .active) 已退役——视觉值翻成 utilities 写进 people/primitives.tsx。
+ * 两个使用者（PeopleLibraryModal / AddPersonModal）都在本阶段范围内，
+ * 类名、role="tablist"、data-template-type / data-category、aria-selected
+ * 与 `active` 类名逐字保留作探针钩子。
+ */
 
-.template-type-tab.active {
-  border-color: rgba(161, 161, 170, 0.5);
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-}
-
-.template-category-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.template-category-chip {
-  min-height: 28px;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 999px;
-  padding: 0 10px;
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 760;
-}
-
-.template-category-chip:hover,
-.template-category-chip:focus-visible,
-.template-category-chip.active {
-  border-color: rgba(161, 161, 170, 0.5);
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-}
-
-.select-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid rgba(113, 113, 122, 0.14);
-  border-radius: 8px;
-  padding: 10px;
-  background: rgba(24, 24, 27, 0.46);
-}
-
-.select-row-content {
-  min-width: 0;
-}
-
-#d4d4d8-role-form {
-  border-color: rgba(113, 113, 122, 0.1);
-  background: rgba(8, 16, 24, 0.42);
-}
+/* S4-T4：.select-row / .select-row-content 退役——视觉翻成 utilities 写进
+ * AddPersonModal（grid 三列 / gap 10 / items-center / 1px 边框 / radius 8 /
+ * padding 10 / bg-card），**类名保留**：screenshot-bugfix-acceptance.mjs
+ * 直接断言 #add-library-people-list .select-row 的行几何与取色。
+ * #d4d4d8-role-form 零 TSX 使用者，同批免费清理。 */
 
 .section-title {
   display: flex;
@@ -2545,19 +2340,15 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .theme-switch,
-:root[data-theme="light"] .site-segmented {
+:root[data-theme="light"] .theme-switch {
   border-color: rgba(113, 113, 122, 0.18);
   background: #ffffff;
 }
 
 :root[data-theme="light"] .theme-option[aria-pressed="true"],
-:root[data-theme="light"] .site-segment:has(input:checked),
 :root[data-theme="light"] .mode-option:has(input:checked),
 :root[data-theme="light"] .group-template-option.active,
-:root[data-theme="light"] .group-template-category-filter.active,
-:root[data-theme="light"] .template-type-tab.active,
-:root[data-theme="light"] .template-category-chip.active {
+:root[data-theme="light"] .group-template-category-filter.active {
   border-color: rgba(113, 113, 122, 0.36);
   background: #ffffff;
   color: #27272a;
@@ -2579,9 +2370,7 @@ select:focus {
 :root[data-theme="light"] .group-template-option:hover,
 :root[data-theme="light"] .group-template-option:focus-visible,
 :root[data-theme="light"] .group-template-category-filter:hover,
-:root[data-theme="light"] .group-template-category-filter:focus-visible,
-:root[data-theme="light"] .template-category-chip:hover,
-:root[data-theme="light"] .template-category-chip:focus-visible {
+:root[data-theme="light"] .group-template-category-filter:focus-visible {
   border-color: rgba(113, 113, 122, 0.28);
   background: #ffffff;
   color: #27272a;
@@ -2634,9 +2423,9 @@ select:focus {
   color: var(--muted-foreground);
 }
 
+/* S4-T4：本组摘除 .modal-card / .select-row（两族已退役、视觉换 bg-card /
+ * border-border 语义 token）——本组剩下的是编排（S6）与群模板（S5）表面。 */
 :root[data-theme="light"] .group-template-option,
-:root[data-theme="light"] .modal-card,
-:root[data-theme="light"] .select-row,
 :root[data-theme="light"] .orchestration-sidebar,
 :root[data-theme="light"] .orchestration-settings,
 :root[data-theme="light"] .orchestration-footer,
@@ -2679,11 +2468,11 @@ select:focus {
 :root[data-theme="light"] .reference-box,
 :root[data-theme="light"] .message-tool-btn:hover,
 :root[data-theme="light"] .message-tool-btn:focus-visible,
+/* S4-T4：本组摘除 .add-person-site-option——S3 交接 A.2 记录的那条例外（搬前
+ * 即被更晚的同特异性浅色 .site-pill* 压住 = 长期 dead），站点 pill 的浅色视觉
+ * 现已全部由 globals.css 的 .site-pill* 承载（含 .active 的 645 行覆盖规则）。 */
 :root[data-theme="light"] .note-tool-btn,
-:root[data-theme="light"] .template-type-tab,
-:root[data-theme="light"] .group-template-category-filter,
-:root[data-theme="light"] .template-category-chip,
-:root[data-theme="light"] .add-person-site-option {
+:root[data-theme="light"] .group-template-category-filter {
   border-color: rgba(113, 113, 122, 0.16);
   background: #ffffff;
   color: var(--muted-foreground);
@@ -2720,7 +2509,6 @@ select:focus {
 :root[data-theme="light"] .notes-editor,
 :root[data-theme="light"] .all-note-target,
 :root[data-theme="light"] .all-note-target-title,
-:root[data-theme="light"] .template-prompt-preview,
 :root[data-theme="light"] .orchestration-status,
 :root[data-theme="light"] .orchestration-status-title,
 :root[data-theme="light"] .orchestration-status-current-main,
@@ -2752,15 +2540,9 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .template-prompt-preview {
-  border-color: rgba(113, 113, 122, 0.16);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] #d4d4d8-role-form {
-  border-color: rgba(113, 113, 122, 0.14);
-  background: #ffffff;
-}
+/* S4-T4：浅色的 .template-prompt-preview 独立规则已随暗色族一并退役——
+ * 凹槽底是 bg-background（浅色 #fff、暗色近黑），边框 border-border，
+ * 前景 text-foreground；#d4d4d8-role-form 零 TSX 使用者，属免费清理项。 */
 
 :root[data-theme="light"] #iframe-host {
   background: #ffffff;
@@ -2783,12 +2565,6 @@ select:focus {
 
 :root[data-theme="light"] #iframe-host .role-frame-label {
   color: #3f3f46;
-}
-
-:root[data-theme="light"] .template-type-builtin {
-  border-color: rgba(113, 113, 122, 0.26);
-  background: #ffffff;
-  color: #52525b;
 }
 
 :root[data-theme="light"] .chat-create-template-btn,

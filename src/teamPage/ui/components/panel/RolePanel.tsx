@@ -29,13 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../ui/alert-dialog'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card } from '../ui/card'
+import { AppModal } from '../common/AppModal'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '../ui/sheet'
 
 /*
@@ -59,7 +59,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
  * - 站点菜单 → DropdownMenu（受控单开；原 .role-site-menu 的 document
  *   关闭逻辑由 Radix 外点/Escape 接管，roleSiteMenuRoleId 状态删除）
  * - 删除确认 window.confirm → AlertDialog（已知视觉偏差，同 P2a 群列表）
- * - 提示词详情 → Dialog（原 .role-prompt-modal 手工挂 body 对译）
+ * - 提示词详情 → Dialog（原 .role-prompt-modal 手工挂 body 对译）；
+ *   S4-T4 起换公共组合壳 common/AppModal（size="lg" + 自绘 ×），仍是
+ *   SheetContent 的子树——抽屉是非模态层，叠层语义依赖这层嵌套
  * - 卡片选中 → state.selectedRoleId + notifyAppState
  * - 提及捷径：头像/名称点击与右键均插入 @（insertMention 经消息动作组）
  * 数据全部由 useStoreSelector 从 appStore 派生。
@@ -332,17 +334,31 @@ export function RolePanel() {
           </Card>
         </div>
 
-        <Dialog open={promptDetailRole !== undefined} onOpenChange={open => { if (!open) setPromptDetailRole(undefined) }}>
-          <DialogContent className="template-detail-modal" aria-describedby={undefined}>
-            <DialogHeader>
-              <DialogTitle id="role-prompt-detail-title">{promptDetailRole?.name}</DialogTitle>
-              <DialogDescription className="tiny">
-                {promptDetailRole?.description || ui('未填写人员描述')}
-              </DialogDescription>
-            </DialogHeader>
-            <pre className="template-prompt-preview">{promptDetailRole?.systemPrompt?.trim() || ui('未填写提示词')}</pre>
-          </DialogContent>
-        </Dialog>
+        {/* 提示词详情（S4-T4 起换公共组合壳 AppModal，size="lg"）。
+            **必须留在 SheetContent 的子树里**：抽屉是非模态层，弹窗的层级
+            语义依赖这层 React 嵌套（Escape/外点只关最顶层），不能挪到
+            SheetContent 外面。原实现靠 aria-describedby={undefined} 压 Radix
+            警告，壳不传 description 时天然没有悬空引用（说明行照旧由 Radix
+            给自动 id）。#role-prompt-detail-title 保留（单测与 p3 脚本在用）。 */}
+        <AppModal
+          open={promptDetailRole !== undefined}
+          onOpenChange={open => { if (!open) setPromptDetailRole(undefined) }}
+          size="lg"
+          height="auto"
+          titleId="role-prompt-detail-title"
+          title={promptDetailRole?.name}
+          description={promptDetailRole?.description || ui('未填写人员描述')}
+          closeId="close-role-prompt-detail"
+          closeLabel={ui('关闭提示词详情')}
+          onClose={() => setPromptDetailRole(undefined)}
+          // 正文内边距靠这里补回来（壳用 p-0 收掉了原语基类的 p-6）
+          bodyClassName="p-6"
+        >
+          {/* 与内置详情同一份 .template-prompt-preview utilities（legacy 规则
+              已退役）：whitespace-pre-wrap 与 leading-[1.65] 不能漏，否则
+              <pre> 退回 UA 默认的 white-space:pre → 长提示词横向溢出 */}
+          <pre className="template-prompt-preview max-h-[min(520px,calc(100vh-190px))] overflow-auto rounded-md border border-border bg-background p-3.5 font-mono text-xs leading-[1.65] whitespace-pre-wrap text-foreground">{promptDetailRole?.systemPrompt?.trim() || ui('未填写提示词')}</pre>
+        </AppModal>
 
         <AlertDialog open={deleteRole !== undefined} onOpenChange={open => { if (!open) setDeleteRole(undefined) }}>
           <AlertDialogContent>
