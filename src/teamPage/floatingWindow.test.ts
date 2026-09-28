@@ -273,6 +273,151 @@ describe('team page floating window boundary', () => {
       vi.useRealTimers()
     }
   })
+
+  it('restores persisted left and top when leaving fullscreen', () => {
+    vi.useFakeTimers()
+    try {
+      const appShellEl = document.createElement('main')
+      const toggleWindowSizeEl = document.createElement('button')
+      const toggleFullscreenEl = document.createElement('button')
+      const windowLauncherEl = document.createElement('button')
+      const titlebarEl = document.createElement('header')
+      appShellEl.append(titlebarEl)
+      document.body.append(appShellEl)
+      Object.defineProperty(appShellEl, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({
+          left: 100,
+          top: 80,
+          right: 700,
+          bottom: 580,
+          width: 600,
+          height: 500,
+          x: 100,
+          y: 80,
+          toJSON: () => ({}),
+        }),
+      })
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 })
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
+      appShellEl.setPointerCapture = () => undefined
+      appShellEl.releasePointerCapture = () => undefined
+      appShellEl.hasPointerCapture = () => true
+      localStorage.removeItem(SHELL_GEOMETRY_STORAGE_KEY)
+
+      createFloatingWindowControls({
+        appShellEl,
+        toggleWindowSizeEl,
+        toggleFullscreenEl,
+        windowLauncherEl,
+      }).registerFloatingWindowControls()
+
+      // 拖动后等 debounce 落盘（jsdom 下 currentGeometry 读到的是上面的桩矩形）
+      titlebarEl.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 180, clientY: 96, pointerId: 1, bubbles: true }))
+      appShellEl.dispatchEvent(new PointerEvent('pointermove', { clientX: 220, clientY: 126, pointerId: 1, bubbles: true }))
+      appShellEl.dispatchEvent(new PointerEvent('pointerup', { button: 0, clientX: 220, clientY: 126, pointerId: 1, bubbles: true }))
+      vi.advanceTimersByTime(300)
+      const persisted = JSON.parse(localStorage.getItem(SHELL_GEOMETRY_STORAGE_KEY)!) as { left: number; top: number }
+      expect(persisted).toEqual({ left: 100, top: 80, width: 600, height: 500 })
+
+      // 进入全屏清掉 left/top 内联样式，退出后两者都必须从持久化几何恢复
+      toggleFullscreenEl.click()
+      expect(appShellEl.style.left).toBe('')
+      expect(appShellEl.style.top).toBe('')
+
+      toggleFullscreenEl.click()
+
+      expect(appShellEl.classList.contains('fullscreen')).toBe(false)
+      expect(appShellEl.style.left).toBe(`${persisted.left}px`)
+      expect(appShellEl.style.top).toBe(`${persisted.top}px`)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('flushes pending geometry persist on pagehide', () => {
+    vi.useFakeTimers()
+    try {
+      const appShellEl = document.createElement('main')
+      const toggleWindowSizeEl = document.createElement('button')
+      const toggleFullscreenEl = document.createElement('button')
+      const windowLauncherEl = document.createElement('button')
+      const titlebarEl = document.createElement('header')
+      appShellEl.append(titlebarEl)
+      document.body.append(appShellEl)
+      Object.defineProperty(appShellEl, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({
+          left: 100,
+          top: 80,
+          right: 700,
+          bottom: 580,
+          width: 600,
+          height: 500,
+          x: 100,
+          y: 80,
+          toJSON: () => ({}),
+        }),
+      })
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1200 })
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 })
+      appShellEl.setPointerCapture = () => undefined
+      appShellEl.releasePointerCapture = () => undefined
+      appShellEl.hasPointerCapture = () => true
+      localStorage.removeItem(SHELL_GEOMETRY_STORAGE_KEY)
+
+      createFloatingWindowControls({
+        appShellEl,
+        toggleWindowSizeEl,
+        toggleFullscreenEl,
+        windowLauncherEl,
+      }).registerFloatingWindowControls()
+
+      // 拖动结束即挂起一笔 300ms 后才落盘的持久化
+      titlebarEl.dispatchEvent(new PointerEvent('pointerdown', { button: 0, clientX: 180, clientY: 96, pointerId: 1, bubbles: true }))
+      appShellEl.dispatchEvent(new PointerEvent('pointermove', { clientX: 220, clientY: 126, pointerId: 1, bubbles: true }))
+      appShellEl.dispatchEvent(new PointerEvent('pointerup', { button: 0, clientX: 220, clientY: 126, pointerId: 1, bubbles: true }))
+
+      // jsdom 的 Storage 是代理，spyOn(localStorage, 'setItem') 截不到真实写入，
+      // 与同文件既有用例一致改断言存储内容
+      window.dispatchEvent(new Event('pagehide'))
+
+      expect(localStorage.getItem(SHELL_GEOMETRY_STORAGE_KEY)).toBe(
+        JSON.stringify({ left: 100, top: 80, width: 600, height: 500 }),
+      )
+
+      // 冲刷必须同步清掉挂起定时器：清空后推进 300ms 不允许再写一次
+      localStorage.removeItem(SHELL_GEOMETRY_STORAGE_KEY)
+      vi.advanceTimersByTime(300)
+      expect(localStorage.getItem(SHELL_GEOMETRY_STORAGE_KEY)).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('pagehide with no pending persist does not write', async () => {
+    // 早前用例（拖动/拉伸）会遗留 300ms 真实持久化定时器与对应的 pagehide
+    // 监听，先用真实时钟放掉，避免陈旧监听在下方同步断言窗口内抢写。
+    await new Promise(resolve => setTimeout(resolve, 350))
+
+    const appShellEl = document.createElement('main')
+    const toggleWindowSizeEl = document.createElement('button')
+    const toggleFullscreenEl = document.createElement('button')
+    const windowLauncherEl = document.createElement('button')
+    document.body.append(appShellEl)
+
+    localStorage.removeItem(SHELL_GEOMETRY_STORAGE_KEY)
+    createFloatingWindowControls({
+      appShellEl,
+      toggleWindowSizeEl,
+      toggleFullscreenEl,
+      windowLauncherEl,
+    }).registerFloatingWindowControls()
+
+    window.dispatchEvent(new Event('pagehide'))
+
+    expect(localStorage.getItem(SHELL_GEOMETRY_STORAGE_KEY)).toBeNull()
+  })
 })
 
 describe('data-app-size 同步', () => {

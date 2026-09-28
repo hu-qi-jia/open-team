@@ -437,4 +437,27 @@
     position: absolute;
     height: 100%;
   }
+
+  /*
+   * 拖拽热区光标。热区判定（顶部 52px、排除表单控件/按钮等）在
+   * floatingWindow.isTopChromeDragEvent，CSS 只跟随表态：壳内唯一的
+   * <header> 是 ChatHeader（h-14 = 56px，顶边贴 #app 顶边），恰好盖住
+   * workspace 上方 52px 热区。非全屏/非最小化时空白处 grab、按下 grabbing；
+   * header 内 button / [role=button] 恒为 pointer（本层胜过 components 层
+   * 拖拽期 .app-shell:not(.fullscreen) button 的 cursor: revert 兜底）。
+   * 为什么在 utilities 层：本文件所有壳层覆盖规则都要压过 components 层
+   * 的 .app-shell.dragging/.resizing grabbing（见文件末注释，层序恒胜）。
+   */
+  .app-shell:not(.fullscreen):not(.minimized) header {
+    cursor: grab;
+  }
+
+  .app-shell:not(.fullscreen):not(.minimized) header:active {
+    cursor: grabbing;
+  }
+
+  .app-shell header button,
+  .app-shell header [role='button'] {
+    cursor: pointer;
+  }
 }

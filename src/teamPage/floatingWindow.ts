@@ -74,10 +74,23 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     window.clearTimeout(persistTimer)
     // 全屏守卫放在回调内：手势结束后 300ms 内进入全屏会清掉 left/top，
     // 若只在调用时检查，挂起的定时器仍会把全屏矩形写进持久化键。
-    persistTimer = window.setTimeout(() => {
-      if (deps.appShellEl.classList.contains('fullscreen')) return
-      writeShellGeometry(window.localStorage, currentGeometry())
-    }, 300)
+    persistTimer = window.setTimeout(writeCurrentGeometry, 300)
+  }
+
+  // persistShellGeometry 的 debounce 回调体，pagehide 冲刷复用同一份：
+  // 全屏态不落盘（全屏矩形无位置语义）。
+  function writeCurrentGeometry(): void {
+    persistTimer = undefined
+    if (deps.appShellEl.classList.contains('fullscreen')) return
+    writeShellGeometry(window.localStorage, currentGeometry())
+  }
+
+  // 关闭页面/切走时 debounce 可能还没到点，最后一次几何会丢——pagehide
+  // 时把挂起的持久化立即落盘；无挂起时零写入。
+  function flushPendingGeometryPersist(): void {
+    if (persistTimer === undefined) return
+    window.clearTimeout(persistTimer)
+    writeCurrentGeometry()
   }
 
   function setWindowMinimized(minimized: boolean): void {
@@ -92,6 +105,7 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
   }
 
   function setWindowFullscreen(fullscreen: boolean): void {
+    const wasFullscreen = deps.appShellEl.classList.contains('fullscreen')
     if (fullscreen) {
       deps.appShellEl.style.left = ''
       deps.appShellEl.style.top = ''
@@ -103,6 +117,14 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       syncAppSizeTier()
     }
     deps.appShellEl.classList.toggle('fullscreen', fullscreen)
+    // 退出全屏：进全屏时清掉的 left/top 内联样式不在了，宽高仍有内联值，
+    // 位置则会被 CSS 拉回居中（视觉即窗口跳走）——从同一持久化几何补回
+    // left/top（经 moveShellTo 钳制）。仅在真实「全屏 → 常态」翻转时执行，
+    // 注册期对常态壳的 setWindowFullscreen(false) 不会重复搬运。
+    if (!fullscreen && wasFullscreen) {
+      const restored = readShellGeometry(window.localStorage)
+      if (restored) moveShellTo(restored.left, restored.top)
+    }
     deps.toggleFullscreenEl.textContent = fullscreen ? '⤡' : '⛶'
     deps.toggleFullscreenEl.setAttribute('aria-pressed', String(fullscreen))
     deps.toggleFullscreenEl.setAttribute('aria-label', fullscreen ? '退出全屏' : '全屏窗口')
@@ -206,6 +228,7 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       clampShellPosition()
       syncAppSizeTier()
     })
+    window.addEventListener('pagehide', flushPendingGeometryPersist)
   }
 
   function isTopChromeDragEvent(event: PointerEvent): boolean {
