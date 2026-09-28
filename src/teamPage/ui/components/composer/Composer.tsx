@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { ArrowUp, AtSign } from 'lucide-react'
 import type { GroupMessage, GroupRole } from '../../../../group/types'
 import { roleMentionLabel, roleMentionLabelOptionsFromSettings } from '../../../../group/mentionParser'
 import { shouldAutoReconnectRole, shouldConfirmMentionWithEnter, shouldSendMessageWithEnter } from '../../../chatExperience'
@@ -110,6 +111,16 @@ export function Composer() {
     element.setSelectionRange(position, position)
     element.focus()
   }, [draft])
+
+  // 最小 scrollHeight 自增高（规格 §4.5）：先置 auto 再按内容高度钳到 max-h-40
+  const autosize = useRef<() => void>(() => undefined)
+  autosize.current = () => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px` // max-h-40
+  }
+  useEffect(() => { autosize.current() }, [draft])
 
   function updateDraft(next: string): void {
     draftRef.current = next
@@ -231,11 +242,11 @@ export function Composer() {
   }
 
   return (
-    <form id="composer" className="composer mx-6 mb-4 rounded-2xl border border-border bg-card shadow-sm transition-colors focus-within:border-ring/60" onSubmit={handleFormSubmit}>
-      <div id="reference-draft" className="reference-draft mx-3 mt-2.5" hidden={!view.reference}>
+    <form id="composer" className="composer mx-6 mb-4 rounded-lg border border-border bg-card p-2 shadow-sm focus-within:ring-1 focus-within:ring-ring" onSubmit={handleFormSubmit}>
+      <div id="reference-draft" className="reference-draft mx-3 mt-2.5 flex items-center justify-between gap-3" hidden={!view.reference}>
         {view.reference && (
           <>
-            <div className="reference-draft-preview truncate rounded-md bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
+            <div className="reference-draft-preview min-w-0 truncate rounded-md bg-muted px-2.5 py-1.5 text-xs text-muted-foreground">
               {`引用 ${view.reference.roleName || '人员'}：${view.reference.contentSnapshot}`}
             </div>
             <Button
@@ -268,7 +279,8 @@ export function Composer() {
       <textarea
         id="message-input"
         ref={textareaRef}
-        className="max-h-40 min-h-[54px] w-full resize-none border-0 bg-transparent px-3.5 py-3 text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
+        rows={1}
+        className="max-h-40 min-h-9 w-full resize-none border-0 bg-transparent px-3 py-2 text-sm leading-relaxed outline-none placeholder:text-muted-foreground"
         placeholder="输入消息，@成员可指定回复；不 @ 仅记录到群聊。"
         value={draft}
         onChange={event => handleDraftChange(event.target.value)}
@@ -276,12 +288,38 @@ export function Composer() {
         onKeyUp={syncCursor}
         onClick={syncCursor}
       />
-      <div className="composer-actions flex items-center justify-between gap-2 px-3.5 pb-3">
-        <div className="min-w-0">
-          <div id="target-preview" className="muted tiny truncate text-[11px] text-muted-foreground">{preview.targetText}</div>
-          <div id="busy-preview" className="tiny truncate text-[11px] text-muted-foreground">{preview.busyText}</div>
+      <div className="composer-actions flex items-center justify-between gap-2 px-1 pb-1">
+        <div className="flex min-w-0 items-center gap-1">
+          <Button
+            id="composer-mention"
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            disabled={view.roles.length === 0}
+            aria-label={t('提及成员')}
+            title={t('提及成员')}
+            onClick={() => {
+              const el = textareaRef.current
+              if (!el) return
+              const pos = el.selectionStart ?? draftRef.current.length
+              const next = `${draftRef.current.slice(0, pos)}@${draftRef.current.slice(pos)}`
+              pendingSelectionRef.current = pos + 1
+              updateDraft(next)
+              // 光标状态同步到插入位：光标前未闭合 @ 满足 shouldShowMentionPanel，面板随即弹出
+              setCursor(pos + 1)
+              setMentionDismissed(false)
+              el.focus()
+            }}
+          ><AtSign className="size-4" /></Button>
+          <div className="min-w-0">
+            <div id="target-preview" className="muted tiny truncate text-[11px] text-muted-foreground">{preview.targetText}</div>
+            <div id="busy-preview" className="tiny truncate text-[11px] text-muted-foreground">{preview.busyText}</div>
+          </div>
         </div>
-        <Button id="send-message" size="sm" type="submit" disabled={preview.sendDisabled}>发送</Button>
+        <Button id="send-message" type="submit" size="sm" disabled={preview.sendDisabled}>
+          <span>{t('发送')}</span>
+          <ArrowUp className="size-3.5" />
+        </Button>
       </div>
     </form>
   )

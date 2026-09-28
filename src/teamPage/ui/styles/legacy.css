@@ -604,7 +604,7 @@ select:focus {
   box-shadow: inset 0 0 0 1px rgba(161, 161, 170, 0.06), 0 18px 36px rgba(0, 0, 0, 0.2);
 }
 
-.chat-row, .role-row, .template-actions, .composer-actions {
+.chat-row, .role-row, .template-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1475,45 +1475,11 @@ select:focus {
   fill: currentColor;
 }
 
-.composer {
-  position: relative;
-  display: block;
-  margin: 0 22px 18px;
-  padding: 14px 14px 12px;
-  border: 1px solid rgba(113, 113, 122, 0.22);
-  border-radius: 14px;
-  background: #1b1d20;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.018), 0 12px 30px rgba(0, 0, 0, 0.18);
-}
-
-.reference-draft {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(100% + 10px);
-  border: 1px solid rgba(161, 161, 170, 0.28);
-  border-radius: 8px;
-  padding: 10px 12px;
-  background: rgba(9, 19, 28, 0.96);
-}
-
-.reference-draft[hidden] {
-  display: none;
-}
-
-.reference-draft-preview {
-  min-width: 0;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* S2 Task 5：.composer / .reference-draft 族退役——输入区改为 Card 视觉
+ * （rounded-lg border bg-card p-2 + focus-within ring），引用条改入文档流，
+ * 几何与配色全部由 Composer.tsx 的行内 utilities 提供（.composer /
+ * .reference-draft / .reference-draft-preview 类保留作选择器钩子；
+ * hidden 折叠交给 preflight 的 [hidden] 规则）。 */
 
 .mention-panel {
   position: absolute;
@@ -1579,18 +1545,10 @@ select:focus {
   box-shadow: none;
 }
 
-.composer-actions {
-  position: absolute;
-  right: 14px;
-  bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.composer-actions > div {
-  display: none;
-}
+/* S2 Task 5：.composer-actions 族退役——底行回归文档流 flex 行
+ * （左 @提及 图标钮 + 预览文案，右发送钮），由 Composer.tsx 行内
+ * utilities 提供（.composer-actions 类保留作选择器钩子；预览行
+ * 不再被 display:none 隐藏）。 */
 
 #send-message {
   width: 40px;
@@ -3801,17 +3759,6 @@ select:focus {
   background: #ffffff;
   color: var(--text);
   box-shadow: 0 8px 18px rgba(63, 63, 70, 0.14);
-}
-
-:root[data-theme="light"] .composer {
-  border-color: rgba(113, 113, 122, 0.22);
-  background: #ffffff;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72), 0 12px 28px rgba(63, 63, 70, 0.12);
-}
-
-:root[data-theme="light"] .reference-draft {
-  border-color: rgba(113, 113, 122, 0.24);
-  background: #ffffff;
 }
 
 :root[data-theme="light"] .role-panel,

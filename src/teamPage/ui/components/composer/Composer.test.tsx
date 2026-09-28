@@ -426,6 +426,55 @@ describe('team page composer send flow', () => {
   })
 })
 
+describe('team page composer v2 visual', () => {
+  it('composer container gains focus ring and small radius', () => {
+    renderComposer()
+
+    const form = document.querySelector('#composer')!
+    expect(form.className).toContain('rounded-lg')
+    expect(form.className).toContain('focus-within:ring-1')
+    expect(form.className).toContain('ring-ring')
+    expect(form.className).not.toContain('rounded-2xl')
+  })
+
+  it('mention button inserts @ and focuses textarea', () => {
+    renderComposer()
+
+    fireEvent.click(mentionButton())
+
+    const input = document.querySelector('#message-input') as HTMLTextAreaElement
+    expect(input.value).toContain('@')
+    expect(document.activeElement).toBe(input)
+  })
+
+  it('mention button opens the mention panel', () => {
+    renderComposer()
+
+    fireEvent.click(mentionButton())
+
+    expect(document.getElementById('mention-panel')).not.toBeNull()
+  })
+
+  it('mention button is disabled without roles', () => {
+    const state = makeState({})
+    const chat = state.store.chatsById['chat-1']
+    chat.roleIds = []
+    renderComposer({ state })
+
+    expect(mentionButton().disabled).toBe(true)
+  })
+
+  it('textarea grows with content up to max-h', async () => {
+    const { composer } = renderComposer()
+
+    // jsdom 无布局：scrollHeight 恒 0 —— mock 成 300px 断言钳到 max-h-40
+    Object.defineProperty(composer.input, 'scrollHeight', { value: 300, configurable: true })
+    await typeText(composer.input, '很长的一段消息。'.repeat(40))
+
+    expect(composer.input.style.height).toBe('160px')
+  })
+})
+
 // ---------- 装配与工具 ----------
 
 interface ComposerHarnessOptions {
@@ -488,6 +537,12 @@ function busyPreviewText(): string {
 function sendButton(): HTMLButtonElement {
   const button = document.getElementById('send-message')
   if (!button) throw new Error('#send-message 未渲染')
+  return button as HTMLButtonElement
+}
+
+function mentionButton(): HTMLButtonElement {
+  const button = document.getElementById('composer-mention')
+  if (!button) throw new Error('#composer-mention 未渲染')
   return button as HTMLButtonElement
 }
 

@@ -183,6 +183,7 @@ const UI_TRANSLATIONS: Record<string, string> = {
   '输入消息；不 @ 仅记录，@ 人员触发回复': 'Type a message; without @ it is recorded only, while @people triggers replies',
   '将作为群消息记录，不触发 AI；@ 人员可触发回复': 'This will be recorded as a chat message and will not trigger AI; @people can trigger replies',
   '取消引用': 'Cancel quote',
+  '提及成员': 'Mention members',
   '所有人': 'Everyone',
   '全员': 'All people',
   '本机智能体控制：开启': 'Local agent control: On',
