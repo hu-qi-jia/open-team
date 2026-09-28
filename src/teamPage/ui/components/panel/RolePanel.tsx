@@ -47,8 +47,10 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
  * #close-people-drawer）全部保留。
  * 抽屉开合与 AI 登录按钮原由 vanilla（teamUiController）绑定，P4d 起自持：
  * - 「收起」翻转 appState.peopleDrawerOpen；抽屉打开时的外点关闭交给 Radix
- *   DismissableLayer（onInteractOutside），站点菜单因仍是抽屉的 React 后代
- *   而不被判为「抽屉外」（原 document 监听 + popper 白名单退役）
+ *   DismissableLayer（onInteractOutside）。站点菜单打开时抽屉不会被判「外点」：
+ *   DropdownMenu 是模态层（react-menu 的 disableOutsidePointerEvents: context.open），
+ *   抽屉层的 isPointerEventsEnabled 因此为 false，压根不处理外点
+ *   （原 document 监听 + popper 白名单退役）
  * - ◇ 登录按钮经 services.openAiSiteLogin（chrome.tabs.create 留在
  *   装配层，组件树保持零 chrome 依赖）
  * #role-template-select 为遗留隐藏位，其值全工程无人读取，选项仅
@@ -67,12 +69,13 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
  * 卡片状态点色板（原 .status-pill::before 的 7px 圆点 + .status-* 文字色，
  * legacy 565-607 已退役）。legacy 侧颜色经 globals.css components 层重映射到
  * 语义 token，就近取 Tailwind 调色板（T5 的取色断言钉住这里的取值）：
- *   ready            → var(--success) → --chart-2（青绿系，深浅同值）→ emerald-500
- *   thinking/stopped/loading → var(--warning) → 深色 --chart-3 / 浅色 --chart-4
- *                      （语义「进行中」；取浅色段实际的琥珀）→ amber-500
- *   error            → var(--danger) → --destructive（红）→ red-500
+ *   ready            → var(--success) → --chart-2：浅色 teal-600（oklch .6 .118 184.7），
+ *                      深色 emerald-500（oklch .696 .17 162.48，精确等值）→ 取 emerald-500
+ *   thinking/stopped/loading → var(--warning)：浅色 --chart-4 = amber-400，
+ *                      深色 --chart-3 = amber-500（精确等值）→ 取 amber-500
+ *   error            → var(--danger) → --destructive：浅色 red-600 / 深色 red-400 → 取 red-500
  *   pending          → legacy 无规则，取 .status-pill 的 var(--muted)
- *                      （#a1a1aa = zinc-400，「待唤醒」中性色）→ zinc-400
+ *                      （深色 #a1a1aa = zinc-400，「待唤醒」中性色）→ zinc-400
  */
 const STATUS_DOT_CLASS: Record<RoleStatus, string> = {
   pending: 'bg-zinc-400',
@@ -216,6 +219,11 @@ export function RolePanel() {
           // 官方 Content 是 fixed z-50 inset-y-0 right-0 w-3/4 sm:max-w-sm gap-4 p-6
           // transition …：全部走 className 交给 twMerge 去重（同组后者胜）
           'absolute inset-y-0 right-0 w-[340px] max-w-[calc(100%-54px)] sm:max-w-none',
+          // 层次钉回 legacy 的 z-index:4：官方基类 z-50 会盖住浮窗铬件
+          // （.floating-toolbar z-12 / .window-resize-handle z-8，改造前浮在抽屉之上）
+          // ——规格 §9「行为不变」要求窗控钮与缩放把手始终可点，
+          // 4 的语义即「在应用内容之上、在窗控与窗口把手之下」
+          'z-4',
           'gap-0 p-0',
           // 官方 animate-in/out 在 forceMount 常挂载下首帧会播退场动画，且退场动画
           // fill 不保留终态 → 关掉动画，用 data-state 驱动的位移过渡（等价 legacy 0.18s）

@@ -231,8 +231,10 @@ describe('team page role panel drawer chrome', () => {
     await user.click(document.querySelector('.role-panel')!)
     expect(state.peopleDrawerOpen).toBe(true)
 
-    // 站点菜单传送至 body，但仍是抽屉的 React 后代（DropdownMenu 挂在 RoleCard 内），
-    // Radix 因此不判为「抽屉外」——旧实现里 [data-radix-popper-content-wrapper] 白名单退役
+    // 站点菜单传送至 body（DOM 上不在抽屉内），但它是模态层
+    // （react-menu 的 disableOutsidePointerEvents: context.open）：菜单打开期间
+    // 抽屉层的 isPointerEventsEnabled 为 false，Radix 因此不判「抽屉外」
+    // ——旧实现里 [data-radix-popper-content-wrapper] 白名单退役
     await user.click(document.querySelector<HTMLButtonElement>('.site-pill')!)
     const option = await waitFor(() => {
       const element = document.querySelector('.role-site-menu .role-site-option.active')
