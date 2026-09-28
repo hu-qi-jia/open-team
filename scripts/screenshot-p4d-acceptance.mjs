@@ -144,25 +144,33 @@ try {
   await page.waitForSelector('#app', { timeout: 15_000 })
   await sleep(2500)
 
-  const drawerClass = () => document.querySelector('aside.role-panel')?.className ?? ''
+  // S3：抽屉改由 Sheet 承载（根元素不再是 aside），open 判定用 classList 逐 token
+  // 检查——类名表里另有 data-[state=open] 变体类，substring 判定会恒真
+  const drawerClass = () => document.querySelector('.role-panel')?.className ?? ''
 
   // ---- 1. 成员抽屉：开关按钮（React 自持，P4d 收编） ----
   check('restore-chat button is rendered by React', await page.evaluate(() => Boolean(document.getElementById('restore-chat'))))
   await page.click('#toggle-people-drawer')
   await sleep(400)
-  check('drawer opens from the header toggle', await page.evaluate(() => document.querySelector('aside.role-panel')?.className.includes('open')), await page.evaluate(drawerClass))
+  check('drawer opens from the header toggle', await page.evaluate(() => Boolean(document.querySelector('.role-panel')?.classList.contains('open'))), await page.evaluate(drawerClass))
   await shot(page, '01-drawer-open')
 
   await page.click('#close-people-drawer')
   await sleep(400)
-  check('drawer closes from the collapse button', await page.evaluate(() => !document.querySelector('aside.role-panel')?.className.includes('open')))
+  check('drawer closes from the collapse button', await page.evaluate(() => {
+    const drawer = document.querySelector('.role-panel')
+    return drawer !== null && !drawer.classList.contains('open')
+  }))
 
   // 外点关闭：点头部标题（抽屉与开关之外的真实 DOM；iframe 内点击本就不冒泡，与旧行为一致）
   await page.click('#toggle-people-drawer')
   await sleep(300)
   await page.click('#chat-title')
   await sleep(400)
-  check('drawer closes on outside click', await page.evaluate(() => !document.querySelector('aside.role-panel')?.className.includes('open')))
+  check('drawer closes on outside click', await page.evaluate(() => {
+    const drawer = document.querySelector('.role-panel')
+    return drawer !== null && !drawer.classList.contains('open')
+  }))
 
   // ---- 2. 群模板弹窗全流程（P4d React 化的主体） ----
   await page.click('#quick-create-chat')

@@ -91,5 +91,7 @@ export function CanvasPortal({ stages, selectedStageId, graphEdges, canvasKey, s
     canvasRef.current?.selectStage(selectedStageId)
   }, [selectedStageId])
 
-  return <div id="orchestration-stage-canvas" className="orchestration-stage-canvas" ref={hostRef} />
+  // 尺寸由 utilities 提供（原 legacy `.orchestration-stage-canvas` 的
+  // width/height:100% + min-height:0）；类名保留作 runtime 钩子。
+  return <div id="orchestration-stage-canvas" className="orchestration-stage-canvas size-full min-h-0" ref={hostRef} />
 }
