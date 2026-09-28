@@ -183,9 +183,11 @@ export function AppModal({
           contentClassName,
         )}
         onOpenAutoFocus={handleOpenAutoFocus}
-        // 'escape-only' 时挂掉一切 outside 交互（背板 pointerdown 与焦点外移）。
-        // Radix 的 DismissableLayer 在 onInteractOutside 里看 event.defaultPrevented
-        // 决定是否 onDismiss，因此 preventDefault 即可——与群模板迁移前的写法逐字一致。
+        // 'escape-only' 时挂掉 outside 交互。⚠️ 真正的**行为增量只有背板 pointerdown**：
+        // 焦点外移在本壳（modal 弹窗）里早已被 Radix 自己挡掉——DialogContentModal 内置
+        // onFocusOutside: event => event.preventDefault()，所以焦点路径本来就到不了 onDismiss。
+        // 机制：DismissableLayer 在 onInteractOutside 之后看 event.defaultPrevented 决定是否
+        // onDismiss，因此 preventDefault 即可——与群模板迁移前的写法逐字一致。
         // 'default' 时**不传**该 prop，维持 Radix 默认（背板点击关）。
         {...(closeOn === 'escape-only'
           ? { onInteractOutside: (event: InteractOutsideEvent) => event.preventDefault() }

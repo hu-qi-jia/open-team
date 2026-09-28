@@ -22,6 +22,9 @@
 - **runtime 不许动**：`iframeHost` / `sendWithReconnect` / 编排 runtime / `notesBridge` / `useFloatingPanelGeometry`。
 - **零新增 npm 依赖**；**禁止** git worktree、**禁止** junction `node_modules`；**禁止** `position: fixed`；**禁止** push。
 - **评审者只读**（除自己的 review 文件）；**禁止**并行派发多个实现子代理。
+- **复审期间冻结分支**：独立复审在跑时，编排者**不许再推 commit**（只能改 `.superpowers/` 下已 gitignore 的文件）。
+  T1 复审期间推了 6 个 docs-only 提交，导致**被审 commit 的 HEAD 在复审途中漂移**——复审者只能逐 blob 核对
+  才敢下结论。这是自找的不确定性，后续任务一律避免。
 - **门禁**：每任务 `npm run typecheck` + 触及的测试文件 + `npm run build` 全绿才算完成；阶段末跑全量。
   已知既有失败豁免：`packages/openteamcli` ×2、`extensionConfig` ×1、`QuickCreateChat` 4 条 `css-syntax-error` minify 警告。
 - **正文内边距必须显式接管**：`AppModal` 用 `p-0` 收掉原语 `DialogContent` 的 `p-6`，正文内边距**没有别的来源**。
@@ -221,8 +224,11 @@ T2 以**暗色为正典**、用 token 表达使两主题一致 → **浅色下�
      扩成 `grid-rows-[auto_minmax(0,1fr)_auto]`；**无 footer 时保持两行**（别无条件写三行）。
    - `auto` 高度下 footer 就是 flex 列的最后一行（不参与 grid 行）。
 2. `closeOn?: 'default' | 'escape-only'`（默认 `'default'`）
-   - `'escape-only'` → 在 `DialogContent` 上传 `onInteractOutside={event => event.preventDefault()}`
-     （Radix 的 outside 既覆盖背板 pointerdown，也覆盖焦点外移，与 GroupTemplate 现状一致）。
+   - `'escape-only'` → 在 `DialogContent` 上传 `onInteractOutside={event => event.preventDefault()}`。
+     ⚠️ **订正（T1 复审 §5.2）**：本行原写「既覆盖背板 pointerdown，也覆盖焦点外移」是**过度声称**——
+     焦点外移在本壳里**早已被 Radix 挡掉**（`DialogContentModal` 内置 `onFocusOutside: e => e.preventDefault()`，
+     `@radix-ui/react-dialog@1.1.23` dist:163-166），所以这个 prop 的**唯一行为增量是背板 pointerdown**。
+     机制描述已按此改在 `AppModal.tsx:186-190` 的注释里。
    - `'default'` → 不传，维持 Radix 默认（背板关）。
    - 两种模式下 **× 与 Escape 都必须仍能关**。
 
@@ -240,6 +246,36 @@ T2 以**暗色为正典**、用 token 表达使两主题一致 → **浅色下�
 **三条用 `lastElementChild` 的测试**（people 三个文件）、`npm run build`。
 
 **Step 4**：一次 commit。
+
+### T1 执行与复审记录（2026-09-29）
+
+- **实现**：commit **`e075801`**（父 `a5ac3c6`），恰好 6 个文件，+184/−9，无夹带、无调试残留。
+- **独立只读复审**：`.superpowers/s5-notes-templates/task-1-review.md`，**VERDICT: APPROVE WITH NITS，必需修复项 = 无**。
+  复审者独立复跑了全部门禁（`typecheck` / AppModal **18/18** / people 四文件 **37/37** / `src/teamPage/ui` **404/404** /
+  `build` exit 0 / bugfix 探针 **42 PASS 0 FAIL** 两次），并自证了 `dist/team.css` 的两条 grid 规则。
+- ⭐ **最有价值的一条：`escape-only` 用例不是假绿。** 复审者读了**实际安装的**
+  `radix-ui@1.6.7 → @radix-ui/react-dialog@1.1.23 → @radix-ui/react-dismissable-layer@1.1.19` 源码，证明
+  `deferPointerDownOutside` 的 click 路径是**同步**的（不是 setTimeout，故 `await user.click()` 后立即断言不构成竞态）；
+  且它核查了一个报告没提的坑——DismissableLayer 的「outside 交互被拦截即吞掉」机制会吃掉外点事件，
+  **遮罩之所以逃得掉，是因为 `DialogOverlay` 调了 `useDismissableLayerSurface()` 登记为 dismissable surface**
+  （`react-dialog` dist:111）。**没核这条，#5 就有可能是假绿。**
+  另有**配对在场证明**：同文件缺省分支的「背板点击**会**关」用**同一套** `user.click(overlay)` 序列且为绿——
+  两条互为反证，不可能同时为假。
+- **加固经机械证明语义未放松**：把父提交与 `e075801` 的 4 个 people 测试文件的**所有 `expect(` 行**抽出逐行 diff，
+  **结果为空**（53/69/39/26 行全等）；改动只有 1 行选择器 + 2 行注释。`lastElementChild` 全仓 **7 处 / 6 文件**，
+  逐文件行号与订正表**完全吻合**。
+- **订正一处事实**：壳的消费者是 **7 个不是 6 个**——`people/BuiltinTemplateDetailModal.tsx:51` 也在用
+  （另 6 个：`ExternalModelsModal`、`RolePanel`、`AddPersonModal`、`PeopleLibraryModal`、`PersonTemplateModal`、
+  `TemporaryPersonModal`）。七者**均未**传 `footer` / `footerClassName` / `closeOn`，两个新 prop 目前确实零消费者。
+- **编排者事后补的两处修订（在 `e075801` 之后，非实现者所为）**：
+  1. `AppModal.tsx:186-190` 的注释去掉「也覆盖焦点外移」的过度声称（复审 §5.2）；
+  2. 本计划 T1 第 2 条同步订正（见上）。
+  → 终审（T6 档）需覆盖这两个 commit。
+- **留给 T2 的两件事**（复审 §7，均非 T1 缺陷）：加固 `models/ExternalModelsModal.test.tsx:328` 与
+  `panel/RolePanel.test.tsx:148`；订正注释表述（已由编排者做掉）。
+- ⚠️ **流程教训**：复审期间编排者连推了 6 个 docs-only 提交，导致**被审 commit 的 HEAD 在复审中漂移**
+  （复审者逐 blob 核对确认 `src/` 与 `e075801` 相同，结论不受影响）。**后续任务复审期间一律冻结分支**，
+  只能改 `.superpowers/` 下的文件（已 gitignore）。
 
 ---
 
