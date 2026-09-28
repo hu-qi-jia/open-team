@@ -27,7 +27,7 @@ export function ImageGrid({ message }: { message: GroupMessage }) {
   const count = Math.min(attachments.length, 4)
   const single = count === 1
   return (
-    <div className={`message-image-grid image-count-${count} mt-1.5 grid gap-1${single ? ' w-48' : ' grid-cols-2'}`}>
+    <div className={`message-image-grid image-count-${count} mt-1.5 grid gap-1 ${single ? ' w-48' : ' grid-cols-2'}`}>
       {attachments.map(attachment => (
         <ImageTile key={attachment.id} message={message} attachment={attachment} single={single} />
       ))}
@@ -86,7 +86,7 @@ function ImageTile({ message, attachment, single }: { message: GroupMessage; att
   }
 
   return (
-    <div className={`message-image-tile group/image relative overflow-hidden rounded-md border border-border${loadedUrl ? '' : ' min-h-[150px] bg-muted/40 message-image-loading'}`}>
+    <div className={`message-image-tile group/image relative overflow-hidden rounded-md border border-border ${loadedUrl ? '' : ' min-h-[150px] bg-muted/40 message-image-loading'}`}>
       <button
         type="button"
         className="message-image-preview block size-full cursor-zoom-in disabled:cursor-wait"
@@ -96,6 +96,9 @@ function ImageTile({ message, attachment, single }: { message: GroupMessage; att
           if (loadedUrl) window.open(loadedUrl, '_blank', 'noopener')
         }}
       >
+        {/* 类名与 ${ 之间必须留空白：Tailwind 扫描器会丢弃紧贴 `${` 的候选
+            （max-h-[520px]${…} → dist/team.css 不生成该类，长图按原尺寸
+            渲染撑爆消息流）。同族写法见 MarkMenu 色钮的 ring-offset-popover。 */}
         <img
           alt={attachment.alt || 'ChatGPT 生成图片'}
           loading="lazy"
@@ -103,7 +106,7 @@ function ImageTile({ message, attachment, single }: { message: GroupMessage; att
           width={attachment.width}
           height={attachment.height}
           src={loadedUrl}
-          className={`block size-full max-h-[520px]${single ? ' object-contain' : ' object-cover'}`}
+          className={`block size-full max-h-[520px] ${single ? ' object-contain' : ' object-cover'}`}
         />
       </button>
       {!loadedUrl && (

@@ -100,12 +100,12 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
 
   return (
     <article
-      className={`message-row message ${message.type}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex py-1.5${message.type === 'user' ? ' flex-row-reverse' : ''}`}
+      className={`message-row message ${message.type}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex py-1.5 ${message.type === 'user' ? ' flex-row-reverse' : ''}`}
       data-message-id={message.id}
     >
       <div className="message-inner flex w-full min-w-0 items-start gap-3">
         <Avatar
-          className={`message-avatar size-7 shrink-0 cursor-pointer select-none${role ? ' mention-shortcut' : ''}`}
+          className={`message-avatar size-7 shrink-0 cursor-pointer select-none ${role ? ' mention-shortcut' : ''}`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
@@ -140,7 +140,7 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
             ) : (
               <div
                 ref={bodyRef}
-                className={`message-body text-sm leading-relaxed break-words${bodyHtml !== undefined ? ' markdown-body' : ' whitespace-pre-wrap'}`}
+                className={`message-body text-sm leading-relaxed break-words ${bodyHtml !== undefined ? ' markdown-body' : ' whitespace-pre-wrap'}`}
               >
                 {message.type === 'user' && (message.mentionsAll || mentionedRoles.length > 0) && (
                   <div className="message-mentions mb-0.5 mr-1.5 inline-flex flex-wrap gap-1.5">
@@ -343,7 +343,7 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
   return (
     <button
       type="button"
-      className={`message-tool-btn flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2' : ''}`}
+      className={`message-tool-btn flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 ${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2' : ''}`}
       disabled={disabled}
       aria-label={label}
       onPointerDown={event => {

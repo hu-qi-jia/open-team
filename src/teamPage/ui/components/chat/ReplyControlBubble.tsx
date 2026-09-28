@@ -41,7 +41,7 @@ export function ReplyControlBubble({ role, showName = true, showAvatar = true, m
     >
       <div className="message-inner flex w-full min-w-0 items-start gap-3">
         <Avatar
-          className={`message-avatar size-7 shrink-0 cursor-pointer select-none${showAvatar ? ' mention-shortcut' : ''}`}
+          className={`message-avatar size-7 shrink-0 cursor-pointer select-none ${showAvatar ? ' mention-shortcut' : ''}`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}

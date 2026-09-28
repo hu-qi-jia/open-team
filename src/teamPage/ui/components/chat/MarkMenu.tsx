@@ -40,10 +40,13 @@ export function MarkMenu({ controller }: { controller: MarkMenuController }) {
     <div ref={menuRef} className="mark-menu fixed z-50 flex flex-col rounded-md border border-border bg-popover p-1 shadow-md">
       <div className="mark-color-row flex items-center gap-1.5 border-b border-border px-1 pb-1.5" aria-label="高亮颜色">
         {MESSAGE_HIGHLIGHT_COLORS.map(color => (
+          // 类名与 ${ 之间必须留空白：Tailwind 扫描器会丢弃紧贴 `${` 的候选
+          // （ring-offset-popover${…} → dist/team.css 不生成该类，v4 的
+          // --tw-ring-offset-color 初值 #fff 兜底，暗色下露出白圈）。
           <button
             key={color.value}
             type="button"
-            className={`mark-color-btn size-5 rounded-full bg-[rgba(var(--mark-color-rgb),0.9)] ring-offset-2 ring-offset-popover${selectedMark.color === color.value ? ' ring-2 ring-ring' : ''}`}
+            className={`mark-color-btn size-5 rounded-full bg-[rgba(var(--mark-color-rgb),0.9)] ring-offset-2 ring-offset-popover ${selectedMark.color === color.value ? ' ring-2 ring-ring' : ''}`}
             aria-label={`高亮颜色：${color.label}`}
             aria-pressed={selectedMark.color === color.value}
             style={{ '--mark-color-rgb': messageHighlightColorRgb(color.value) } as React.CSSProperties}
