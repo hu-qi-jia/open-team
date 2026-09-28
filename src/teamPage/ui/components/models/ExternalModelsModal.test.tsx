@@ -296,4 +296,102 @@ describe('team page external models modal', () => {
 
     expect(document.activeElement).toBe(document.querySelector('#external-model-name'))
   })
+
+  it('renders through the shared modal shell with the sm token and an auto height cap', async () => {
+    const state = createTeamPageState()
+    state.store = makeStoreWithModel(makeModel())
+    const { services } = renderModal(state)
+
+    await openModal(services)
+
+    const modal = document.querySelector<HTMLElement>('#external-models-modal')
+    expect(modal).not.toBeNull()
+    // 宽度令牌由 AppModal 的 size="sm" 承担（520 / 沟槽统一 48px），原语基类的
+    // sm:max-w-lg 必须被 max-w-none sm:max-w-none 抵掉
+    expect(modal!.classList.contains('w-[min(520px,calc(100vw-48px))]')).toBe(true)
+    expect(modal!.classList.contains('max-w-none')).toBe(true)
+    expect(modal!.classList.contains('sm:max-w-none')).toBe(true)
+    expect(modal!.classList.contains('max-w-lg')).toBe(false)
+    // 高度上限是本任务补的洞：迁移前这个弹窗是全库唯一没有任何 max-h 的
+    // 弹窗（内容可撑破视口），height="auto" 的整壳封顶 + 整壳滚动正好补上
+    expect(modal!.classList.contains('max-h-[min(760px,calc(100vh-48px))]')).toBe(true)
+    expect(modal!.classList.contains('overflow-auto')).toBe(true)
+    // .template-editor-modal 退役（legacy 规则同 commit 删除）
+    expect(modal!.classList.contains('template-editor-modal')).toBe(false)
+    // p-0 是壳自己的贡献（抵掉原语基类的 p-6）：内容节点确实由 AppModal 渲染
+    expect(modal!.classList.contains('p-0')).toBe(true)
+    expect(modal!.getAttribute('aria-labelledby')).toBe('external-models-title')
+
+    // 正文内边距必须靠 bodyClassName 补回来（本弹窗自己不带任何 padding，
+    // jsdom 不算布局；s4-1b 用 #external-model-form 的 left 差值实测）。
+    // height="auto" 下正文行不再加 overflow-auto——滚动归壳，避免双滚动条
+    const bodyRow = modal!.lastElementChild as HTMLElement
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
+    expect(bodyRow.classList.contains('overflow-auto')).toBe(false)
+
+    // 共享族类名逐字保留：.template-list 的另一个使用者是已过审的
+    // PeopleLibraryModal，.modal-form 的三个使用者是 T3/T4 已过审的弹窗——
+    // 两族的 legacy 规则都不许在 T5 删，这里把「本弹窗照常消费」钉住
+    const list = bodyRow.querySelector<HTMLElement>('#external-models-list')
+    expect(list).not.toBeNull()
+    expect(list!.classList.contains('template-list')).toBe(true)
+    const form = bodyRow.querySelector<HTMLFormElement>('#external-model-form')
+    expect(form).not.toBeNull()
+    expect(form!.classList.contains('modal-form')).toBe(true)
+
+    // 4 个可见文本框换官方 Input 原语（不再靠 legacy 全局 input{} 塑形）；
+    // #external-model-id（type=hidden）无视觉、保持裸 input；
+    // 原生 <select> 保持原生——换 Radix Select 会改键盘与取值行为
+    for (const id of ['external-model-name', 'external-model-base-url', 'external-model-api-key', 'external-model-model-name']) {
+      const input = form!.querySelector<HTMLInputElement>(`#${id}`)
+      expect(input).not.toBeNull()
+      expect(input!.getAttribute('data-slot')).toBe('input')
+    }
+    const hidden = form!.querySelector<HTMLInputElement>('#external-model-id')
+    expect(hidden!.type).toBe('hidden')
+    const format = form!.querySelector<HTMLSelectElement>('#external-model-format')
+    expect(format).not.toBeNull()
+    expect(format!.tagName).toBe('SELECT')
+    expect(format!.getAttribute('data-slot')).toBeNull()
+
+    // 自绘 × 字形换成壳的 lucide 图标钮（s4-3 断言「恰好一个可见 svg 关闭钮」）
+    const close = modal!.querySelector<HTMLButtonElement>('#close-external-models')
+    expect(close).not.toBeNull()
+    expect(close!.getAttribute('aria-label')).toBe('关闭外部模型')
+    expect(close!.querySelector('svg')).not.toBeNull()
+    expect(close!.textContent).toBe('')
+
+    // 头部与列表的 2026-09-28 修复三件套原样保留
+    expect(modal!.querySelector('#external-models-title')!.textContent).toBe('外部模型')
+    const card = list!.querySelector<HTMLElement>('.template-card')!
+    expect(card.querySelector('[data-slot="card-header"]')!.classList.contains('gap-1')).toBe(true)
+    expect(card.querySelector('[data-slot="card-header"]')!.classList.contains('px-0')).toBe(true)
+    const action = card.querySelector<HTMLElement>('[data-slot="card-action"]')!
+    expect(action.classList.contains('flex')).toBe(true)
+    expect(action.classList.contains('items-center')).toBe(true)
+    expect(action.classList.contains('gap-1')).toBe(true)
+    const content = card.querySelector<HTMLElement>('[data-slot="card-content"]')!
+    expect(content.classList.contains('px-0')).toBe(true)
+    expect(content.classList.contains('text-muted-foreground')).toBe(true)
+  })
+
+  it('closes from #close-external-models and resets the draft', async () => {
+    const state = createTeamPageState()
+    state.store = makeStoreWithModel(makeModel())
+    const { services } = renderModal(state)
+
+    await openModal(services)
+    await user.click(document.querySelector<HTMLButtonElement>('.external-model-edit')!)
+    expect(document.querySelector<HTMLInputElement>('#external-model-name')!.value).toBe('本地模型')
+
+    await user.click(document.querySelector<HTMLButtonElement>('#close-external-models')!)
+    await waitFor(() => expect(document.querySelector('#external-models-modal')).toBeNull())
+
+    // 再次打开：draft 已复位（close() 与 uiBus 打开路径都回 EMPTY_DRAFT）
+    await openModal(services)
+    expect(document.querySelector<HTMLInputElement>('#external-model-name')!.value).toBe('')
+    expect(document.querySelector<HTMLInputElement>('#external-model-id')!.value).toBe('')
+    expect(document.querySelector<HTMLSelectElement>('#external-model-format')!.value).toBe('openai')
+  })
 })

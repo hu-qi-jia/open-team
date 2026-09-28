@@ -1290,9 +1290,13 @@ select:focus {
  * （.pagination-btn 与 .template-edit 的框体由 Button size="sm" 承担）。
  */
 
-.template-editor-modal {
-  width: min(520px, 100%);
-}
+/* S4-T5：外部模型弹窗的编辑器宽度类（原 `width: min(520px, 100%)`）退役——
+ * 唯一使用者 ExternalModelsModal 换上通用组合壳 common/AppModal，宽度改由
+ * size="sm" 的 w-[min(520px,calc(100vw-48px))] 承担（沟槽 48px），类名随手写
+ * DialogContent 一起消失，本文件里不再有对应规则。
+ * ⚠️ 上方的 .modal-form（1274）**保留**：T3/T4 只迁了视觉，三个已过审弹窗
+ * （PersonTemplateModal / TemporaryPersonModal / AddPersonModal）仍在消费它的
+ * display:grid; gap:12px; margin-top:12px，退役属于 S6/S7。 */
 
 /* S4-T4：.template-detail-modal / .template-prompt-preview / .modal-header-actions /
  * .modal-grid(.single-column) / .modal-grid-wide 退役——两个 .template-detail-modal
