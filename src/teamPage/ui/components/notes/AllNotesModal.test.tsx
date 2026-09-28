@@ -258,6 +258,41 @@ describe('team page all notes modal', () => {
     // 右栏三行栅格：编辑器行吸收剩余高度
     const editorShell = document.querySelector<HTMLElement>('.all-notes-editor-shell')!
     expect(editorShell.classList.contains('grid-rows-[auto_auto_minmax(0,1fr)]')).toBe(true)
+
+    // 窄档行模板：列表条带 auto（不被拉伸成半屏）、编辑器吃剩余高度
+    expect(workspace.classList.contains('max-[760px]:grid-rows-[auto_minmax(0,1fr)]')).toBe(true)
+  })
+
+  it('keeps the amber border on hover for unselected deleted-chat targets', async () => {
+    /*
+     * 复审修补：Tailwind 把 hover 变体排在基础工具类之后，所以未选中项上的
+     * `hover:border-muted-foreground/20` 会顶掉基础琥珀边——而 legacy 里
+     * `.all-note-target:hover`(0,2,0) 与 `.all-note-target.deleted-chat`(0,2,0)
+     * 同特异性且后者更靠后，悬停时**琥珀边胜**（底色照旧走 :hover 的灰）。
+     * jsdom 算不出 :hover，只能照本文件既有做法钉 class 串。
+     */
+    const store: OpenTeamStore = createDefaultStore()
+    store.settings.language = 'zh-CN'
+    store.chatNotesById = { 'deleted-chat': note('这条笔记不能随着群聊消失') }
+    const state = createTeamPageState()
+    state.store = store
+
+    const { services } = renderModal({ state })
+
+    await act(async () => {
+      services.uiBus.emit('open-all-notes')
+    })
+
+    const deleted = document.querySelector<HTMLElement>('[data-note-target-id="deleted-chat"]')!
+    expect(deleted.getAttribute('aria-pressed')).toBe('false')
+    expect(deleted.classList.contains('deleted-chat')).toBe(true)
+    expect(deleted.classList.contains('border-[rgba(248,184,78,0.22)]')).toBe(true)
+    // 悬停 / 聚焦时琥珀边必须活着，且不能再挂灰边变体（灰边会压过琥珀边）
+    expect(deleted.classList.contains('hover:border-[rgba(248,184,78,0.22)]')).toBe(true)
+    expect(deleted.classList.contains('focus-visible:border-[rgba(248,184,78,0.22)]')).toBe(true)
+    expect(deleted.classList.contains('hover:border-muted-foreground/20')).toBe(false)
+    // 底色仍随 hover 变 accent（legacy 没有 .deleted-chat:hover 的 background）
+    expect(deleted.classList.contains('hover:bg-accent')).toBe(true)
   })
 })
 

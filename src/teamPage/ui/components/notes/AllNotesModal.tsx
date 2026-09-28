@@ -174,7 +174,16 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
                   // :hover 之后，故选中项悬停不换底、不换边）——两条分支互斥
                   isActive
                     ? 'active'
-                    : 'hover:border-muted-foreground/20 hover:bg-accent focus-visible:border-muted-foreground/20 focus-visible:bg-accent',
+                    : cn(
+                        'hover:bg-accent focus-visible:bg-accent',
+                        // legacy 里 .deleted-chat(0,2,0) 排在 :hover(0,2,0) 之后
+                        // → 悬停时琥珀边胜、底色照旧走 :hover 的灰。Tailwind 把
+                        // hover 变体排在基础工具类之后，所以琥珀边必须补一条
+                        // hover/focus-visible 变体，否则会被灰边顶掉。
+                        item.deletedChat
+                          ? 'hover:border-[rgba(248,184,78,0.22)] focus-visible:border-[rgba(248,184,78,0.22)]'
+                          : 'hover:border-muted-foreground/20 focus-visible:border-muted-foreground/20',
+                      ),
                   item.deletedChat && 'deleted-chat border-[rgba(248,184,78,0.22)]',
                   isActive && !item.deletedChat && 'border-muted-foreground/32 bg-accent shadow-[inset_3px_0_0_var(--muted-foreground)]',
                   isActive && item.deletedChat && 'bg-[rgba(248,184,78,0.09)] shadow-[inset_3px_0_0_rgba(248,184,78,0.74)]',
