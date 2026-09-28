@@ -148,6 +148,29 @@ describe('team page app modal shell', () => {
     })
   })
 
+  it('focuses #initialFocusId with { preventScroll: true }', async () => {
+    // jsdom 没有布局，测不了 scrollTop，所以这里断的是**调用形态**：壳必须把
+    // preventScroll 透给目标元素。裸 .focus() 会在 height="auto" 的滚动容器
+    // （max-h-[min(760px,calc(100vh-48px))] overflow-auto）里触发
+    // scroll-into-view，把头部与整个列表滚出视野——外部模型弹窗种入 ≥7 个模型
+    // 时「打开即停在表单底部」就是这个副作用（T5-Fix1 / F1）。
+    // 焦点仍照常落在该元素上（键盘输入不受影响），只是不再把壳滚走。
+    const target = document.createElement('input')
+    target.id = 'app-modal-prevent-scroll-field'
+    document.body.appendChild(target)
+    const focusSpy = vi.spyOn(target, 'focus')
+
+    try {
+      renderModal({ initialFocusId: 'app-modal-prevent-scroll-field' })
+
+      await waitFor(() => expect(focusSpy).toHaveBeenCalled())
+      expect(focusSpy.mock.calls[0][0]).toEqual({ preventScroll: true })
+    } finally {
+      focusSpy.mockRestore()
+      target.remove()
+    }
+  })
+
   it('carries contentId and contentClassName on the dialog content element', () => {
     renderModal({ contentId: 'app-modal-custom-id', contentClassName: 'app-modal-custom-class' })
 

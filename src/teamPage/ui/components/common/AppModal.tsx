@@ -114,13 +114,17 @@ export function AppModal({
     onClose()
   }
 
-  // 只在给了 initialFocusId 时才接管首焦，实现与现状逐字一致：
+  // 只在给了 initialFocusId 时才接管首焦：
   // preventDefault 挂掉 Radix 的默认聚焦，再手动聚焦目标（Radix 挂载内容
   // 晚于 open 翻转，放进焦点调度内才不会被内容挂载聚焦覆盖）。
+  // preventScroll：聚焦本身照旧，但别让浏览器在新出现的滚动容器里做
+  // scroll-into-view——height="auto" 的 max-h + overflow-auto 会把整壳滚到底
+  // （头部与列表一起滚出视野，模型 ≥7 个时必现）。迁移前没有这个容器，打开
+  // 时看到的就是顶部，preventScroll 把打开位置恢复到一致。
   const handleOpenAutoFocus = initialFocusId
     ? (event: OpenAutoFocusEvent) => {
         event.preventDefault()
-        document.getElementById(initialFocusId)?.focus()
+        document.getElementById(initialFocusId)?.focus({ preventScroll: true })
       }
     : undefined
 
