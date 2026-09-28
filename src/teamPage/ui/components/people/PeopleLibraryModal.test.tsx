@@ -208,6 +208,30 @@ describe('team page people library modal', () => {
     expect(document.querySelector('#builtin-template-detail-modal')).not.toBeNull()
     expect(document.querySelector('#builtin-template-detail-title')?.textContent).toBe('弗兰克尔')
     expect(document.querySelector('#builtin-template-detail-meta')?.textContent).toContain('内置人员')
+
+    // 外壳契约：宽度令牌 lg=720（.template-detail-modal 想写 720 却被原语
+    // 基类 sm:max-w-lg 钳成 512 的老问题随壳消失）、无 max-w-lg、壳的 p-0
+    const modal = document.querySelector<HTMLElement>('#builtin-template-detail-modal')!
+    expect(modal.classList.contains('w-[min(720px,calc(100vw-48px))]')).toBe(true)
+    expect(modal.classList.contains('max-w-lg')).toBe(false)
+    expect(modal.classList.contains('p-0')).toBe(true)
+    // 正文内边距由 bodyClassName 补回（本弹窗自己不带 padding）
+    const bodyRow = modal.lastElementChild as HTMLElement
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
+    // 描述 id 不再被显式 id 顶掉 Radix 自动 id：content 的 aria-describedby
+    // 必须指回弹窗内真实存在的那个描述节点
+    expect(modal.getAttribute('aria-describedby')).toBe('builtin-template-detail-meta')
+    expect(modal.querySelector('#builtin-template-detail-meta')).not.toBeNull()
+
+    // 提示词预览退役 legacy 规则后，换行/行距/凹槽底/前景色由 utilities 承担
+    const pre = bodyRow.querySelector<HTMLElement>('#builtin-template-detail-prompt')!
+    expect(pre.classList.contains('template-prompt-preview')).toBe(true)
+    expect(pre.classList.contains('whitespace-pre-wrap')).toBe(true)
+    expect(pre.classList.contains('leading-[1.65]')).toBe(true)
+    expect(pre.classList.contains('bg-background')).toBe(true)
+    expect(pre.classList.contains('text-foreground')).toBe(true)
+
     const prompt = document.querySelector('#builtin-template-detail-prompt')?.textContent ?? ''
     expect(prompt).toContain('弗兰克尔式意义顾问')
     expect(prompt).toContain('意义疗法')

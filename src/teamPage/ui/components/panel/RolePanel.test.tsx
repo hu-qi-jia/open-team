@@ -121,6 +121,66 @@ describe('team page role panel cards', () => {
     await waitFor(() => expect(document.getElementById('role-prompt-detail-title')).toBeNull())
   })
 
+  it('renders the member prompt detail through the shared modal shell with its own close button', async () => {
+    const user = userEvent.setup()
+    const { state } = renderPanel({
+      patchRole: role => {
+        role.description = '拆解需求和验收标准'
+        role.systemPrompt = '你是产品经理。请先澄清目标，再输出可执行方案。'
+      },
+    })
+
+    await user.click(document.querySelector<HTMLButtonElement>('[data-role-prompt-detail="role-1"]')!)
+
+    const modal = await waitFor(() => {
+      const element = document
+        .getElementById('role-prompt-detail-title')
+        ?.closest<HTMLElement>('[data-slot="dialog-content"]')
+      if (!element) throw new Error('prompt dialog not open')
+      return element
+    })
+    // 宽度令牌 lg=720：原 .template-detail-modal 想写 720 却被原语基类
+    // sm:max-w-lg 钳成 512 的老问题随壳消失，这里不许再出现 max-w-lg
+    expect(modal.classList.contains('w-[min(720px,calc(100vw-48px))]')).toBe(true)
+    expect(modal.classList.contains('max-w-lg')).toBe(false)
+    // 壳自己的 p-0（抵掉原语基类的 p-6）→ 正文内边距必须由 bodyClassName 补回
+    expect(modal.classList.contains('p-0')).toBe(true)
+    const bodyRow = modal.lastElementChild as HTMLElement
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
+
+    // legacy .template-prompt-preview 退役后，换行/行距/凹槽底/前景色必须由
+    // utilities 承担——丢了 whitespace-pre-wrap，<pre> 会退回 UA 默认的
+    // white-space:pre，长提示词从自动换行变成横向溢出（jsdom 抓不到布局，
+    // 只能钉类名）
+    const preview = bodyRow.querySelector<HTMLElement>('.template-prompt-preview')
+    expect(preview).not.toBeNull()
+    expect(preview!.classList.contains('whitespace-pre-wrap')).toBe(true)
+    expect(preview!.classList.contains('leading-[1.65]')).toBe(true)
+    expect(preview!.classList.contains('bg-background')).toBe(true)
+    expect(preview!.classList.contains('border-border')).toBe(true)
+    expect(preview!.classList.contains('text-foreground')).toBe(true)
+
+    // 自绘 × 的 id（本任务新增契约）：可点且关得掉
+    const close = document.querySelector<HTMLButtonElement>('#close-role-prompt-detail')
+    expect(close).not.toBeNull()
+    await user.click(close!)
+    await waitFor(() => expect(document.getElementById('role-prompt-detail-title')).toBeNull())
+
+    // 叠层语义：抽屉（非模态）在上时，Escape 只关最顶层的详情弹窗
+    act(() => {
+      state.peopleDrawerOpen = true
+      notifyAppState()
+    })
+    await waitFor(() => expect(document.querySelector('.role-panel')?.getAttribute('data-state')).toBe('open'))
+    await user.click(document.querySelector<HTMLButtonElement>('[data-role-prompt-detail="role-1"]')!)
+    await waitFor(() => expect(document.getElementById('role-prompt-detail-title')).not.toBeNull())
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(document.getElementById('role-prompt-detail-title')).toBeNull())
+    expect(state.peopleDrawerOpen).toBe(true)
+    expect(document.querySelector('.role-panel')?.getAttribute('data-state')).toBe('open')
+  })
+
   it('renders the latest AI page health detail on the member card', () => {
     renderPanel({
       patchRole: role => {
