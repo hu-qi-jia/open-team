@@ -58,6 +58,13 @@ beforeEach(() => {
 
 let restoreScrollStubs: (() => void) | undefined
 
+/** ScrollArea 化后的真实滚动容器：容器级手势（mousedown/mouseup）必须落在 viewport 内 */
+function scrollViewportOf(messagesEl: HTMLElement): HTMLElement {
+  const viewport = messagesEl.querySelector<HTMLElement>('[data-slot="scroll-area-viewport"]')
+  if (!viewport) throw new Error('ScrollArea viewport 未渲染')
+  return viewport
+}
+
 /*
  * 滚动容器桩：jsdom 没有布局，scrollTop/scrollHeight/clientHeight 全是 0。
  * 装在 Element.prototype 上（而非单个元素），让 React 渲染出的 #messages
@@ -686,11 +693,12 @@ describe('team page messages (React)', () => {
       runCommand,
       messageActions: { insertTextIntoActiveNote },
     })
+    const scrollEl = scrollViewportOf(messagesEl)
 
     selectBodyText(messagesEl, 5, 7)
 
     vi.useFakeTimers()
-    fireEvent.mouseUp(messagesEl)
+    fireEvent.mouseUp(scrollEl)
     settleMarkMenuTimer()
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[aria-label="高亮并加入笔记"]')!)
     await act(async () => { await Promise.resolve() })
@@ -739,15 +747,16 @@ describe('team page messages (React)', () => {
     const store = makeStore({ chat, messages: [message] })
 
     const { messagesEl } = renderMessagesView(store)
+    const scrollEl = scrollViewportOf(messagesEl)
 
     selectBodyText(messagesEl, 5, 7)
 
     vi.useFakeTimers()
-    fireEvent.mouseDown(messagesEl)
+    fireEvent.mouseDown(scrollEl)
     fireEvent(document, new Event('selectionchange'))
     expect(document.querySelector('.mark-menu')).toBeNull()
 
-    fireEvent.mouseUp(messagesEl)
+    fireEvent.mouseUp(scrollEl)
     settleMarkMenuTimer()
     expect(document.querySelector('.mark-menu')).not.toBeNull()
   })
@@ -758,13 +767,14 @@ describe('team page messages (React)', () => {
     const store = makeStore({ chat, messages: [message] })
 
     const { messagesEl } = renderMessagesView(store)
+    const scrollEl = scrollViewportOf(messagesEl)
     const outsideEl = document.createElement('div')
     document.body.append(outsideEl)
 
     selectBodyText(messagesEl, 5, 7)
 
     vi.useFakeTimers()
-    fireEvent.mouseDown(messagesEl)
+    fireEvent.mouseDown(scrollEl)
     fireEvent(document, new Event('selectionchange'))
     fireEvent.mouseUp(document)
     fireEvent.click(outsideEl)
@@ -914,6 +924,66 @@ describe('team page messages (React)', () => {
     expect(received).toEqual(['open-add-person'])
   })
 
+  it('renders the message flow inside a ScrollArea viewport with a 720px centered column', () => {
+    const chat = makeChat({ roleIds: ['role-1'], messageIds: ['msg-1'], nextMessageSeq: 2 })
+    const role = makeRole()
+    const message = makeAssistantMessage({ content: '这里有一段重点内容', roleName: role.name })
+    const store = makeStore({ chat, roles: [role], messages: [message] })
+
+    const { messagesEl } = renderMessagesView(store)
+
+    expect(messagesEl.tagName).toBe('SECTION')
+    expect(messagesEl.getAttribute('aria-live')).toBe('polite')
+    const viewport = messagesEl.querySelector('[data-slot="scroll-area-viewport"]')
+    expect(viewport).not.toBeNull()
+    // Radix Viewport 在子级自带 display:table 内容包裹层，列容器以 data-slot 定位
+    const column = viewport?.querySelector('[data-slot="messages-column"]')
+    expect(column?.className).toContain('mx-auto')
+    expect(column?.className).toContain('max-w-[720px]')
+    expect(column?.className).toContain('px-4')
+  })
+
+  it('renders the no-chat empty state inside the same ScrollArea column', () => {
+    const emptyStore = { ...createDefaultStore() }
+    const { messagesEl } = renderMessagesView(emptyStore)
+    const viewport = scrollViewportOf(messagesEl)
+    expect(viewport.querySelector('[data-slot="messages-column"]')?.textContent).toContain('选择一个群聊')
+  })
+
+  it('points the auto-scroll ref at the ScrollArea viewport instead of the section', async () => {
+    installScrollStubs(680, 1000, 300)
+    const chat = makeChat({ roleIds: ['role-1'], messageIds: ['msg-1'], nextMessageSeq: 2 })
+    const role = makeRole()
+    const message = makeAssistantMessage({ content: '贴底跟随', roleName: role.name })
+    const store = makeStore({ chat, roles: [role], messages: [message] })
+
+    const { messagesEl } = renderMessagesView(store)
+
+    // 挂载帧近底部 + 无历史测量 → 贴底赋值在首帧就已触发
+    expect(messagesEl.scrollTop).toBe(1000)
+
+    // 实例级 scrollTop 陷阱：下一次贴底写入必须落在 viewport（真实滚动元素），
+    // 若 ref 仍指向 section，这里将只有 section 侧记录到写入
+    const viewport = scrollViewportOf(messagesEl)
+    const viewportWrites: number[] = []
+    const sectionWrites: number[] = []
+    Object.defineProperty(viewport, 'scrollTop', {
+      configurable: true,
+      get: () => 1000,
+      set: value => { viewportWrites.push(value) },
+    })
+    Object.defineProperty(messagesEl, 'scrollTop', {
+      configurable: true,
+      get: () => 120,
+      set: value => { sectionWrites.push(value) },
+    })
+
+    await pushStoreUpdate()
+
+    expect(viewportWrites).toEqual([1000])
+    expect(sectionWrites).toEqual([])
+  })
+
   it('renders a stopped-reply bubble with a resend action', () => {
     const chat = makeChat({ roleIds: ['role-1'] })
     const role = makeRole({ status: 'stopped', lastPromptMessageId: 'msg-user' })
@@ -957,11 +1027,12 @@ describe('team page messages (React)', () => {
     })
 
     const { messagesEl } = renderMessagesView(store, { runCommand })
+    const scrollEl = scrollViewportOf(messagesEl)
 
     selectBodyText(messagesEl, 5, 7)
 
     vi.useFakeTimers()
-    fireEvent.mouseUp(messagesEl)
+    fireEvent.mouseUp(scrollEl)
     settleMarkMenuTimer()
     fireEvent.click(document.querySelector<HTMLButtonElement>('button[aria-label="高亮"]')!)
     await act(async () => { await Promise.resolve() })

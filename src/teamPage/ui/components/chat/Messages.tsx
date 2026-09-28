@@ -3,6 +3,7 @@ import type { GroupMessage, GroupRole, MessageHighlight, OpenTeamStore, Orchestr
 import { MessageSquare, Users } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
+import { ScrollArea } from '../ui/scroll-area'
 import { roleMentionLabelOptionsFromSettings } from '../../../../group/mentionParser'
 import {
   THINKING_TIMEOUT_MS,
@@ -57,7 +58,10 @@ export function Messages() {
   const services = useServices()
   const version = useStoreSelector(getAppStateVersion)
   const selectedChatId = useStoreSelector(state => state.selectedChatId)
-  const scrollRef = useRef<HTMLElement>(null)
+  // 贴底跟随与划词菜单共用的滚动容器 ref：指向 ScrollArea 的 Viewport
+  // （真实滚动元素），ref 在 commit 阶段先于 layout effect 挂好，挂载帧
+  // 的贴底判定因此照常触发。useAutoScroll / useMarkMenu 的签名不变。
+  const scrollRef = useRef<HTMLDivElement>(null)
   const [thinkingTick, setThinkingTick] = useState(0)
   const thinkingTimeoutsRef = useRef<number[]>([])
   const loggedThinkingTimeoutRoleIdsRef = useRef(new Set<string>())
@@ -163,8 +167,12 @@ export function Messages() {
 
   if (!view.chat) {
     return (
-      <section id="messages" className="messages" aria-live="polite" ref={scrollRef}>
-        <EmptyState title="选择一个群聊" body="左侧群聊列表会显示最近摘要、状态和更新时间。" />
+      <section id="messages" className="messages flex h-full min-h-0 flex-col" aria-live="polite">
+        <MessagesScrollArea viewportRef={scrollRef}>
+          <div data-slot="messages-column" className="mx-auto flex w-full flex-1 flex-col px-4 max-w-[720px] pb-4">
+            <EmptyState title="选择一个群聊" body="左侧群聊列表会显示最近摘要、状态和更新时间。" />
+          </div>
+        </MessagesScrollArea>
       </section>
     )
   }
@@ -172,59 +180,84 @@ export function Messages() {
   const startupNotice = view.messages.length === 0 ? getChatStartupNotice(view.chat, view.roles) : undefined
 
   return (
-    <section id="messages" className="messages" aria-live="polite" ref={scrollRef}>
+    <section id="messages" className="messages flex h-full min-h-0 flex-col" aria-live="polite">
+      {/* S6 表面，位置保持：状态卡在滚动列之外，不做列容器内的 720px 约束 */}
       <OrchestrationStatusCard />
-      {view.messages.length === 0 && (view.roles.length === 0 ? (
-        <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。" icon={<Users className="size-4" />}>
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => services.uiBus.emit('open-add-person')}
-          >添加人员</Button>
-        </EmptyState>
-      ) : (
-        <EmptyState
-          title={startupNotice?.title ?? '等待第一条消息'}
-          body={startupNotice?.body ?? '直接发送会记录消息；@ 人员或 @所有人 后触发回复。'}
-        />
-      ))}
-      {view.entries.map(entry => entry.kind === 'time'
-        ? <div key={entry.id} className="message-time-divider mx-auto my-3 w-fit rounded-full bg-muted/70 px-2.5 py-0.5 text-[11px] text-muted-foreground">{entry.label}</div>
-        : (
-          <MessageItem
-            key={entry.message.id}
-            message={entry.message}
-            showName={entry.showName}
-            showAvatar={entry.showAvatar}
-            role={entry.role}
-            reviewResult={entry.reviewResult}
-            highlights={entry.highlights}
-            signature={entry.signature}
-            mentionedRoles={entry.mentionedRoles}
-            mentionLabelOptions={mentionLabelOptions}
-          />
-        ))}
-      {thinkingRoles.map(role => (
-        <ReplyControlBubble
-          key={`thinking-${role.id}`}
-          role={role}
-          mentionLabelOptions={mentionLabelOptions}
-        />
-      ))}
-      {stoppedRoles.map(role => (
-        <ReplyControlBubble
-          key={`stopped-${role.id}`}
-          role={role}
-          mentionLabelOptions={mentionLabelOptions}
-        />
-      ))}
+      <MessagesScrollArea viewportRef={scrollRef}>
+        {/* 内容列（规格 D7）：720px 居中，水平 padding 由列承担；行内条目按
+            Task 3 前的现状渲染（px-6 归 Task 4 移除）。 */}
+        <div data-slot="messages-column" className="mx-auto flex w-full flex-1 flex-col px-4 max-w-[720px] pb-4">
+          {view.messages.length === 0 && (view.roles.length === 0 ? (
+            <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。" icon={<Users className="size-4" />}>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => services.uiBus.emit('open-add-person')}
+              >添加人员</Button>
+            </EmptyState>
+          ) : (
+            <EmptyState
+              title={startupNotice?.title ?? '等待第一条消息'}
+              body={startupNotice?.body ?? '直接发送会记录消息；@ 人员或 @所有人 后触发回复。'}
+            />
+          ))}
+          {view.entries.map(entry => entry.kind === 'time'
+            ? <div key={entry.id} className="message-time-divider mx-auto my-3 w-fit rounded-full bg-muted/70 px-2.5 py-0.5 text-[11px] text-muted-foreground">{entry.label}</div>
+            : (
+              <MessageItem
+                key={entry.message.id}
+                message={entry.message}
+                showName={entry.showName}
+                showAvatar={entry.showAvatar}
+                role={entry.role}
+                reviewResult={entry.reviewResult}
+                highlights={entry.highlights}
+                signature={entry.signature}
+                mentionedRoles={entry.mentionedRoles}
+                mentionLabelOptions={mentionLabelOptions}
+              />
+            ))}
+          {thinkingRoles.map(role => (
+            <ReplyControlBubble
+              key={`thinking-${role.id}`}
+              role={role}
+              mentionLabelOptions={mentionLabelOptions}
+            />
+          ))}
+          {stoppedRoles.map(role => (
+            <ReplyControlBubble
+              key={`stopped-${role.id}`}
+              role={role}
+              mentionLabelOptions={mentionLabelOptions}
+            />
+          ))}
+        </div>
+      </MessagesScrollArea>
       <MarkMenu controller={markMenuController} />
     </section>
   )
 }
 
-/* W3-3：空态换 Empty 原语（.messages 为 flex 列，Empty 的 flex-1 +
- * justify-center 使内容垂直居中）；icon 可选，默认会话图标 */
+/*
+ * Messages 专用的 ScrollArea 装配：Radix Viewport 自带 display:table 的内容
+ * 包裹层（inline style，普通类压不过），这里用 !important 变体把它转成
+ * min-h-full 的 flex 列，列容器以 flex-1 撑满——空态才能借 Empty 的 flex-1
+ * 垂直居中（jsdom 无布局，该几何由 Task 8 截图脚本锁定）。表格布局下
+ * 百分比高度不可解析（实测 Chromium 空态顶置），不能依赖 min-h-full。
+ */
+function MessagesScrollArea({ children, viewportRef }: { children: React.ReactNode; viewportRef: React.Ref<HTMLDivElement> }) {
+  return (
+    <ScrollArea
+      className="min-h-0 flex-1 [&>[data-slot=scroll-area-viewport]>div]:flex! [&>[data-slot=scroll-area-viewport]>div]:flex-col [&>[data-slot=scroll-area-viewport]>div]:min-h-full"
+      viewportRef={viewportRef}
+    >
+      {children}
+    </ScrollArea>
+  )
+}
+
+/* W3-3：空态换 Empty 原语（列容器为 flex 列且撑满 viewport 高度，Empty 的
+ * flex-1 + justify-center 使内容垂直居中）；icon 可选，默认会话图标 */
 function EmptyState({ title, body, children, icon }: { title: string; body: string; children?: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <Empty className="mx-auto max-w-sm">

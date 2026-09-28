@@ -884,15 +884,9 @@ select:focus {
   font-size: 12px;
 }
 
-.messages {
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
-  gap: 10px;
-  overflow: auto;
-  padding: 22px 30px 16px;
-  background: transparent;
-}
+/* S2 Task 3：.messages 容器族退役——滚动改由 ScrollArea Viewport 承担，
+ * 尺寸/内边距/居中列改由 Messages.tsx 的 utilities 提供（#messages 上的
+ * .messages 类保留作 E2E/legacy 选择器钩子）。 */
 
 .message-row {
   display: flex;
@@ -1288,10 +1282,6 @@ select:focus {
   color: rgba(4, 46, 35, 0.72);
 }
 
-.message-system-pill .orchestration-message-label {
-  padding: 0 0 3px;
-}
-
 .orchestration-review-summary {
   display: grid;
   gap: 4px;
@@ -1310,28 +1300,9 @@ select:focus {
   font-weight: 760;
 }
 
-.message-time-divider {
-  align-self: center;
-  width: fit-content;
-  max-width: 72%;
-  border-radius: 999px;
-  padding: 3px 9px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(243, 245, 246, 0.62);
-  font-size: 11px;
-  line-height: 1.4;
-}
-
-.message-system-pill {
-  max-width: 72%;
-  border-radius: 999px;
-  padding: 5px 11px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(243, 245, 246, 0.72);
-  font-size: 12px;
-  line-height: 1.45;
-  text-align: center;
-}
+/* S2 Task 3：.message-time-divider / .message-system-pill 规则退役——
+ * 两类元素保留类名作钩子，视觉已由行内 utilities 承担（原 72% 上限随
+ * 720px 列容器自然收窄，不再需要）。 */
 
 .thinking-dots::after {
   content: "...";
@@ -4077,12 +4048,6 @@ select:focus {
   border-right-color: #fbf5e6;
 }
 
-:root[data-theme="light"] .message-time-divider,
-:root[data-theme="light"] .message-system-pill {
-  background: #ffffff;
-  color: rgba(32, 45, 58, 0.68);
-}
-
 :root[data-theme="light"] .orchestration-review-summary,
 :root[data-theme="light"] .reference-box,
 :root[data-theme="light"] .message-tool-btn:hover,
@@ -4482,10 +4447,6 @@ select:focus {
 
   .chat-header {
     padding-right: 72px;
-  }
-
-  .messages {
-    padding-inline: 20px;
   }
 
   #iframe-host .chat-frame-group {
