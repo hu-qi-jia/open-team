@@ -1,22 +1,27 @@
 /*
  * V5 清理：legacy 的整套 token（--bg/--panel/--brand/--orchestration-*…）
  * 已全部由 globals.css components 层重映射到 zinc shadcn tokens（未分层
- * 声明在此必输，原本就是死值），只保留 remap 刻意不接管的 --muted
- * （shadcn 侧同名为背景 token，legacy 侧是文字色，见 globals 注释）。
+ * 声明在此必输，原本就是死值）。
  * 其余零散旧值（danger/warning/success 语义色）也随 remap 走
  * chart/destructive tokens。动态色板家族里的 role-tone-* / site-pill-*
  * 已于 S3 Task 4 归位到 globals.css components 层；其余色板
  * （template-type-* 等）的字面量仍留在下方各规则里。
+ *
+ * 2026-09-28（用户报「部分文字亮色/暗色都不对」）：原先在此声明的
+ * --muted（暗 #a1a1aa / 浅 #71717a，本文件当**文字色**用）与 shadcn
+ * 的 --muted（**背景** token，globals.css 顶层未分层）同名——未分层恒压
+ * 分层，故本文件的 --muted 声明与全部 `color: var(--muted)` 都是死值，
+ * 文字取到的是背景色（浅色≈白、暗色≈zinc-700），两主题双双不可读。
+ * 现删掉这组声明，21 处文字色改指 --muted-foreground（随主题翻转、语义
+ * 相符）；globals 侧同理。
  */
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --muted: #a1a1aa;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --muted: #71717a;
 }
 
 * {
@@ -73,129 +78,21 @@ button {
   display: none;
 }
 
-.floating-toolbar {
-  position: absolute;
-  left: auto;
-  right: 18px;
-  top: 6px;
-  z-index: 12;
-  display: flex;
-  flex-direction: row-reverse;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  width: auto;
-  height: 11px;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  box-shadow: none;
-  transform: none;
-  backdrop-filter: none;
-  pointer-events: auto;
-}
-
-.floating-toolbar .icon-btn {
-  width: 11px;
-  height: 11px;
-  min-width: 11px;
-  border: 1px solid rgba(0, 0, 0, 0.18);
-  border-radius: 50%;
-  background: #d8dde4;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.28);
-}
-
-.window-dot {
-  position: relative;
-  display: grid;
-  place-items: center;
-  padding: 0;
-  color: rgba(22, 24, 28, 0);
-  font-size: 0;
-  line-height: 1;
-}
-
-.window-dot::before {
-  color: rgba(22, 24, 28, 0);
-  font-size: 8px;
-  font-weight: 760;
-  line-height: 1;
-  transform: translateY(-0.5px);
-  transition: color 0.12s ease;
-}
-
-.floating-toolbar:hover .window-dot::before,
-.floating-toolbar .window-dot:focus-visible::before {
-  color: rgba(22, 24, 28, 0.68);
-}
-
-.floating-toolbar .icon-btn.window-dot:hover {
-  border-color: rgba(0, 0, 0, 0.24);
-  filter: brightness(1.04);
-}
-
-.floating-toolbar .icon-btn.window-dot-close {
-  background: #ff5f57;
-}
-
-.window-dot-close::before {
-  content: "×";
-}
-
-.floating-toolbar .window-dot-close::before {
-  color: rgba(22, 24, 28, 0.68);
-}
-
-.floating-toolbar .icon-btn.window-dot-minimize {
-  background: #febc2e;
-}
-
-.window-dot-minimize::before {
-  content: "−";
-}
-
-.floating-toolbar .icon-btn.window-dot-fullscreen {
-  background: #28c840;
-}
-
-.window-dot-fullscreen::before {
-  content: "↗";
-  font-size: 7px;
-}
-
-#toggle-fullscreen[aria-pressed="true"]::before {
-  content: "↙";
-}
+/*
+ * 窗控三钮的 macOS 交通灯圆点家族（.floating-toolbar 几何 + .icon-btn 11px
+ * 圆钮 + .window-dot::before 字形）已随用户 2026-09-28 报的「换成同类型的
+ * icon」退役：几何与配色改由 FloatingWindowChrome.tsx 上的 shadcn
+ * Button(icon-xs) + utilities 承担（absolute/top-1.5/right-3/z-12/flex）。
+ */
 
 /*
  * S1 Task 7：壳层家族（.app-shell 几何/minimized/fullscreen/dragging/
  * resizing/window-resize-handle）已搬迁至 globals.css components 层；
  * .panel/.rail/.rail-actions/.rail-btn/data-tooltip 伪元素家族随旧壳
- * （Rail.tsx、旧 Sidebar.tsx 布局）一并退役。.icon-btn 仅保留浮窗铬件
- * （floating-toolbar 三个窗控圆点）仍在用的规则。
+ * （Rail.tsx、旧 Sidebar.tsx 布局）一并退役。
+ * .icon-btn 曾只为浮窗铬件三个窗控圆点保留，该家族 2026-09-28 随窗控钮
+ * React 化退役（改走 shadcn Button），此处已无活消费者。
  */
-.icon-btn {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid transparent;
-  border-radius: 11px;
-  background: transparent;
-  color: #a1a1aa;
-  cursor: pointer;
-  transition: 0.16s ease;
-}
-
-.icon-btn:hover {
-  border-color: rgba(113, 113, 122, 0.34);
-  background:
-    radial-gradient(circle at 50% 20%, rgba(161, 161, 170, 0.24), transparent 56%),
-    rgba(63, 63, 70, 0.26);
-  color: #ffffff;
-  box-shadow: 0 0 0 1px rgba(161, 161, 170, 0.06) inset, 0 14px 28px rgba(0, 0, 0, 0.2);
-}
 
 #settings-button[hidden] {
   display: none;
@@ -293,7 +190,7 @@ h3 {
 }
 
 .muted {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 .tiny {
@@ -322,28 +219,6 @@ h3 {
 .settings-menu button {
   width: 100%;
   justify-content: flex-start;
-}
-
-.chat-create {
-  position: absolute;
-  top: 74px;
-  right: 14px;
-  left: 14px;
-  z-index: 6;
-  display: grid;
-  gap: 10px;
-  border: 1px solid rgba(113, 113, 122, 0.24);
-  border-radius: 10px;
-  padding: 12px;
-  background:
-    radial-gradient(circle at 18% 0%, rgba(161, 161, 170, 0.12), transparent 42%),
-    rgba(9, 9, 11, 0.96);
-  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.42), var(--glow);
-  backdrop-filter: blur(20px);
-}
-
-.chat-create[hidden] {
-  display: none;
 }
 
 .chat-create-template-row {
@@ -419,7 +294,7 @@ h3 {
   place-items: center;
   min-height: 34px;
   border-radius: 6px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 12px;
   font-weight: 760;
@@ -467,11 +342,12 @@ h3 {
 #template-persona-generation-status {
   min-height: 16px;
   margin: 0;
-  color: #d4d4d8;
+  /* 原 #d4d4d8 是暗色专用字面量，浅色下白底灰字不可读（本规则无浅色覆盖） */
+  color: var(--muted-foreground);
 }
 
 label {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 700;
 }
@@ -560,18 +436,6 @@ select:focus {
   white-space: nowrap;
 }
 
-#restore-chat {
-  width: 36px;
-  min-width: 36px;
-  padding: 0;
-  font-size: 0;
-}
-
-#restore-chat::before {
-  content: "↺";
-  font-size: 16px;
-}
-
 #open-orchestration[hidden] {
   display: none;
 }
@@ -643,7 +507,7 @@ select:focus {
   border-radius: 999px;
   padding: 0 9px;
   background: transparent;
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 12px;
   font-weight: 780;
@@ -678,7 +542,7 @@ select:focus {
 
 .chat-subtitle {
   margin-top: 5px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
 }
 
@@ -793,7 +657,8 @@ select:focus {
 }
 
 .orchestration-status-drag-grip {
-  color: #d4d4d8;
+  /* 同 #template-persona-generation-status：本体无浅色覆盖，改随主题翻转 */
+  color: var(--muted-foreground);
   font-size: 14px;
   letter-spacing: 1px;
 }
@@ -1270,7 +1135,7 @@ select:focus {
   border: 1px dashed rgba(113, 113, 122, 0.24);
   border-radius: 10px;
   padding: 28px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   text-align: center;
 }
 
@@ -1318,7 +1183,7 @@ select:focus {
 }
 
 .all-note-target-meta {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 720;
 }
@@ -1443,7 +1308,7 @@ select:focus {
 
 .template-description {
   margin-top: 2px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -1503,7 +1368,7 @@ select:focus {
 
 .pagination-label {
   min-width: 54px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   font-weight: 760;
   text-align: center;
@@ -1526,7 +1391,7 @@ select:focus {
   border: 1px solid rgba(113, 113, 122, 0.18);
   border-radius: 999px;
   padding: 0 7px;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 820;
   line-height: 1;
@@ -1606,7 +1471,7 @@ select:focus {
 }
 
 .group-template-search-field span {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 760;
   letter-spacing: 0;
@@ -1630,7 +1495,7 @@ select:focus {
   border-radius: 999px;
   padding: 6px 11px;
   background: rgba(24, 24, 27, 0.46);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 12px;
   font-weight: 780;
@@ -1714,7 +1579,7 @@ select:focus {
 }
 
 .group-template-role-count {
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 11px;
   font-weight: 760;
   line-height: 1.2;
@@ -1733,7 +1598,7 @@ select:focus {
 .group-template-summary {
   display: -webkit-box;
   overflow: hidden;
-  color: var(--muted);
+  color: var(--muted-foreground);
   font-size: 12px;
   line-height: 1.6;
   white-space: normal;
@@ -1811,7 +1676,7 @@ select:focus {
   border: 1px solid rgba(113, 113, 122, 0.16);
   border-radius: 8px;
   background: rgba(113, 113, 122, 0.08);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 12px;
   font-weight: 760;
@@ -1835,7 +1700,7 @@ select:focus {
   border-radius: 999px;
   padding: 0 10px;
   background: rgba(113, 113, 122, 0.08);
-  color: var(--muted);
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 11px;
   font-weight: 760;
@@ -2631,7 +2496,7 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create {
+:root[data-theme="light"] .settings-menu {
   border-color: rgba(113, 113, 122, 0.2);
   background: #ffffff;
   box-shadow: var(--shadow), var(--glow);
@@ -2647,17 +2512,6 @@ select:focus {
   border-color: rgba(113, 113, 122, 0.34);
   background: #ffffff;
   color: #52525b;
-}
-
-:root[data-theme="light"] .icon-btn {
-  color: #71717a;
-}
-
-:root[data-theme="light"] .icon-btn:hover {
-  border-color: rgba(113, 113, 122, 0.26);
-  background: #ffffff;
-  color: #27272a;
-  box-shadow: 0 0 0 1px rgba(113, 113, 122, 0.08) inset, 0 12px 24px rgba(63, 63, 70, 0.12);
 }
 
 :root[data-theme="light"] .sidebar {
@@ -2777,7 +2631,7 @@ select:focus {
 :root[data-theme="light"] .orchestration-template-summary,
 :root[data-theme="light"] .orchestration-auto-role-site-row span,
 :root[data-theme="light"] .orchestration-auto-role-prompt-row span {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 :root[data-theme="light"] .group-template-option,
@@ -2832,7 +2686,7 @@ select:focus {
 :root[data-theme="light"] .add-person-site-option {
   border-color: rgba(113, 113, 122, 0.16);
   background: #ffffff;
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 :root[data-theme="light"] .orchestration-review-line span:first-child {
@@ -3039,11 +2893,11 @@ select:focus {
 }
 
 :root[data-theme="light"] .orchestration-person .tiny {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 :root[data-theme="light"] .orchestration-template-group-title {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 :root[data-theme="light"] .orchestration-template-card {
@@ -3064,7 +2918,7 @@ select:focus {
 }
 
 :root[data-theme="light"] .orchestration-template-summary {
-  color: var(--muted);
+  color: var(--muted-foreground);
 }
 
 :root[data-theme="light"] .orchestration-arrange {

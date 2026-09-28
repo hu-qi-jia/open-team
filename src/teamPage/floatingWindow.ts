@@ -113,7 +113,8 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     if (!minimized && deps.appShellEl.style.transform !== 'none') ensureShellPositioned()
     deps.appShellEl.classList.toggle('minimized', minimized)
     deps.windowLauncherEl.hidden = !minimized
-    deps.toggleWindowSizeEl.textContent = minimized ? '□' : '−'
+    // 不再直写 textContent 换字形（那会清掉 React 渲染的 svg 图标）：
+    // 最小化时 .app-shell.minimized 令整壳 display:none，钮本就不可见
     deps.toggleWindowSizeEl.setAttribute('aria-expanded', String(!minimized))
     if (!minimized) window.requestAnimationFrame(clampShellPosition)
     syncAppSizeTier()
@@ -127,7 +128,6 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       deps.appShellEl.style.transform = ''
       deps.appShellEl.classList.remove('minimized')
       deps.windowLauncherEl.hidden = true
-      deps.toggleWindowSizeEl.textContent = '−'
       deps.toggleWindowSizeEl.setAttribute('aria-expanded', 'true')
       syncAppSizeTier()
     }
@@ -140,7 +140,8 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
       const restored = readShellGeometry(window.localStorage)
       if (restored) moveShellTo(restored.left, restored.top)
     }
-    deps.toggleFullscreenEl.textContent = fullscreen ? '⤡' : '⛶'
+    // 图标翻转（Maximize2 ↔ Minimize2）由 #app 的 .fullscreen 类经 CSS 祖先
+    // variant 承担（FloatingWindowChrome.tsx），此处只维护 aria/标题
     deps.toggleFullscreenEl.setAttribute('aria-pressed', String(fullscreen))
     deps.toggleFullscreenEl.setAttribute('aria-label', fullscreen ? chromeLabel('退出全屏') : chromeLabel('全屏窗口'))
     deps.toggleFullscreenEl.title = fullscreen ? chromeLabel('退出全屏') : chromeLabel('全屏窗口')

@@ -165,10 +165,10 @@ export function ExternalModelsModal() {
               const phase = testState?.id === model.id ? testState.phase : undefined
               return (
                 <Card key={model.id} className="template-card gap-1.5 rounded-lg border-border bg-card p-3 text-left">
-                  <CardHeader className="gap-1">
-                    <CardTitle className="text-sm font-medium">{model.name}</CardTitle>
+                  <CardHeader className="gap-1 px-0">
+                    <CardTitle className="text-sm font-medium leading-tight">{model.name}</CardTitle>
                     <CardDescription className="text-xs leading-relaxed">{ui(`${model.format === 'anthropic' ? 'Anthropic' : 'OpenAI'} · ${model.modelName}`)}</CardDescription>
-                    <CardAction>
+                    <CardAction className="flex items-center gap-1">
                       <Button
                         type="button"
                         variant="ghost"

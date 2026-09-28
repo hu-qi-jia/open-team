@@ -285,13 +285,16 @@ function TemplateCard({ template, store, language, ui, used, onEdit, onDetail, o
       : ''
   return (
     <Card className="template-card gap-1.5 rounded-lg border-border bg-card p-3 text-left">
-      <CardHeader className="gap-1">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium">
-          <span className="role-name truncate">{displayTemplate.name}</span>
+      {/* px-0 抵消 CardHeader 基类的 px-6：卡片自身 p-3（12px），而 CardContent 走 px-0，
+          两侧基准必须一致，否则标题/按钮比下半部元信息多缩进 24px（用户报的「文字错位」） */}
+      <CardHeader className="gap-1 px-0">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium leading-tight">
+          <span className="role-name truncate font-medium">{displayTemplate.name}</span>
           <span className={`template-type-badge template-type-${template.type}`}>{ui(template.type === 'builtin' ? '内置' : '自定义')}</span>
         </CardTitle>
         <CardDescription className="text-xs leading-relaxed">{displayTemplate.description || ui('未填写人员库描述')}</CardDescription>
-        <CardAction>
+        {/* CardAction 是普通 div（无 flex/gap），相邻按钮会贴死 */}
+        <CardAction className="flex items-center gap-1">
           {template.type === 'builtin' ? (
             <Button type="button" variant="ghost" size="sm" className="template-detail" onClick={event => { event.stopPropagation(); onDetail() }}>{ui('详情')}</Button>
           ) : (
