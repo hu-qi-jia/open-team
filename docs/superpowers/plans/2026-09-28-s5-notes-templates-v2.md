@@ -98,7 +98,25 @@
 **除上表外，浅色块里其余提到 note 的行都属于共享族，一律不动**：`2322 .note-toolbar`、`2474/2502/2503 .note-tool-btn`、
 `2509 .notes-editor`。
 
-**B 组独占、可退役**：`.group-template-*` 全部（1309–1509），及浅色 2350–2351/2370–2373/2411–2413/2428/2571/2575/2581/2587。
+**B 组独占、可退役**：`.group-template-*`，`^\.group-template` 实测 **28 个行首命中 = 24 条规则**
+（⚠️ 别把命中行数当规则数：1359–1361 与 1396–1398 是两组**多行选择器**，续行 4 行）。
+规则起始行：1309/1317/1323/1328/1335/1339/1347/1359/1368/1378/1396/1405/1412/1418/1425/1436/1443/1453/1464/1472/1480/1490/1499/1505。
+**无 `@media` 块**（与 A 组不同，B 组没有响应式规则）。及下面逐条判过的浅色对应。
+
+⚠️ **2026-09-29 订正：原写的浅色行号漏了 2475**——它与共享族 `.note-tool-btn` 同组，属「只摘成员」。
+
+| 行 | 形态 | 处置 |
+| --- | --- | --- |
+| 2348–2351 | **分组 4 成员**：`.theme-option[aria-pressed="true"], .mode-option:has(input:checked), .group-template-option.active, .group-template-category-filter.active` | 只摘 2350/2351；前两个成员**保留** |
+| 2370–2373 | 独立组（4 条全是 group-template） | 整条删 |
+| 2409–2422 | **分组 14 成员**：`.chat-time, .summary-line, .group-template-summary, .group-template-meta, .group-template-role-count,` + 9 个 `.orchestration-*` | 只摘 **2411/2412/2413**；其余全留 |
+| 2428–2432 | **分组 5 成员**：`.group-template-option, .orchestration-sidebar, .orchestration-settings, .orchestration-footer, .orchestration-json-preview` | 只摘 2428 |
+| 2474–2475 | **分组**：`.note-tool-btn, .group-template-category-filter` | 只摘 **2475**；`.note-tool-btn` 是共享族（守卫测试钉住） |
+| 2570–2571 | **分组**：`.chat-create-template-btn, .group-template-category` | 只摘 2571 |
+| 2575 / 2581 / 2587 | 三条独立：`.group-template-risk` / `.group-template-risk-professional` / `.group-template-roles span` | 整条删 |
+
+**结论（A/B 两组共用）**：浅色块里**绝大多数 group-template / all-note 成员都藏在分组选择器里**，
+「整条删」的只有 A 组 3 条 + B 组 5 条，其余全是**摘成员**。T4 必须按这张表逐行改，不许按行号区间粗删。
 
 **必须保留（共享族 / 全局）**：
 
