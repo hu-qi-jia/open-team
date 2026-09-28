@@ -81,8 +81,22 @@
 
 **A 组独占、可退役**：`.all-notes-modal`(1077)、`.all-notes-workspace`(1083)、`.all-notes-list`(1090)、
 `.all-notes-empty`(1101)、`.all-note-target` 族(1109–1156)、`.all-notes-editor-shell`(1158)、
-`.all-notes-editor-header`(1165, 1174)、`.all-notes-editor`(1184)，及浅色 2323/2324/2461/2509–2511/2525/2529/2533/2537，
-媒体查询 1188–1203。
+`.all-notes-editor-header`(1165, 1174)、`.all-notes-editor`(1184)，媒体查询 1188–1203，
+及下面**逐条判过**的浅色对应。
+
+**浅色块逐条判（⚠️ 2026-09-29 订正：原写「2509–2511」会误导 T4——2509 是共享族）**：
+
+| 行 | 形态 | 处置 |
+| --- | --- | --- |
+| 2321–2327 | **分组**：`.chat-header, .note-toolbar, .all-notes-workspace, .all-notes-editor-header, #iframe-host .chat-frame-group-title, #iframe-host .role-frame-label { border-color }` | **只摘成员** 2323/2324，其余 4 个成员**原样保留**（`note-toolbar` 是共享族） |
+| 2459–2462 | **分组**：`.template-card.active, .all-note-target.active { … }` | 只摘 2461（`.all-note-target.active`），**`.template-card.active` 留给 S6/S7** |
+| 2498 | 独立：`.all-note-toolbar { background:#fff }` | **保留**——`all-note-toolbar` 是共享族，被守卫测试钉住（规则在、视觉由 utilities 接管） |
+| 2509–2523 | **分组 13 个成员**（`.notes-editor` + `.all-note-target` + `.all-note-target-title` + 10 个 `.orchestration-*`） | 只摘 **2510/2511**；**2509 `.notes-editor` 是共享族必须留**，orchestration 10 个全留 |
+| 2525 / 2529 / 2533 | 三条独立：`.all-notes-list` / `.all-notes-editor-header` / `.all-notes-editor-header h3` | 整条删 |
+| 2537–2538 | 独立组：`.all-note-target:hover, :focus-visible` | 整条删 |
+
+**除上表外，浅色块里其余提到 note 的行都属于共享族，一律不动**：`2322 .note-toolbar`、`2474/2502/2503 .note-tool-btn`、
+`2509 .notes-editor`。
 
 **B 组独占、可退役**：`.group-template-*` 全部（1309–1509），及浅色 2350–2351/2370–2373/2411–2413/2428/2571/2575/2581/2587。
 
