@@ -11,7 +11,7 @@ export function FloatingWindowChrome() {
   return (
     <>
       <div id="floating-toolbar" className="floating-toolbar">
-        <button id="close-window" className="icon-btn window-dot window-dot-close" type="button" aria-label={t('缩小窗口')} title={t('缩小窗口')}>×</button>
+        <button id="close-window" className="icon-btn window-dot window-dot-close" type="button" aria-label={t('关闭窗口')} title={t('关闭窗口')}>×</button>
         <button id="toggle-window-size" className="icon-btn window-dot window-dot-minimize" type="button" aria-expanded="true" aria-label={t('缩小窗口')} title={t('缩小窗口')}>−</button>
         <button id="toggle-fullscreen" className="icon-btn window-dot window-dot-fullscreen" type="button" aria-pressed="false" aria-label={t('全屏窗口')} title={t('全屏窗口')}>⛶</button>
       </div>

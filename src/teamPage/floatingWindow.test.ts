@@ -3,8 +3,17 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import { createTeamPageState } from './appState'
 import { createFloatingWindowControls } from './floatingWindow'
+import { bindAppState } from './ui/lib/appStore'
 import { SHELL_GEOMETRY_STORAGE_KEY } from './shellGeometry'
+
+// 铬件文案语言与 useT 同源：读 appStore 绑定的共享 state（语言切换即生效）。
+function bindUiLanguage(language: 'en' | 'zh-CN'): void {
+  const state = createTeamPageState()
+  state.store.settings.language = language
+  bindAppState(state)
+}
 
 function mockShellRect(el: HTMLElement, width: number, height = 600): void {
   el.getBoundingClientRect = () => ({
@@ -30,7 +39,11 @@ describe('team page floating window boundary', () => {
     expect(entrySource).not.toContain('function registerFloatingWindowControls(): void')
   })
 
-  it('toggles fullscreen mode from the floating toolbar', () => {
+  // 全屏钮的 aria-label/title 由 vanilla 侧在每次状态翻转时改写（React 只提供
+  // 初始值），文案必须走翻译表且语言取自绑定 store——否则英文界面下第一次
+  // 切换全屏就会被写回中文（S2 R1 评审裁定修复）。
+  it('writes fullscreen chrome labels translated in the bound store language (en)', () => {
+    bindUiLanguage('en')
     const appShellEl = document.createElement('main')
     const toggleWindowSizeEl = document.createElement('button')
     const toggleFullscreenEl = document.createElement('button')
@@ -47,13 +60,38 @@ describe('team page floating window boundary', () => {
 
     expect(appShellEl.classList.contains('fullscreen')).toBe(true)
     expect(toggleFullscreenEl.getAttribute('aria-pressed')).toBe('true')
-    expect(toggleFullscreenEl.getAttribute('aria-label')).toBe('退出全屏')
+    expect(toggleFullscreenEl.getAttribute('aria-label')).toBe('Exit fullscreen')
+    expect(toggleFullscreenEl.title).toBe('Exit fullscreen')
 
     toggleFullscreenEl.click()
 
     expect(appShellEl.classList.contains('fullscreen')).toBe(false)
     expect(toggleFullscreenEl.getAttribute('aria-pressed')).toBe('false')
+    expect(toggleFullscreenEl.getAttribute('aria-label')).toBe('Fullscreen window')
+    expect(toggleFullscreenEl.title).toBe('Fullscreen window')
+  })
+
+  it('writes fullscreen chrome labels in Chinese for a zh-CN bound store', () => {
+    bindUiLanguage('zh-CN')
+    const appShellEl = document.createElement('main')
+    const toggleWindowSizeEl = document.createElement('button')
+    const toggleFullscreenEl = document.createElement('button')
+    const windowLauncherEl = document.createElement('button')
+
+    createFloatingWindowControls({
+      appShellEl,
+      toggleWindowSizeEl,
+      toggleFullscreenEl,
+      windowLauncherEl,
+    }).registerFloatingWindowControls()
+
+    toggleFullscreenEl.click()
+    expect(toggleFullscreenEl.getAttribute('aria-label')).toBe('退出全屏')
+    expect(toggleFullscreenEl.title).toBe('退出全屏')
+
+    toggleFullscreenEl.click()
     expect(toggleFullscreenEl.getAttribute('aria-label')).toBe('全屏窗口')
+    expect(toggleFullscreenEl.title).toBe('全屏窗口')
   })
 
   it('leaves fullscreen mode when minimized', () => {

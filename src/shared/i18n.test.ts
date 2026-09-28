@@ -31,7 +31,9 @@ describe('shared i18n configuration', () => {
     expect(translateUi('拖拽调整宽度，双击重置', 'en')).toBe('Drag to resize, double-click to reset')
     // 浮窗铬件 aria-label/title 与 Composer 引用草稿取消钮（S2 Task 2）
     expect(translateUi('缩小窗口', 'en')).toBe('Minimize window')
+    expect(translateUi('关闭窗口', 'en')).toBe('Close window')
     expect(translateUi('全屏窗口', 'en')).toBe('Fullscreen window')
+    expect(translateUi('退出全屏', 'en')).toBe('Exit fullscreen')
     expect(translateUi('调整窗口大小', 'en')).toBe('Resize window')
     expect(translateUi('调整窗口宽度', 'en')).toBe('Resize width')
     expect(translateUi('调整窗口高度', 'en')).toBe('Resize height')

@@ -1,7 +1,22 @@
 // 最小 520×480 由 clampShellSize 内的 MIN_SHELL_WIDTH / MIN_SHELL_HEIGHT 兜底，
 // 本模块不再自带 min 常量（原 760×520 已随几何规则下沉 shellGeometry 而删除）。
+import { DEFAULT_LANGUAGE, normalizeLanguage, translateUi } from '../shared/i18n'
 import { clampShellPoint, clampShellSize, readShellGeometry, writeShellGeometry, type ShellGeometry } from './shellGeometry'
 import { deriveAppSizeTier } from './appSizeTier'
+import { getAppState } from './ui/lib/appStore'
+
+/*
+ * 铬件文案翻译（vanilla 侧直写 DOM 的属性）：与 React 的 useT 同一张表、
+ * 同一语言源（appStore 绑定的共享 state）。store 未绑定（纯 DOM 单测装配、
+ * 模块早于 index.tsx 的 bindAppState）时按默认语言，不让翻译炸掉铬件装配。
+ */
+function chromeLabel(source: string): string {
+  try {
+    return translateUi(source, normalizeLanguage(getAppState().store.settings.language))
+  } catch {
+    return translateUi(source, DEFAULT_LANGUAGE)
+  }
+}
 
 export interface FloatingWindowDependencies {
   appShellEl: HTMLElement
@@ -127,8 +142,8 @@ export function createFloatingWindowControls(deps: FloatingWindowDependencies): 
     }
     deps.toggleFullscreenEl.textContent = fullscreen ? '⤡' : '⛶'
     deps.toggleFullscreenEl.setAttribute('aria-pressed', String(fullscreen))
-    deps.toggleFullscreenEl.setAttribute('aria-label', fullscreen ? '退出全屏' : '全屏窗口')
-    deps.toggleFullscreenEl.title = fullscreen ? '退出全屏' : '全屏窗口'
+    deps.toggleFullscreenEl.setAttribute('aria-label', fullscreen ? chromeLabel('退出全屏') : chromeLabel('全屏窗口'))
+    deps.toggleFullscreenEl.title = fullscreen ? chromeLabel('退出全屏') : chromeLabel('全屏窗口')
     syncAppSizeTier()
   }
 
