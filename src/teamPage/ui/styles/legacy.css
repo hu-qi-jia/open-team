@@ -1074,133 +1074,25 @@ select:focus {
   padding-left: 22px;
 }
 
-.all-notes-modal {
-  width: min(980px, calc(100vw - 48px));
-  max-height: min(760px, calc(100vh - 48px));
-  overflow: hidden;
-}
+/* S5-T4：A 组（全部笔记独占族）整族退役——.all-notes-modal / -workspace /
+ * -list / -empty、.all-note-target 族（含 :hover/:focus-visible/.active/
+ * .deleted-chat 与 -title/-meta）。视觉逐属性翻成 AllNotesModal.tsx 的
+ * utilities；类名一律保留作钩子（既有脚本与用例按它取元素）。
+ * ⚠️ .all-note-toolbar（下一条）不在其中：它是与 NotesPanel 共用的共享族，
+ * 被 NotesPanel.test.tsx 的 CSS 守卫测试钉住，永久保留。 */
 
-.all-notes-workspace {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
-  min-height: min(620px, calc(100vh - 150px));
-  border-top: 1px solid rgba(113, 113, 122, 0.08);
-}
-
-.all-notes-list {
-  display: grid;
-  align-content: start;
-  max-height: min(620px, calc(100vh - 150px));
-  gap: 8px;
-  overflow: auto;
-  padding: 14px;
-  border-right: 1px solid rgba(113, 113, 122, 0.08);
-  background: rgba(4, 12, 18, 0.2);
-}
-
-.all-notes-empty {
-  border: 1px dashed rgba(113, 113, 122, 0.24);
-  border-radius: 10px;
-  padding: 28px;
-  color: var(--muted-foreground);
-  text-align: center;
-}
-
-.all-note-target {
-  display: grid;
-  gap: 5px;
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 11px 12px;
-  background: transparent;
-  color: #e4e4e7;
-  text-align: left;
-  cursor: pointer;
-}
-
-.all-note-target:hover,
-.all-note-target:focus-visible {
-  border-color: rgba(161, 161, 170, 0.2);
-  background: rgba(161, 161, 170, 0.08);
-}
-
-.all-note-target.active {
-  border-color: rgba(161, 161, 170, 0.32);
-  background: rgba(161, 161, 170, 0.13);
-  box-shadow: inset 3px 0 0 rgba(161, 161, 170, 0.76);
-}
-
-.all-note-target.deleted-chat {
-  border-color: rgba(248, 184, 78, 0.22);
-}
-
-.all-note-target.deleted-chat.active {
-  background: rgba(248, 184, 78, 0.09);
-  box-shadow: inset 3px 0 0 rgba(248, 184, 78, 0.74);
-}
-
-.all-note-target-title {
-  overflow: hidden;
-  color: #f2fbfc;
-  font-size: 13px;
-  font-weight: 820;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.all-note-target-meta {
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 720;
-}
-
-.all-notes-editor-shell {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  min-width: 0;
-  min-height: 0;
-}
-
-.all-notes-editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid rgba(113, 113, 122, 0.08);
-}
-
-.all-notes-editor-header h3 {
-  margin: 0;
-  color: #eff9fa;
-  font-size: 16px;
-}
+/* S5-T4：续 A 组退役——.all-notes-editor-shell / -editor-header(+ h3)。 */
 
 .all-note-toolbar {
   background: rgba(6, 14, 22, 0.34);
 }
 
-.all-notes-editor {
-  min-height: 360px;
-}
-
-@media (max-width: 760px) {
-  .all-notes-workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .all-notes-list {
-    display: flex;
-    max-height: none;
-    overflow-x: auto;
-    border-right: 0;
-  }
-
-  .all-note-target {
-    min-width: 160px;
-  }
-}
+/* S5-T4：A 组收尾——.all-notes-editor（min-height:360px）；≤760px 媒体查询
+ * 整块（.all-notes-workspace 单栏 / .all-notes-list 横向条带 + max-height:none
+ * + border-right:0 / .all-note-target min-width:160px）。三个声明全部翻成
+ * AllNotesModal.tsx 的 max-[760px]: 响应式 utilities（grid-cols-1 /
+ * grid-rows-[auto_minmax(0,1fr)] / flex / overflow-x-auto / border-r-0 /
+ * min-w-[160px]），块内无共享族成员。 */
 
 /* S2 Task 4：.message-highlight 规则退役——高亮视觉改由
  * messageHighlightsDom 的内联样式（--message-highlight-rgb 变量机制保留）
@@ -1306,207 +1198,11 @@ select:focus {
  * 类名 .template-prompt-preview / .modal-header-actions 保留作钩子
  * （RolePanel.test.tsx 与 bugfix/T6 探针在用）。 */
 
-.group-template-modal {
-  display: grid;
-  min-height: min(820px, calc(100vh - 24px));
-  max-height: calc(100vh - 24px);
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-.group-template-toolbar {
-  display: grid;
-  gap: 10px;
-  min-width: 0;
-}
-
-.group-template-search-field {
-  display: grid;
-  gap: 6px;
-}
-
-.group-template-search-field span {
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 760;
-  letter-spacing: 0;
-}
-
-.group-template-search-field input {
-  height: 38px;
-}
-
-.group-template-categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  overflow: visible;
-  padding: 0 2px 2px;
-}
-
-.group-template-category-filter {
-  flex: 0 0 auto;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 999px;
-  padding: 6px 11px;
-  background: rgba(24, 24, 27, 0.46);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 780;
-}
-
-.group-template-category-filter:hover,
-.group-template-category-filter:focus-visible,
-.group-template-category-filter.active {
-  border-color: rgba(161, 161, 170, 0.46);
-  background: rgba(161, 161, 170, 0.1);
-  color: #e4e4e7;
-  outline: none;
-}
-
-.group-template-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(520px, 1fr));
-  gap: 16px;
-  min-height: 0;
-  max-height: min(720px, calc(100vh - 240px));
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.group-template-option {
-  position: relative;
-  display: grid;
-  gap: 11px;
-  align-content: start;
-  min-height: 190px;
-  overflow: visible;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 8px;
-  padding: 16px;
-  background:
-    linear-gradient(145deg, rgba(161, 161, 170, 0.08), transparent 46%),
-    rgba(24, 24, 27, 0.52);
-  color: var(--text);
-  cursor: pointer;
-  text-align: left;
-}
-
-.group-template-option:hover,
-.group-template-option:focus-visible,
-.group-template-option.active {
-  border-color: rgba(161, 161, 170, 0.52);
-  background: rgba(161, 161, 170, 0.1);
-  box-shadow: var(--glow);
-  outline: none;
-}
-
-.group-template-option-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.group-template-heading {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
-
-.group-template-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.group-template-option strong {
-  display: -webkit-box;
-  min-width: 0;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 820;
-  line-height: 1.25;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.group-template-role-count {
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 760;
-  line-height: 1.2;
-}
-
-.group-template-category {
-  flex: 0 0 auto;
-  border: 1px solid rgba(161, 161, 170, 0.24);
-  border-radius: 999px;
-  padding: 2px 7px;
-  color: #d4d4d8;
-  font-size: 11px;
-  font-weight: 760;
-}
-
-.group-template-summary {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--muted-foreground);
-  font-size: 12px;
-  line-height: 1.6;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.group-template-meta {
-  overflow: visible;
-  color: #a1a1aa;
-  font-size: 11px;
-  line-height: 1.5;
-  white-space: normal;
-}
-
-.group-template-roles {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
-  gap: 8px;
-  padding-bottom: 2px;
-}
-
-.group-template-roles span {
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 999px;
-  padding: 3px 7px;
-  background: rgba(113, 113, 122, 0.08);
-  color: #d4d4d8;
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.group-template-risk {
-  flex: 0 0 auto;
-  border: 1px solid rgba(240, 162, 58, 0.28);
-  border-radius: 999px;
-  padding: 2px 7px;
-  background: rgba(240, 162, 58, 0.08);
-  color: #ffd18a;
-}
-
-.group-template-risk-professional {
-  border-color: rgba(246, 96, 122, 0.34);
-  background: rgba(246, 96, 122, 0.1);
-  color: #ff9fb2;
-}
-
-.group-template-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 14px;
-}
+/* S5-T4：B 组（群模板独占族）整族退役——.group-template-* 共 24 条规则
+ * （^\.group-template 28 个行首命中：1359-1361 / 1396-1398 两组多行选择器的
+ * 续行另占 4 行），B 组无 @media 块。全部视觉逐属性翻成
+ * GroupTemplateModal.tsx 的 utilities；类名与 id 原样保留作钩子。
+ * 浅色对应见浅色块的逐条摘除（整条删 4 条 + 摘成员 6 处）。 */
 
 /* S4-T4：.select-list（grid / gap 8 / max-height 360 / overflow auto）与
  * .add-person-toolbar（grid / gap 10）退役——两个独占用例都在 AddPersonModal，
@@ -2318,10 +2014,11 @@ select:focus {
   border-right-color: rgba(113, 113, 122, 0.16);
 }
 
+/* S5-T4：本组摘除 .all-notes-workspace / .all-notes-editor-header（A 组退役，
+ * 浅色边框由 border-border 承担）；.chat-header / .note-toolbar（共享族）/
+ * 两个 #iframe-host 成员原样保留。 */
 :root[data-theme="light"] .chat-header,
 :root[data-theme="light"] .note-toolbar,
-:root[data-theme="light"] .all-notes-workspace,
-:root[data-theme="light"] .all-notes-editor-header,
 :root[data-theme="light"] #iframe-host .chat-frame-group-title,
 :root[data-theme="light"] #iframe-host .role-frame-label {
   border-color: rgba(113, 113, 122, 0.13);
@@ -2345,34 +2042,20 @@ select:focus {
   background: #ffffff;
 }
 
+/* S5-T4：本组摘除 .group-template-option.active / .group-template-category-filter.active
+ * （B 组退役；两者的浅色选中态由 aria-pressed 变体 utilities 承担）；
+ * .theme-option / .mode-option 不是本阶段独占族，保留。 */
 :root[data-theme="light"] .theme-option[aria-pressed="true"],
-:root[data-theme="light"] .mode-option:has(input:checked),
-:root[data-theme="light"] .group-template-option.active,
-:root[data-theme="light"] .group-template-category-filter.active {
+:root[data-theme="light"] .mode-option:has(input:checked) {
   border-color: rgba(113, 113, 122, 0.36);
   background: #ffffff;
   color: #27272a;
   box-shadow: inset 0 0 0 1px rgba(113, 113, 122, 0.14);
 }
 
-:root[data-theme="light"] .btn {
-  border-color: rgba(113, 113, 122, 0.2);
-  background: #ffffff;
-  color: var(--text);
-}
-
 :root[data-theme="light"] .manual-mention-toggle[aria-pressed="true"] {
   border-color: rgba(113, 113, 122, 0.3);
   background: rgba(113, 113, 122, 0.1);
-  color: #27272a;
-}
-
-:root[data-theme="light"] .group-template-option:hover,
-:root[data-theme="light"] .group-template-option:focus-visible,
-:root[data-theme="light"] .group-template-category-filter:hover,
-:root[data-theme="light"] .group-template-category-filter:focus-visible {
-  border-color: rgba(113, 113, 122, 0.28);
-  background: #ffffff;
   color: #27272a;
 }
 
@@ -2406,11 +2089,10 @@ select:focus {
   box-shadow: none;
 }
 
+/* S5-T4：本组摘除 .group-template-summary / -meta / -role-count（B 组退役，
+ * 浅色语义色由 text-muted-foreground 承担）；其余成员全留。 */
 :root[data-theme="light"] .chat-time,
 :root[data-theme="light"] .summary-line,
-:root[data-theme="light"] .group-template-summary,
-:root[data-theme="light"] .group-template-meta,
-:root[data-theme="light"] .group-template-role-count,
 :root[data-theme="light"] .orchestration-status-count span,
 :root[data-theme="light"] .orchestration-status-node-index,
 :root[data-theme="light"] .orchestration-status-current-label,
@@ -2424,8 +2106,9 @@ select:focus {
 }
 
 /* S4-T4：本组摘除 .modal-card / .select-row（两族已退役、视觉换 bg-card /
- * border-border 语义 token）——本组剩下的是编排（S6）与群模板（S5）表面。 */
-:root[data-theme="light"] .group-template-option,
+ * border-border 语义 token）——本组剩下的是编排（S6）表面。
+ * S5-T4：再摘除 .group-template-option（B 组退役，浅色视觉由 bg-card /
+ * border-border 承担）。 */
 :root[data-theme="light"] .orchestration-sidebar,
 :root[data-theme="light"] .orchestration-settings,
 :root[data-theme="light"] .orchestration-footer,
@@ -2457,8 +2140,10 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .template-card.active,
-:root[data-theme="light"] .all-note-target.active {
+/* S5-T4：本组摘除 .all-note-target.active（A 组退役；选中态改以暗色为正典，
+ * 由 border-muted-foreground/32 + bg-accent + inset 竖条 utilities 承担）；
+ * .template-card.active 留给 S6/S7，保留。 */
+:root[data-theme="light"] .template-card.active {
   border-color: rgba(113, 113, 122, 0.4);
   background: #ffffff;
   box-shadow: var(--glow);
@@ -2471,8 +2156,10 @@ select:focus {
 /* S4-T4：本组摘除 .add-person-site-option——S3 交接 A.2 记录的那条例外（搬前
  * 即被更晚的同特异性浅色 .site-pill* 压住 = 长期 dead），站点 pill 的浅色视觉
  * 现已全部由 globals.css 的 .site-pill* 承载（含 .active 的 645 行覆盖规则）。 */
-:root[data-theme="light"] .note-tool-btn,
-:root[data-theme="light"] .group-template-category-filter {
+/* S5-T4：本组摘除 .group-template-category-filter（B 组退役，浅色视觉由
+ * bg-popover / border-border / text-muted-foreground 承担）；.note-tool-btn
+ * 是共享族（守卫测试钉住），保留。 */
+:root[data-theme="light"] .note-tool-btn {
   border-color: rgba(113, 113, 122, 0.16);
   background: #ffffff;
   color: var(--muted-foreground);
@@ -2506,9 +2193,10 @@ select:focus {
   color: #27272a;
 }
 
+/* S5-T4：本组摘除 .all-note-target / .all-note-target-title（A 组退役，
+ * 浅色前景由 text-foreground 承担）；.notes-editor 是共享族（守卫测试钉住）
+ * 与 10 个 .orchestration-* 一律保留。 */
 :root[data-theme="light"] .notes-editor,
-:root[data-theme="light"] .all-note-target,
-:root[data-theme="light"] .all-note-target-title,
 :root[data-theme="light"] .orchestration-status,
 :root[data-theme="light"] .orchestration-status-title,
 :root[data-theme="light"] .orchestration-status-current-main,
@@ -2520,24 +2208,6 @@ select:focus {
 :root[data-theme="light"] .stage-role-chip,
 :root[data-theme="light"] .orchestration-empty-hint {
   color: var(--text);
-}
-
-:root[data-theme="light"] .all-notes-list {
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .all-notes-editor-header {
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .all-notes-editor-header h3 {
-  color: var(--text);
-}
-
-:root[data-theme="light"] .all-note-target:hover,
-:root[data-theme="light"] .all-note-target:focus-visible {
-  border-color: rgba(113, 113, 122, 0.18);
-  background: #ffffff;
 }
 
 /* S4-T4：浅色的 .template-prompt-preview 独立规则已随暗色族一并退役——
@@ -2567,26 +2237,9 @@ select:focus {
   color: #3f3f46;
 }
 
-:root[data-theme="light"] .chat-create-template-btn,
-:root[data-theme="light"] .group-template-category {
-  color: #52525b;
-}
-
-:root[data-theme="light"] .group-template-risk {
-  border-color: rgba(194, 129, 32, 0.26);
-  background: #fff8ec;
-  color: #8a5a0a;
-}
-
-:root[data-theme="light"] .group-template-risk-professional {
-  border-color: rgba(190, 48, 76, 0.24);
-  background: #fff2f4;
-  color: #a32644;
-}
-
-:root[data-theme="light"] .group-template-roles span {
-  border-color: rgba(113, 113, 122, 0.16);
-  background: #f6f7f8;
+/* S5-T4：本组摘除 .group-template-category（B 组退役，浅色视觉由
+ * text-foreground/85 承担）；.chat-create-template-btn 不是本阶段独占族，保留。 */
+:root[data-theme="light"] .chat-create-template-btn {
   color: #52525b;
 }
 
