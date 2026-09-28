@@ -309,8 +309,9 @@
   /*
    * 以下壳层状态/铬件几何自 legacy.css 搬迁（S1 Task 7，搬迁项先复制后删）：
    * 几何数值一字不改，颜色字面量换 zinc token；搬迁时剔除的死选择器
-   * （.rail、.chat-header，目标随旧壳退役）不再搬迁——.panel-header 仍是
-   * 活规则（RolePanel/NotesPanel 在用），留在 legacy 未动。
+   * （.rail、.chat-header，目标随旧壳退役）不再搬迁——.panel-header 当时
+   * 仍是活规则（RolePanel/NotesPanel 在用）留在 legacy，S3 T2/T3 两个面板
+   * 改造后随各自的类退役，legacy 已零命中。
    */
   .app-shell.minimized {
     display: none;

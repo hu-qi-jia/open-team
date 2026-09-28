@@ -215,11 +215,6 @@ button {
   border-right: 1px solid rgba(95, 126, 150, 0.17);
 }
 
-.sidebar > .panel-header {
-  min-height: 66px;
-  padding: 10px 14px 8px 18px;
-}
-
 .sidebar-brand-copy {
   min-width: 0;
 }
@@ -246,16 +241,6 @@ button {
   flex: 0 0 auto;
   align-items: center;
   gap: 5px;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 58px;
-  padding: 13px 18px 10px;
-  border-bottom: 1px solid rgba(113, 113, 122, 0.1);
 }
 
 .brand-mark {
@@ -1191,112 +1176,6 @@ select:focus {
 /* 卡片等高不拉伸：少量卡片时按内容高度顶格排布 */
 .template-list {
   align-content: start;
-}
-
-.notes-panel {
-  position: fixed;
-  top: 72px;
-  right: 24px;
-  z-index: 18;
-  display: grid;
-  width: min(440px, calc(100vw - 24px));
-  height: min(620px, calc(100vh - 32px));
-  grid-template-rows: auto auto auto minmax(0, 1fr);
-  overflow: hidden;
-  border: 1px solid rgba(161, 161, 170, 0.22);
-  border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(13, 21, 30, 0.98), rgba(7, 13, 20, 0.97));
-  box-shadow: 0 24px 76px rgba(0, 0, 0, 0.46), 0 0 0 1px rgba(255, 255, 255, 0.03);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(8px) scale(0.98);
-  transform-origin: top right;
-  transition: opacity 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
-  visibility: hidden;
-  backdrop-filter: blur(24px);
-}
-
-.notes-panel.open {
-  opacity: 1;
-  pointer-events: auto;
-  transform: none;
-  visibility: visible;
-}
-
-.notes-panel.dragging,
-.notes-panel.resizing {
-  transition: none;
-  user-select: none;
-}
-
-.notes-panel-header {
-  min-height: 74px;
-  cursor: grab;
-  user-select: none;
-}
-
-.notes-panel.dragging .notes-panel-header {
-  cursor: grabbing;
-}
-
-.notes-resize-handle {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  width: 20px;
-  height: 20px;
-  border: 0;
-  border-radius: 6px;
-  background: rgba(113, 113, 122, 0.12);
-  cursor: nwse-resize;
-}
-
-.notes-resize-handle::before {
-  content: '';
-  position: absolute;
-  right: 5px;
-  bottom: 5px;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid rgba(212, 212, 216, 0.62);
-  border-bottom: 2px solid rgba(212, 212, 216, 0.62);
-  box-shadow: 4px 4px 0 -2px rgba(161, 161, 170, 0.55);
-}
-
-.notes-resize-handle:hover,
-.notes-resize-handle:focus-visible {
-  background: rgba(161, 161, 170, 0.16);
-  outline: 1px solid rgba(161, 161, 170, 0.38);
-}
-
-.note-scope-tabs {
-  display: flex;
-  gap: 6px;
-  padding: 12px 16px 8px;
-}
-
-.note-scope-tab {
-  min-height: 32px;
-  flex: 1 1 0;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 8px;
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 760;
-}
-
-.note-scope-tab.active {
-  border-color: rgba(161, 161, 170, 0.5);
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-}
-
-.note-scope-tab:disabled {
-  cursor: not-allowed;
-  opacity: 0.42;
 }
 
 .note-toolbar {
@@ -2660,12 +2539,6 @@ select:focus {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.orchestration-stage-canvas {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-
 .orchestration-arrange {
   position: absolute;
   top: 12px;
@@ -2927,7 +2800,6 @@ select:focus {
   border-right-color: rgba(113, 113, 122, 0.16);
 }
 
-:root[data-theme="light"] .panel-header,
 :root[data-theme="light"] .chat-header,
 :root[data-theme="light"] .note-toolbar,
 :root[data-theme="light"] .all-notes-workspace,
@@ -2961,7 +2833,6 @@ select:focus {
 :root[data-theme="light"] .mode-option:has(input:checked),
 :root[data-theme="light"] .group-template-option.active,
 :root[data-theme="light"] .group-template-category-filter.active,
-:root[data-theme="light"] .note-scope-tab.active,
 :root[data-theme="light"] .template-type-tab.active,
 :root[data-theme="light"] .template-category-chip.active,
 :root[data-theme="light"] .add-person-site-option.active {
@@ -3093,7 +2964,6 @@ select:focus {
 :root[data-theme="light"] .message-tool-btn:hover,
 :root[data-theme="light"] .message-tool-btn:focus-visible,
 :root[data-theme="light"] .note-tool-btn,
-:root[data-theme="light"] .note-scope-tab,
 :root[data-theme="light"] .template-type-tab,
 :root[data-theme="light"] .group-template-category-filter,
 :root[data-theme="light"] .template-category-chip,
@@ -3127,20 +2997,8 @@ select:focus {
   box-shadow: 0 8px 18px rgba(63, 63, 70, 0.14);
 }
 
-:root[data-theme="light"] .notes-panel {
-  border-color: rgba(113, 113, 122, 0.2);
-  background: #ffffff;
-  box-shadow: 0 24px 70px rgba(63, 63, 70, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.68);
-}
-
-:root[data-theme="light"] .notes-resize-handle,
 :root[data-theme="light"] .all-note-toolbar {
   background: #ffffff;
-}
-
-:root[data-theme="light"] .notes-resize-handle::before {
-  border-right-color: rgba(82, 82, 91, 0.55);
-  border-bottom-color: rgba(82, 82, 91, 0.55);
 }
 
 :root[data-theme="light"] .note-tool-btn:hover,

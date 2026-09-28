@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { cn } from 'cn'
 import { useServices } from '../../context/ServicesContext'
 import { useAppShellChromeState } from '../../hooks/useAppShellChrome'
 import { useFloatingPanelGeometry } from '../../hooks/useFloatingPanelGeometry'
@@ -9,11 +10,36 @@ import type { NoteEditorFactory, NoteScope, NoteToolbarCommand } from '../../lib
 import { readNoteContent } from '../../lib/noteItems'
 import { showError } from '../../lib/toast'
 import { Button } from '../ui/button'
+import { Card, CardAction, CardHeader } from '../ui/card'
 import { useNoteEditorEngine } from './useNoteEditorEngine'
 
 const FLOATING_PANEL_MARGIN = 12
 const MIN_NOTES_PANEL_WIDTH = 320
 const MIN_NOTES_PANEL_HEIGHT = 360
+
+/*
+ * 范围页签的外观 = ui/tabs.tsx 的 TabsList/TabsTrigger 类名字面量（裁决 6：
+ * 不用 Radix Tabs——编辑器不是 TabsContent，Radix 会改变既有键盘/焦点行为）。
+ * 与官方文件的差异只有两处：①依赖 Radix 组上下文的变体（group-data-
+ * [orientation=*]/tabs、group-data-[variant=*]/tabs-list 以及 line 变体的
+ * after: 下划线）在本组件里恒不生效，故不抄；②激活态的 `data-[state=active]:*`
+ * 改写为 `active` 分支（默认 variant 的 active 阴影 shadow-sm 一并并入）。
+ */
+const TAB_TRIGGER_CLASS = "relative inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 dark:text-muted-foreground dark:hover:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+const TAB_TRIGGER_ACTIVE_CLASS = 'bg-background text-foreground shadow-sm dark:border-input dark:bg-input/30 dark:text-foreground'
+
+/*
+ * 原 legacy `.notes-resize-handle` 的视觉值逐条翻成 utilities：background
+ * zinc-500/12（原 rgba(113,113,122,.12)）、尺寸/光标/圆角由既有类承担；
+ * `::before` 角标（10×10，右/下 2px 边，右下 4px 阴影）走 before: 变体，
+ * 边框色取浅色 zinc-600/55、深色 zinc-300/62（原浅色规则 + 深色基值）；
+ * `border: 0` 由 Tailwind preflight 的全局 `border: 0 solid` 承担。
+ */
+const RESIZE_HANDLE_CLASS = [
+  'notes-resize-handle absolute bottom-2 right-2 size-5 cursor-nwse-resize rounded-md',
+  'bg-zinc-500/12 text-muted-foreground transition-colors hover:bg-accent focus-visible:bg-accent focus-visible:outline-1 focus-visible:outline-ring',
+  "before:absolute before:right-[5px] before:bottom-[5px] before:size-2.5 before:border-r-2 before:border-b-2 before:border-zinc-600/55 dark:before:border-zinc-300/62 before:shadow-[4px_4px_0_-2px_rgba(161,161,170,0.55)] before:content-['']",
+].join(' ')
 
 const TOOLBAR_COMMANDS: Array<{ command: NoteToolbarCommand; id: string; label: string; content: React.ReactNode }> = [
   { command: 'bold', id: 'note-bold', label: '加粗', content: 'B' },
@@ -24,10 +50,12 @@ const TOOLBAR_COMMANDS: Array<{ command: NoteToolbarCommand; id: string; label: 
 ]
 
 /*
- * 笔记面板（原 notesView 整体 React 化，P3）。aside#notes-panel 及内部
- * id（#notes-drag-handle / #close-notes-panel / #chat-note-tab /
- * #global-note-tab / #notes-editor / #note-* / #notes-resize-handle）
- * 全部保留，样式走 legacy.css 同名选择器。与原实现的对译关系：
+ * 笔记面板（原 notesView 整体 React 化，P3；S3 T3 由 legacy aside 重塑为
+ * 浮动 shadcn Card）。#notes-panel 及内部 id（#notes-drag-handle /
+ * #close-notes-panel / #chat-note-tab / #global-note-tab / #notes-editor /
+ * #note-* / #notes-resize-handle）与 .notes-panel(+open/dragging/resizing)
+ * 全部保留作钩子；外观改由 Card/Tabs 类名字面量 + utilities 提供（legacy
+ * 的 notes 族规则已退役），定位仍是 #app 外的 fixed 视口贴角。与原实现的对译关系：
  * - renderNotes → 组件每次提交后的同步 effect（编辑器创建 + 内容键变化
  *   时 setContent）+ 类名/禁用态由渲染直接派生；
  * - 开合与范围共用 appState.notesPanelOpen / activeNoteScope（ChatHeader
@@ -48,7 +76,9 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
   const selectedChatId = useStoreSelector(state => state.selectedChatId)
 
   const [interaction, setInteraction] = useState<'idle' | 'dragging' | 'resizing'>('idle')
-  const panelRef = useRef<HTMLElement | null>(null)
+  // Card 渲染的是 div（React 19 下 ref 作普通 prop 直达 DOM），故元素型别
+  // 取 HTMLDivElement；useFloatingPanelGeometry 收 HTMLElement 超集，兼容。
+  const panelRef = useRef<HTMLDivElement | null>(null)
   const dragHandleRef = useRef<HTMLDivElement | null>(null)
   const resizeHandleRef = useRef<HTMLButtonElement | null>(null)
   const editorElementRef = useRef<HTMLDivElement | null>(null)
@@ -174,43 +204,62 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
   }
 
   const panelClassName = [
-    'panel',
     'notes-panel',
-    // V4 zinc 化：边框/底色/圆角/阴影走 utilities 压过 legacy 青色渐变；
-    // 定位（fixed top/right 与拖拽内联样式）、grid 行结构仍由 legacy/几何钩子提供
-    'overflow-hidden rounded-xl border border-border bg-card shadow-2xl',
-    open ? 'open' : '',
-    interaction === 'dragging' ? 'dragging' : '',
-    interaction === 'resizing' ? 'resizing' : '',
+    // 表面：Card 原语自带 bg-card/border；只覆盖圆角/阴影为规格值（rounded-lg/shadow-md），
+    // 并把官方的 flex + gap-6 + py-6 换成 legacy 的 grid 行结构（4 个在流子元素对应 4 行）
+    'grid gap-0 rounded-lg py-0 shadow-md',
+    // 定位与尺寸：原 legacy .notes-panel 提供；拖拽/缩放后由几何钩子写内联样式覆盖
+    'fixed right-6 top-[72px] z-[18] h-[min(620px,calc(100vh-32px))] w-[min(440px,calc(100vw-24px))]',
+    'grid-rows-[auto_auto_auto_minmax(0,1fr)] origin-top-right overflow-hidden',
+    // 开合：原 legacy .notes-panel / .notes-panel.open（opacity/transform/visibility 三件套）。
+    // 过渡属性写 translate/scale 而非 transform：v4 的 translate-*/scale-* 产出的是
+    // translate/scale 独立属性（dist 实测），写 transform 动画不到。
+    'transition-[opacity,translate,scale] duration-150 ease-out',
+    open
+      ? 'open visible pointer-events-auto translate-y-0 scale-100 opacity-100'
+      : 'invisible pointer-events-none translate-y-2 scale-[.98] opacity-0',
+    interaction === 'dragging' ? 'dragging select-none transition-none' : '',
+    interaction === 'resizing' ? 'resizing select-none transition-none' : '',
   ].filter(Boolean).join(' ')
 
+  // 原 legacy `.notes-panel-header`（min-height: 74px、cursor: grab）与
+  // `.notes-panel.dragging .notes-panel-header`（cursor: grabbing）；内边距取
+  // Card 的 px-6 节奏，纵向自管（Card 的 py-6 已被 py-0 覆盖）。
+  // `[.border-b]:pb-3` 必须显式写：CardHeader 基类带 `[.border-b]:pb-6`，
+  // 同组覆盖靠 cn 的后者胜。
+  const dragHandleClassName = [
+    'min-h-[74px] gap-1.5 border-b border-border px-6 pb-3 pt-3.5 [.border-b]:pb-3',
+    'select-none',
+    interaction === 'dragging' ? 'cursor-grabbing' : 'cursor-grab',
+  ].join(' ')
+
   return (
-    <aside ref={panelRef} id="notes-panel" className={panelClassName} aria-label={t('笔记面板')}>
-      <div
+    <Card ref={panelRef} id="notes-panel" role="complementary" aria-label={t('笔记面板')} className={panelClassName}>
+      <CardHeader
         ref={dragHandleRef}
         id="notes-drag-handle"
-        className="panel-header notes-panel-header flex cursor-grab select-none items-center justify-between gap-3 border-b border-border px-4 pb-3 pt-3.5"
+        className={dragHandleClassName}
         title={t('拖动笔记')}
         onPointerDown={geometry.onDragPointerDown}
       >
-        <div className="min-w-0">
-          <h2 className="truncate text-sm font-semibold tracking-tight">{t('笔记')}</h2>
-          <p className="tiny mt-0.5 truncate text-xs text-muted-foreground">{t('手动记录或收集 Mark 内容。')}</p>
-        </div>
-        <Button
-          id="close-notes-panel"
-          variant="ghost"
-          size="icon-sm"
-          className="size-7 text-muted-foreground"
-          type="button"
-          aria-label={t('关闭笔记')}
-          onClick={closePanel}
-        >×</Button>
-      </div>
-      <div className="note-scope-tabs flex gap-1 px-3 pt-2.5" role="tablist" aria-label={t('笔记范围')}>
+        <h2 className="truncate text-sm leading-none font-semibold tracking-tight">{t('笔记')}</h2>
+        <p className="tiny truncate text-xs text-muted-foreground">{t('手动记录或收集 Mark 内容。')}</p>
+        <CardAction>
+          <Button
+            id="close-notes-panel"
+            variant="ghost"
+            size="icon-sm"
+            className="size-7 text-muted-foreground"
+            type="button"
+            aria-label={t('关闭笔记')}
+            onClick={closePanel}
+          >×</Button>
+        </CardAction>
+      </CardHeader>
+      <div className="note-scope-tabs mx-6 mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground" role="tablist" aria-label={t('笔记范围')}>
         <button
           id="chat-note-tab"
-          className={`note-scope-tab h-7 flex-1 rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:text-foreground${view.effectiveScope === 'chat' ? ' active border-border bg-accent text-accent-foreground' : ''}`}
+          className={cn('note-scope-tab', TAB_TRIGGER_CLASS, view.effectiveScope === 'chat' && ['active', TAB_TRIGGER_ACTIVE_CLASS])}
           type="button"
           data-note-scope="chat"
           disabled={!view.chat}
@@ -218,13 +267,13 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
         >{t('当前群聊')}</button>
         <button
           id="global-note-tab"
-          className={`note-scope-tab h-7 flex-1 rounded-md border border-transparent text-xs text-muted-foreground transition-colors hover:text-foreground${view.effectiveScope === 'global' ? ' active border-border bg-accent text-accent-foreground' : ''}`}
+          className={cn('note-scope-tab', TAB_TRIGGER_CLASS, view.effectiveScope === 'global' && ['active', TAB_TRIGGER_ACTIVE_CLASS])}
           type="button"
           data-note-scope="global"
           onClick={() => selectScope('global')}
         >{t('全局笔记')}</button>
       </div>
-      <div className="note-toolbar flex items-center gap-0.5 px-3 py-2" aria-label={t('富文本工具栏')}>
+      <div className="note-toolbar flex items-center gap-0.5 px-6 py-2" aria-label={t('富文本工具栏')}>
         {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
           <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-xs text-muted-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
         ))}
@@ -232,16 +281,16 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
         <Button id="note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
         <Button id="note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
       </div>
-      <div ref={editorElementRef} id="notes-editor" className="notes-editor min-h-0 bg-transparent px-3.5 pb-2.5 text-sm" aria-label={t('富文本笔记编辑器')}></div>
+      <div ref={editorElementRef} id="notes-editor" className="notes-editor min-h-0 bg-transparent px-6 pb-2.5 text-sm" aria-label={t('富文本笔记编辑器')}></div>
       <button
         ref={resizeHandleRef}
         id="notes-resize-handle"
-        className="notes-resize-handle absolute bottom-2 right-2 size-5 cursor-nwse-resize rounded-md text-muted-foreground transition-colors hover:bg-accent"
+        className={RESIZE_HANDLE_CLASS}
         type="button"
         aria-label={t('调整笔记大小')}
         title={t('调整笔记大小')}
         onPointerDown={geometry.onResizePointerDown}
       ></button>
-    </aside>
+    </Card>
   )
 }

@@ -138,6 +138,18 @@ describe('orchestration canvas portal', () => {
     expect(document.querySelector('#orchestration-stage-canvas')).not.toBeNull()
   })
 
+  it('sizes the canvas host with utilities (legacy .orchestration-stage-canvas rule retired)', async () => {
+    renderPortal()
+    await flushAsync()
+
+    const host = document.getElementById('orchestration-stage-canvas')!
+    // 类名保留作 runtime 钩子；尺寸改由 utilities 提供（原 legacy 的
+    // width/height:100% + min-height:0）。
+    expect(host.classList.contains('orchestration-stage-canvas')).toBe(true)
+    expect(host.classList.contains('size-full')).toBe(true)
+    expect(host.classList.contains('min-h-0')).toBe(true)
+  })
+
   it('re-renders when the structural canvas key changes but not for description-only edits', async () => {
     const { rerender } = renderPortal()
     await flushAsync()

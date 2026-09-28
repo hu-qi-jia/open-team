@@ -66,6 +66,43 @@ describe('team page notes panel', () => {
     expect(state.notesPanelOpen).toBe(false)
   })
 
+  it('renders the notes panel as a card with data-slot=card', async () => {
+    const { state } = renderPanel()
+
+    await act(async () => {
+      state.notesPanelOpen = true
+      notifyAppState()
+    })
+
+    const panel = document.getElementById('notes-panel')!
+    expect(panel.getAttribute('data-slot')).toBe('card')
+    expect(panel.getAttribute('role')).toBe('complementary')
+    expect(panel.className).toContain('notes-panel')
+  })
+
+  it('keeps fixed viewport anchoring + grid rows after the card migration', async () => {
+    const { state } = renderPanel()
+
+    const closed = document.getElementById('notes-panel')!
+    expect(closed.classList.contains('fixed')).toBe(true)
+    expect(closed.classList.contains('invisible')).toBe(true)
+    expect(closed.classList.contains('opacity-0')).toBe(true)
+
+    await act(async () => {
+      state.notesPanelOpen = true
+      notifyAppState()
+    })
+
+    // 类派生样式一律断言 classList 字面量：本仓库 vitest 不处理 CSS，
+    // getComputedStyle 在 jsdom 里恒为空串（真实像素由 T5 浏览器验收覆盖）。
+    const classes = document.getElementById('notes-panel')!.classList
+    expect(classes.contains('fixed')).toBe(true)
+    expect(classes.contains('grid-rows-[auto_auto_auto_minmax(0,1fr)]')).toBe(true)
+    expect(classes.contains('open')).toBe(true)
+    expect(classes.contains('opacity-100')).toBe(true)
+    expect(classes.contains('pointer-events-auto')).toBe(true)
+  })
+
   it('creates the editor lazily with the active note content and switches scope via the tabs', async () => {
     const { state, creations } = renderPanel()
 
@@ -328,6 +365,30 @@ describe('team page notes panel', () => {
     expect(panel.style.width).toBe('468px')
     expect(panel.style.height).toBe('668px')
     expect(panel.classList.contains('resizing')).toBe(false)
+  })
+})
+
+describe('NotesPanel legacy.css retirement', () => {
+  it('retires every notes-panel family rule and keeps the shared ones', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    for (const retired of [
+      '.notes-panel',
+      '.notes-panel-header',
+      '.notes-resize-handle',
+      '.note-scope-',
+      '.panel-header',
+      '.orchestration-stage-canvas {',
+    ]) {
+      expect(cssWithoutComments, `expected ${retired} to be retired`).not.toContain(retired)
+    }
+
+    // 共享族必留：AllNotesModal 与 NotesPanel 共用（tools/editor 族），
+    // 浅色 .all-note-toolbar 同理（其选择器组里曾与 .notes-resize-handle 并排）。
+    for (const shared of ['.notes-editor', '.note-tool-btn', '.note-toolbar {', '.note-toolbar-spacer', '.all-note-toolbar']) {
+      expect(cssWithoutComments, `expected ${shared} to survive`).toContain(shared)
+    }
   })
 })
 
