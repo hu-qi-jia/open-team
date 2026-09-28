@@ -139,9 +139,24 @@
 
 1. `footer?: React.ReactNode`
    - ⚠️ **必须条件渲染**：`footer ? <div data-slot="modal-footer">…</div> : null`。
-     **绝不许**渲染一个空的 footer 节点——现有**三条**测试用 `modal.lastElementChild` 定位内容行
-     （`PeopleLibraryModal.test.tsx` 约 `:286`、`PersonTemplateModal.test.tsx`、`TemporaryPersonModal.test.tsx`），
+     **绝不许**渲染一个空的 footer 节点——现有测试用 `modal.lastElementChild` 定位内容行，
      空节点会让它们**同时误红**。
+     ⚠️ **计数已两次订正，以此表为准**：S4 计划写「三条」，编排者写简报时按一次**范围写窄的 grep**
+     （只搜了 `people/*.test.tsx` + `common/AppModal.test.tsx`，**漏掉 `models/` 与 `panel/`**）
+     写成「5 处 / 4 文件」，T1 实现者实测为 **7 处 / 6 文件**。前 5 处已随 T1 加固；**剩下 2 处**
+     （`models/ExternalModelsModal.test.tsx:328`、`panel/RolePanel.test.tsx:148`）由 **T2 顺手加固**：
+
+     | 文件 | 行 | 状态 |
+     | --- | --- | --- |
+     | `people/AddPersonModal.test.tsx` | 298 | ✅ T1 已改 |
+     | `people/PeopleLibraryModal.test.tsx` | 219、310 | ✅ T1 已改 |
+     | `people/PersonTemplateModal.test.tsx` | 280 | ✅ T1 已改 |
+     | `people/TemporaryPersonModal.test.tsx` | 79 | ✅ T1 已改 |
+     | `models/ExternalModelsModal.test.tsx` | 328 | ⏳ T2 顺手改 |
+     | `panel/RolePanel.test.tsx` | 148 | ⏳ T2 顺手改 |
+
+     **教训（第二次同款）**：发「实测值」前必须确认 grep 的**范围**覆盖了全部目录——
+     范围写窄了比不测更危险，因为它带着「已复核」的权威感。
    - `height="fixed"` 且有 footer 时，grid 行从 `grid-rows-[auto_minmax(0,1fr)]`
      扩成 `grid-rows-[auto_minmax(0,1fr)_auto]`；**无 footer 时保持两行**（别无条件写三行）。
    - `auto` 高度下 footer 就是 flex 列的最后一行（不参与 grid 行）。
