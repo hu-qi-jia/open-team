@@ -14,6 +14,7 @@ import { AppModal, type AppModalProps } from './AppModal'
  */
 
 const CONTENT_ID = 'app-modal-test'
+const CLOSE_ID = 'close-app-modal'
 
 function renderModal(overrides: Partial<AppModalProps> = {}) {
   const props: AppModalProps = {
@@ -21,7 +22,7 @@ function renderModal(overrides: Partial<AppModalProps> = {}) {
     onOpenChange: () => {},
     title: '测试标题',
     titleId: 'app-modal-title',
-    closeId: 'close-app-modal',
+    closeId: CLOSE_ID,
     closeLabel: '关闭测试弹窗',
     onClose: () => {},
     contentId: CONTENT_ID,
@@ -48,11 +49,22 @@ describe('team page app modal shell', () => {
   })
 
   it('uses fixed height mode with a scrollable body row', () => {
-    renderModal({ height: 'fixed' })
+    renderModal({
+      height: 'fixed',
+      children: <div id="app-modal-body-content">内容</div>,
+    })
     const el = contentEl()
 
     expect(el.classList.contains('h-[min(760px,calc(100vh-48px))]')).toBe(true)
     expect(el.classList.contains('grid-rows-[auto_minmax(0,1fr)]')).toBe(true)
+
+    // grid 的第二行（头部之后那一行）才是内容行：min-h-0 允许在 grid 行里收缩，
+    // overflow-auto 让它自己滚——名字里的「scrollable body row」指的就是它。
+    const rows = el.querySelectorAll<HTMLElement>(':scope > div')
+    const bodyRow = rows[rows.length - 1]
+    expect(bodyRow.contains(document.querySelector('#app-modal-body-content'))).toBe(true)
+    expect(bodyRow.classList.contains('min-h-0')).toBe(true)
+    expect(bodyRow.classList.contains('overflow-auto')).toBe(true)
   })
 
   it('uses auto height mode with a max-height cap (never unbounded)', () => {
@@ -74,6 +86,31 @@ describe('team page app modal shell', () => {
 
     await user.click(closeButton!)
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('routes the Escape key to onClose', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ onClose })
+
+    await user.keyboard('{Escape}')
+
+    // Escape 走 Radix DismissableLayer → onOpenChange(false) → onClose；
+    // 这是「逐层关闭」语义的地基（后面的弹窗叠层都靠它）。
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+  })
+
+  it('renders exactly one close button inside the dialog content', () => {
+    renderModal()
+    const content = contentEl()
+
+    // 自绘 × 是唯一关闭入口
+    expect(content.querySelector(`#${CLOSE_ID}`)).not.toBeNull()
+    // 原语自带的浮角关闭钮必须被 showCloseButton={false} 关掉：留着它就是第二个
+    // 关闭入口（2026-09-28 用户报的「两个 icon」正是这类重复）
+    expect(content.querySelectorAll('[data-slot="dialog-close"]')).toHaveLength(0)
+    // 兜底按 svg 计（本 fixture 的 children 不含图标）：整壳只允许一个 X
+    expect(content.querySelectorAll('svg')).toHaveLength(1)
   })
 
   it('renders title/description with the given ids, and omits aria-describedby when there is no description', () => {
