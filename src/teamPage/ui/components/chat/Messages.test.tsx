@@ -764,6 +764,32 @@ describe('team page messages (React)', () => {
     expect(document.querySelector('.mark-menu')).not.toBeNull()
   })
 
+  it('keeps mark-menu listeners on the live viewport when the store arrives after the no-chat first render', async () => {
+    // S2 Task 8 验收发现（真实启动序：mountTeamPageApp 先渲染 React，
+    // refreshStore 异步到达）：空态与群聊态若落在位置/类型不同的 ScrollArea
+    // 分支上，store 到达时 Radix Viewport 会被卸载重建；而 useMarkMenu 的
+    // effect deps 是 [containerRef, hide]（不含元素），监听器会留在已卸载的
+    // 旧 viewport 上——container.contains(body) 恒 false，划选菜单整个会话
+    // 不再出现。此用例锁定「两态共用同一棵 ScrollArea 树」的结构契约。
+    const store = createDefaultStore()
+    const { messagesEl, state } = renderMessagesView(store)
+    expect(messagesEl.querySelector('[data-slot="messages-column"]')?.textContent).toContain('选择一个群聊')
+
+    const chat = makeChat({ messageIds: ['msg-1'], nextMessageSeq: 2 })
+    const message = makeAssistantMessage({ content: '这里有一段重点内容' })
+    state.store = makeStore({ chat, messages: [message] })
+    state.selectedChatId = chat.id
+    await pushStoreUpdate()
+
+    const scrollEl = scrollViewportOf(messagesEl)
+    selectBodyText(messagesEl, 5, 7)
+
+    vi.useFakeTimers()
+    fireEvent.mouseUp(scrollEl)
+    settleMarkMenuTimer()
+    expect(document.querySelector('.mark-menu')).not.toBeNull()
+  })
+
   it('keeps the pending mark menu when the drag-ending click lands outside the message body', () => {
     const chat = makeChat({ messageIds: ['msg-1'], nextMessageSeq: 2 })
     const message = makeAssistantMessage({ content: '这里有一段重点内容' })

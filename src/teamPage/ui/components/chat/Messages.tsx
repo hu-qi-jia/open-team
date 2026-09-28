@@ -165,72 +165,73 @@ export function Messages() {
   // 每次 renderMessages 都重新判定贴底/保留）
   useAutoScroll(scrollRef, version, () => Boolean(getAppState().preserveNextMessageScroll))
 
-  if (!view.chat) {
-    return (
-      <section id="messages" className="messages flex h-full min-h-0 flex-col" aria-live="polite">
-        <MessagesScrollArea viewportRef={scrollRef}>
-          <div data-slot="messages-column" className="mx-auto flex w-full flex-1 flex-col px-4 max-w-[720px] pb-4">
-            <EmptyState title="选择一个群聊" body="左侧群聊列表会显示最近摘要、状态和更新时间。" />
-          </div>
-        </MessagesScrollArea>
-      </section>
-    )
-  }
-
-  const startupNotice = view.messages.length === 0 ? getChatStartupNotice(view.chat, view.roles) : undefined
+  // 空态与群聊态共用同一棵 section/ScrollArea 树（S2 Task 8 验收发现）：
+  // 原实现两个 return 分支的 ScrollArea 位置/类型不同，store 异步到达时
+  // React 会卸载重建 Viewport；而 useMarkMenu 的 effect deps 是
+  // [containerRef, hide]（不含元素）——监听器会留在已卸载的旧 viewport 上，
+  // container.contains(body) 恒 false，划选菜单整个会话不再出现。
+  // 保持元素恒等（条件位留 false 占位）后 ref 始终指向活的 Viewport。
+  const chat = view.chat
+  const startupNotice = chat && view.messages.length === 0 ? getChatStartupNotice(chat, view.roles) : undefined
 
   return (
     <section id="messages" className="messages flex h-full min-h-0 flex-col" aria-live="polite">
       {/* S6 表面，位置保持：状态卡在滚动列之外，不做列容器内的 720px 约束 */}
-      <OrchestrationStatusCard />
+      {chat && <OrchestrationStatusCard />}
       <MessagesScrollArea viewportRef={scrollRef}>
         {/* 内容列（规格 D7）：720px 居中，水平 padding 由列承担；行内条目按
             Task 3 前的现状渲染（px-6 归 Task 4 移除）。 */}
         <div data-slot="messages-column" className="mx-auto flex w-full flex-1 flex-col px-4 max-w-[720px] pb-4">
-          {view.messages.length === 0 && (view.roles.length === 0 ? (
-            <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。" icon={<Users className="size-4" />}>
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => services.uiBus.emit('open-add-person')}
-              >添加人员</Button>
-            </EmptyState>
+          {!chat ? (
+            <EmptyState title="选择一个群聊" body="左侧群聊列表会显示最近摘要、状态和更新时间。" />
           ) : (
-            <EmptyState
-              title={startupNotice?.title ?? '等待第一条消息'}
-              body={startupNotice?.body ?? '直接发送会记录消息；@ 人员或 @所有人 后触发回复。'}
-            />
-          ))}
-          {view.entries.map(entry => entry.kind === 'time'
-            ? <div key={entry.id} className="message-time-divider mx-auto my-3 w-fit rounded-full bg-muted/70 px-2.5 py-0.5 text-[11px] text-muted-foreground">{entry.label}</div>
-            : (
-              <MessageItem
-                key={entry.message.id}
-                message={entry.message}
-                showName={entry.showName}
-                showAvatar={entry.showAvatar}
-                role={entry.role}
-                reviewResult={entry.reviewResult}
-                highlights={entry.highlights}
-                signature={entry.signature}
-                mentionedRoles={entry.mentionedRoles}
-                mentionLabelOptions={mentionLabelOptions}
-              />
-            ))}
-          {thinkingRoles.map(role => (
-            <ReplyControlBubble
-              key={`thinking-${role.id}`}
-              role={role}
-              mentionLabelOptions={mentionLabelOptions}
-            />
-          ))}
-          {stoppedRoles.map(role => (
-            <ReplyControlBubble
-              key={`stopped-${role.id}`}
-              role={role}
-              mentionLabelOptions={mentionLabelOptions}
-            />
-          ))}
+            <>
+              {view.messages.length === 0 && (view.roles.length === 0 ? (
+                <EmptyState title="暂无人员" body="先添加人员，再开始群聊协作。" icon={<Users className="size-4" />}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => services.uiBus.emit('open-add-person')}
+                  >添加人员</Button>
+                </EmptyState>
+              ) : (
+                <EmptyState
+                  title={startupNotice?.title ?? '等待第一条消息'}
+                  body={startupNotice?.body ?? '直接发送会记录消息；@ 人员或 @所有人 后触发回复。'}
+                />
+              ))}
+              {view.entries.map(entry => entry.kind === 'time'
+                ? <div key={entry.id} className="message-time-divider mx-auto my-3 w-fit rounded-full bg-muted/70 px-2.5 py-0.5 text-[11px] text-muted-foreground">{entry.label}</div>
+                : (
+                  <MessageItem
+                    key={entry.message.id}
+                    message={entry.message}
+                    showName={entry.showName}
+                    showAvatar={entry.showAvatar}
+                    role={entry.role}
+                    reviewResult={entry.reviewResult}
+                    highlights={entry.highlights}
+                    signature={entry.signature}
+                    mentionedRoles={entry.mentionedRoles}
+                    mentionLabelOptions={mentionLabelOptions}
+                  />
+                ))}
+              {thinkingRoles.map(role => (
+                <ReplyControlBubble
+                  key={`thinking-${role.id}`}
+                  role={role}
+                  mentionLabelOptions={mentionLabelOptions}
+                />
+              ))}
+              {stoppedRoles.map(role => (
+                <ReplyControlBubble
+                  key={`stopped-${role.id}`}
+                  role={role}
+                  mentionLabelOptions={mentionLabelOptions}
+                />
+              ))}
+            </>
+          )}
         </div>
       </MessagesScrollArea>
       <MarkMenu controller={markMenuController} />
