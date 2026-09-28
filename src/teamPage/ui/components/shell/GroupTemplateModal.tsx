@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { cn } from 'cn'
 import {
   GROUP_TEMPLATE_ALL_CATEGORY,
   buildBuiltinGroupTemplateWelcomeMessage,
@@ -12,18 +13,19 @@ import { SearchX } from 'lucide-react'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { showError } from '../../lib/toast'
+import { AppModal } from '../common/AppModal'
 import { Button } from '../ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 
 /*
  * 群模板弹窗（teamUiController 群模板段整体 React 化，P4d；标记与
- * team.html 末版快照逐字对译，样式仍在 legacy.css 的 .group-template-*）。
- * W1 起外壳换 Radix Dialog——#group-template-modal id 移到 DialogContent，
- * Escape 经 onOpenChange 走 closeGroupTemplate；原行为「不响应背板点击」
- * 以 onInteractOutside preventDefault 保真（焦点移出同理不关闭）；
- * 首开聚焦搜索框改走 onOpenAutoFocus（Radix 挂载内容晚于 open 翻转，
- * open effect 里 ref 尚为空）。
+ * team.html 末版快照逐字对译）。S5/T3 起外壳换公共壳 common/AppModal：
+ * size=full（宽度 1500 不变、沟槽 32→48）、height=fixed（定高 760，取代
+ * legacy 的近满视口 820–926）、footer 槽放确认创建钮、closeOn=escape-only
+ * （取代本地 onInteractOutside preventDefault，逐字等价）、initialFocusId
+ * 取代本地 onOpenAutoFocus 的裸 .focus()（壳的版本带 preventScroll:true）。
+ * legacy 的 .group-template-* 原值逐属性翻成 utilities 写在本文件；类名与 id
+ * 原样保留作钩子（测试与 p4d/w1c5/w3-3 探针在用），规则留待 T4 整族退役。
  * 与原实现对译关系：
  * - 打开入口：快速建群表单「从模板中创建」经 uiBus 'open-group-template-create'
  *   （原 index.tsx 装配处的转发订阅移入本组件）；打开即重置搜索/分类/选中并
@@ -56,10 +58,6 @@ export function GroupTemplateModal() {
     setSelectedId(undefined)
     setOpen(true)
   }), [services])
-
-  // 打开瞬间聚焦搜索框（原 openGroupTemplateModal 尾部 searchEl.focus()）
-  // 改由下方 onOpenAutoFocus 承担；Escape 走 Radix 默认（onOpenChange →
-  // closeGroupTemplate），背板/焦点外移不关闭由 onInteractOutside 保真
 
   function closeGroupTemplate(): void {
     // 原 closeGroupTemplateModal 同步清空全部状态，下次打开即初始视图
@@ -111,84 +109,117 @@ export function GroupTemplateModal() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={next => { if (!next) closeGroupTemplate() }}>
-      <DialogContent
-        id="group-template-modal"
-        aria-labelledby="group-template-title"
-        showCloseButton={false}
-        className="group-template-modal w-[min(1500px,calc(100vw-32px))] max-w-none sm:max-w-none bg-popover"
-        onInteractOutside={event => event.preventDefault()}
-        onOpenAutoFocus={event => {
-          event.preventDefault()
-          document.getElementById('group-template-search')?.focus()
-        }}
-      >
-        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
-          <div>
-            <DialogTitle id="group-template-title">{ui('从模板中创建')}</DialogTitle>
-            <DialogDescription className="tiny">{ui('选择一个现成小组，创建后会自动加入模板人员。')}</DialogDescription>
-          </div>
-          <Button id="close-group-template-modal" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭群聊模板')} onClick={closeGroupTemplate}>×</Button>
-        </DialogHeader>
-        <div className="group-template-toolbar">
-          <label className="group-template-search-field" htmlFor="group-template-search">
-            <span>{ui('搜索模板')}</span>
-            <input
-              id="group-template-search"
-              ref={searchRef}
-              type="search"
-              autoComplete="off"
-              placeholder={ui('搜索任务、行业、角色或模板名称，例如：写论文、合同、面试、AI Agent')}
-              value={query}
-              onChange={event => changeQuery(event.target.value)}
-            />
-          </label>
-          <div id="group-template-categories" className="group-template-categories" aria-label={ui('群聊模板分类')}>
-            {getBuiltinGroupTemplateCategories().map(item => (
-              <button
-                key={item}
-                type="button"
-                className={`group-template-category-filter${category === item ? ' active' : ''}`}
-                aria-pressed={category === item}
-                onClick={() => changeCategory(item)}
-              >{localizeCategory(item, language) ?? item}</button>
-            ))}
-          </div>
-        </div>
-        <div id="group-template-list" className="group-template-list" aria-label={ui('群聊模板')}>
-          {templates.length === 0 ? (
-            /* 锚类保留：GroupTemplateModal.test 以 .group-template-empty 断言
-             * 文案、以 .group-template-empty-actions .btn 点击动作；空态网格
-             * 铺满/最小高原由 legacy 规则承担，W3-3 起改 utility 表达 */
-            <Empty className="group-template-empty col-span-full min-h-60 p-6 md:p-8">
-              <EmptyHeader>
-                <EmptyMedia variant="icon"><SearchX className="size-4" /></EmptyMedia>
-                <EmptyTitle className="text-sm font-medium">{ui('没有找到匹配的小组')}</EmptyTitle>
-                <EmptyDescription className="text-xs">{ui('可以试试换个说法，例如搜索「写论文」「合同」「面试」「投放」「装修」。')}</EmptyDescription>
-              </EmptyHeader>
-              <EmptyContent className="group-template-empty-actions flex-row justify-center gap-2">
-                <Button className="btn" type="button" variant="ghost" size="sm" onClick={clearSearch}>{ui('清空搜索')}</Button>
-                <Button className="btn" type="button" variant="ghost" size="sm" onClick={showAllTemplates}>{ui('查看全部模板')}</Button>
-              </EmptyContent>
-            </Empty>
-          ) : templates.map(template => (
-            <GroupTemplateOption
-              key={template.id}
-              template={template}
-              language={language}
-              ui={ui}
-              selected={template.id === selectedId}
-              onSelect={() => setSelectedId(template.id)}
-            />
+    <AppModal
+      open={open}
+      onOpenChange={next => { if (!next) closeGroupTemplate() }}
+      size="full"
+      height="fixed"
+      title={ui('从模板中创建')}
+      titleId="group-template-title"
+      description={ui('选择一个现成小组，创建后会自动加入模板人员。')}
+      closeId="close-group-template-modal"
+      closeLabel={ui('关闭群聊模板')}
+      onClose={closeGroupTemplate}
+      initialFocusId="group-template-search"
+      contentId="group-template-modal"
+      // .group-template-modal 规则由 T4 退役，类名留作 legacy 钩子；min-h-0
+      // 必须显式写上——legacy 的 min-height:min(820px,100vh-24) 不在壳的覆盖
+      // 清单里（层序只对「写了的属性」生效），不中立就会压过 760 的定高
+      contentClassName="group-template-modal min-h-0"
+      closeOn="escape-only"
+      // 正文行两件都在抵消壳：grid-rows 两行容纳「工具行 + 列表」（minmax(0,1fr)
+      // 底行必须能收缩，1fr 的最小尺寸是 auto 会撑破）；overflow-hidden 抵掉
+      // height="fixed" 给正文行加的 overflow-auto——整壳唯一的滚动容器是
+      // #group-template-list；px-6 则是补回壳 p-0 收掉的原语内边距（头/脚各自
+      // px-6 py-4 补过，正文没有别的来源；jsdom 不算布局，靠 T5 的 s5-1b 量）
+      bodyClassName="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden px-6 py-4"
+      footerClassName="group-template-footer flex justify-end"
+      footer={(
+        <Button id="confirm-group-template-create" type="button" disabled={!selectedTemplate} onClick={confirmCreate}>
+          {ui(selectedTemplate?.riskLevel === 'professional' ? '了解限制并创建' : '确认创建')}
+        </Button>
+      )}
+    >
+      <div className="group-template-toolbar grid min-w-0 gap-2.5">
+        <label className="group-template-search-field grid gap-1.5" htmlFor="group-template-search">
+          <span className="text-[11px] font-[760] text-muted-foreground">{ui('搜索模板')}</span>
+          <input
+            id="group-template-search"
+            ref={searchRef}
+            type="search"
+            autoComplete="off"
+            className="h-[38px]"
+            placeholder={ui('搜索任务、行业、角色或模板名称，例如：写论文、合同、面试、AI Agent')}
+            value={query}
+            onChange={event => changeQuery(event.target.value)}
+          />
+        </label>
+        <div id="group-template-categories" className="group-template-categories flex flex-wrap gap-2 overflow-visible px-0.5 pb-0.5" aria-label={ui('群聊模板分类')}>
+          {getBuiltinGroupTemplateCategories().map(item => (
+            <button
+              key={item}
+              type="button"
+              // 工具类一律走 cn()：模板串里紧贴 ${ 的类名会被 Tailwind 扫描器静默丢掉（:151 的旧写法）
+              className={cn(
+                'group-template-category-filter shrink-0 cursor-pointer rounded-full border border-border bg-popover px-2.5 py-1.5 text-xs font-[780] text-muted-foreground',
+                // hover / focus-visible / 选中三态是 legacy 1359–1361 同一批声明，
+                // 必须逐字同值：Tailwind 把 hover 变体排在基础工具类之后，值一旦
+                // 不同，悬停选中项就会看到 hover 的值（T2 的事故形态）
+                'hover:border-muted-foreground/46 hover:bg-accent hover:text-foreground',
+                'focus-visible:border-muted-foreground/46 focus-visible:bg-accent focus-visible:text-foreground',
+                'aria-pressed:border-muted-foreground/46 aria-pressed:bg-accent aria-pressed:text-foreground',
+                // legacy 在 hover/focus-visible/.active 三态都写了 outline:none；
+                // 提升到基础态等价（Chrome 只在 :focus-visible 画 UA 焦点环，已被覆盖）
+                'outline-none',
+                // 显式中立 legacy 2348–2356 里那条「浅色专属 .active 内阴影」
+                // （inset 0 0 0 1px rgba(113,113,122,.14)，同规则还挂在 .theme-option/
+                // .mode-option 上）：B 组本身没有这个属性，留着就是浅色下 active 比
+                // hover 多一层装饰，既违反「三态同批值」，又会在 T4 摘掉 2351 行那天
+                // 无声消失。基态 shadow-none 让两主题内三态一致
+                'shadow-none',
+                category === item && 'active',
+              )}
+              aria-pressed={category === item}
+              onClick={() => changeCategory(item)}
+            >{localizeCategory(item, language) ?? item}</button>
           ))}
         </div>
-        <div className="group-template-footer">
-          <Button id="confirm-group-template-create" type="button" disabled={!selectedTemplate} onClick={confirmCreate}>
-            {ui(selectedTemplate?.riskLevel === 'professional' ? '了解限制并创建' : '确认创建')}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+      <div
+        id="group-template-list"
+        // max-h-none：legacy 的 max-height:min(720px,100vh-240) 该丢（定高由壳给，
+        // 再压 720 会与「列表内部可滚」打架）——显式中立，T4 删规则时不变
+        className="group-template-list grid max-h-none min-h-0 grid-cols-[repeat(auto-fit,minmax(520px,1fr))] content-start gap-4 overflow-auto pr-0.5"
+        aria-label={ui('群聊模板')}
+      >
+        {templates.length === 0 ? (
+          /* 钩子类保留：GroupTemplateModal.test 以 .group-template-empty 断言文案、
+           * 以 .group-template-empty-actions button 点击动作；空态视觉全部是本行的
+           * utilities（Empty 原语 + col-span-full/min-h-60/p-6 md:p-8），legacy.css
+           * 里这两族本来一条规则都没有 */
+          <Empty className="group-template-empty col-span-full min-h-60 p-6 md:p-8">
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><SearchX className="size-4" /></EmptyMedia>
+              <EmptyTitle className="text-sm font-medium">{ui('没有找到匹配的小组')}</EmptyTitle>
+              <EmptyDescription className="text-xs">{ui('可以试试换个说法，例如搜索「写论文」「合同」「面试」「投放」「装修」。')}</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent className="group-template-empty-actions flex-row justify-center gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={clearSearch}>{ui('清空搜索')}</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={showAllTemplates}>{ui('查看全部模板')}</Button>
+            </EmptyContent>
+          </Empty>
+        ) : templates.map(template => (
+          <GroupTemplateOption
+            key={template.id}
+            template={template}
+            language={language}
+            ui={ui}
+            selected={template.id === selectedId}
+            onSelect={() => setSelectedId(template.id)}
+          />
+        ))}
+      </div>
+    </AppModal>
   )
 }
 
@@ -210,27 +241,52 @@ function GroupTemplateOption({ template, language, ui, selected, onSelect }: Gro
   return (
     <button
       type="button"
-      className={['group-template-option', selected ? 'active' : '', hasLongSummary ? 'has-long-summary' : ''].filter(Boolean).join(' ')}
+      className={cn(
+        // 底色从 legacy 的 linear-gradient + rgba(24,24,27,.52) 收敛成实底 token
+        // （渐变是旧调色板的装饰，shadcn 口径的卡片是实底 + 边框）
+        'group-template-option relative grid min-h-[190px] cursor-pointer content-start gap-[11px] rounded-md border border-border bg-card p-4 text-left text-foreground',
+        // 三态同值 + --glow remap（globals.css:177/207 两主题同值 0 0 0 1px var(--border)）
+        // → ring-1 ring-border；理由同上面的分类片
+        'hover:border-muted-foreground/52 hover:bg-accent hover:ring-1 hover:ring-border',
+        'focus-visible:border-muted-foreground/52 focus-visible:bg-accent focus-visible:ring-1 focus-visible:ring-border',
+        'aria-pressed:border-muted-foreground/52 aria-pressed:bg-accent aria-pressed:ring-1 aria-pressed:ring-border',
+        'outline-none',
+        selected ? 'active' : '',
+        hasLongSummary ? 'has-long-summary' : '',
+      )}
       data-template-id={template.id}
       aria-pressed={selected}
       onClick={onSelect}
     >
-      <span className="group-template-option-top">
-        <span className="group-template-heading">
-          <span className="group-template-title-row">
-            <strong>{displayTemplate.name}</strong>
-            {risk && <span className={`group-template-risk group-template-risk-${template.riskLevel}`}>{risk}</span>}
+      <span className="group-template-option-top flex items-start justify-between gap-2.5">
+        <span className="group-template-heading grid min-w-0 gap-[5px]">
+          <span className="group-template-title-row flex min-w-0 items-center gap-2">
+            <strong className="line-clamp-2 min-w-0 text-sm font-[820] leading-[1.25]">{displayTemplate.name}</strong>
+            {risk && (
+              // 风险色在 globals.css 无对应 token（--warning 是 legacy 的填充色
+              // remap，当文字色在浅色下对比度只有 ~1.7:1），故按 legacy 的亮/暗
+              // 两套原值各写一遍：亮色为 base、暗色走 dark: 变体（唯一一处例外）
+              <span className={cn(
+                `group-template-risk group-template-risk-${template.riskLevel}`,
+                'shrink-0 rounded-full border px-[7px] py-0.5',
+                template.riskLevel === 'professional'
+                  ? 'border-[rgba(190,48,76,0.24)] bg-[#fff2f4] text-[#a32644] dark:border-[rgba(246,96,122,0.34)] dark:bg-[rgba(246,96,122,0.1)] dark:text-[#ff9fb2]'
+                  : 'border-[rgba(194,129,32,0.26)] bg-[#fff8ec] text-[#8a5a0a] dark:border-[rgba(240,162,58,0.28)] dark:bg-[rgba(240,162,58,0.08)] dark:text-[#ffd18a]',
+              )}>{risk}</span>
+            )}
           </span>
-          <span className="group-template-role-count">{ui(`${template.roles.length} 个角色`)}</span>
+          <span className="group-template-role-count text-[11px] font-[760] leading-[1.2] text-muted-foreground">{ui(`${template.roles.length} 个角色`)}</span>
         </span>
-        <span className="group-template-category">{displayTemplate.category}</span>
+        <span className="group-template-category shrink-0 rounded-full border border-muted-foreground/24 px-[7px] py-0.5 text-[11px] font-[760] text-foreground/85">{displayTemplate.category}</span>
       </span>
-      <span className="group-template-summary" title={hasLongSummary ? displayTemplate.summary : undefined}>{displayTemplate.summary}</span>
-      <span className="group-template-meta">
+      <span className="group-template-summary line-clamp-2 text-xs leading-[1.6] text-muted-foreground" title={hasLongSummary ? displayTemplate.summary : undefined}>{displayTemplate.summary}</span>
+      <span className="group-template-meta text-[11px] leading-normal text-muted-foreground">
         {ui(`适用：${displayTemplate.userTypes.slice(0, 3).join(language === 'en' ? ', ' : '、')}`)}
       </span>
-      <span className="group-template-roles">
-        {displayTemplate.roles.map(role => <span key={role.name}>{role.name}</span>)}
+      <span className="group-template-roles flex flex-wrap content-start gap-2 pb-0.5">
+        {displayTemplate.roles.map(role => (
+          <span key={role.name} className="rounded-full border border-border bg-muted-foreground/10 px-[7px] py-[3px] text-[11px] leading-[1.2] text-foreground/85">{role.name}</span>
+        ))}
       </span>
     </button>
   )

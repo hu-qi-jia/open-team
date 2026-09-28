@@ -140,7 +140,7 @@ describe('GroupTemplateModal', () => {
     await user.type(searchEl, '不存在的模板')
     await waitFor(() => expect(document.querySelector('.group-template-empty')).not.toBeNull())
 
-    await user.click([...document.querySelectorAll('.group-template-empty-actions .btn')]
+    await user.click([...document.querySelectorAll('.group-template-empty-actions button')]
       .find(button => button.textContent === '清空搜索') as HTMLButtonElement)
 
     // 清空搜索只还原查询词，分类保持在「技术研发」
@@ -150,7 +150,7 @@ describe('GroupTemplateModal', () => {
 
     await user.type(searchEl, '不存在的模板')
     await waitFor(() => expect(document.querySelector('.group-template-empty')).not.toBeNull())
-    await user.click([...document.querySelectorAll('.group-template-empty-actions .btn')]
+    await user.click([...document.querySelectorAll('.group-template-empty-actions button')]
       .find(button => button.textContent === '查看全部模板') as HTMLButtonElement)
 
     await waitFor(() => expect(optionNames()).toContain('学霸学习群'))
@@ -235,5 +235,113 @@ describe('GroupTemplateModal', () => {
     openGroupTemplate(services)
     await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
     expect(document.getElementById('group-template-modal')).not.toBeNull()
+  })
+
+  /*
+   * 壳契约（S5 / T3）：弹窗迁到 common/AppModal 后，宽度/高度令牌、自绘关闭钮的
+   * 形状、footer 槽的落点都由壳的 utilities 承担；正文行的内边距与「唯一滚动容器」
+   * 则由 bodyClassName 补（壳用 p-0 收掉原语的 p-6）。这些属性 jsdom 不算布局，
+   * 只能钉类名（与 S4/T2 各迁移用例同口径）；真正的几何量测归 T5 的 s5-1/s5-1b/s5-2
+   * 与 T3 的真浏览器探针。
+   */
+  it('uses the full width token and the fixed height token of the shared shell', () => {
+    const services = createFakeServices()
+    renderWithServices(<GroupTemplateModal />, { services })
+    openGroupTemplate(services)
+
+    const modal = document.querySelector<HTMLElement>('#group-template-modal')!
+    // 宽度令牌 full（1500 / 沟槽 48，原 32）；定高 760 取代 legacy 的
+    // min-height min(820,100vh-24) + max-height calc(100vh-24)
+    expect(modal.classList.contains('w-[min(1500px,calc(100vw-48px))]')).toBe(true)
+    expect(modal.classList.contains('h-[min(760px,calc(100vh-48px))]')).toBe(true)
+    expect(modal.classList.contains('w-[min(1500px,calc(100vw-32px))]')).toBe(false)
+    // legacy 的 min-height 不在壳的覆盖清单里（层序只对「写了的属性」生效），
+    // 必须显式中立，否则 820 会压过 760 的定高
+    expect(modal.classList.contains('min-h-0')).toBe(true)
+  })
+
+  it('renders the svg close button with the translated aria-label', () => {
+    const services = createFakeServices()
+    renderWithServices(<GroupTemplateModal />, { services })
+    openGroupTemplate(services)
+
+    // 关闭钮：壳渲染的 svg 图标，不再是裸 `×` 文本节点
+    const close = document.querySelector<HTMLElement>('#close-group-template-modal')
+    expect(close).not.toBeNull()
+    expect(close!.querySelector('svg')).not.toBeNull()
+    expect(close!.textContent).not.toContain('×')
+    expect(close!.getAttribute('aria-label')).toBe('关闭群聊模板')
+  })
+
+  it('puts the confirm button in the shell footer slot and keeps the body row grid + padding', () => {
+    const services = createFakeServices()
+    renderWithServices(<GroupTemplateModal />, { services })
+    openGroupTemplate(services)
+
+    const modal = document.querySelector<HTMLElement>('#group-template-modal')!
+    // footer 槽：确认创建钮在壳的 footer 行里（不在正文滚动区内），
+    // 对齐方式由 footerClassName 给（壳不焊死 flex/justify-end）
+    const footer = modal.querySelector<HTMLElement>('[data-slot="modal-footer"]')
+    expect(footer).not.toBeNull()
+    expect(footer!.classList.contains('flex')).toBe(true)
+    expect(footer!.classList.contains('justify-end')).toBe(true)
+    expect(footer!.querySelector('#confirm-group-template-create')).not.toBeNull()
+    expect(modal.querySelector('[data-slot="modal-body"] #confirm-group-template-create')).toBeNull()
+    expect(modal.querySelector('[data-slot="modal-body"] [data-slot="modal-footer"]')).toBeNull()
+
+    // 正文行：px-6 补回壳用 p-0 收掉的原语内边距（本弹窗自身不带 padding，
+    // 头/脚各自 px-6 py-4 补过，正文没有别的来源）；overflow-hidden 抵掉
+    // height="fixed" 给正文行加的 overflow-auto——整壳唯一的滚动容器是
+    // #group-template-list（否则两层滚动叠成双滚动条）
+    const body = modal.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
+    expect(body.classList.contains('grid')).toBe(true)
+    expect(body.classList.contains('grid-rows-[auto_minmax(0,1fr)]')).toBe(true)
+    expect(body.classList.contains('min-h-0')).toBe(true)
+    expect(body.classList.contains('px-6')).toBe(true)
+    expect(body.classList.contains('overflow-hidden')).toBe(true)
+    expect(body.classList.contains('overflow-auto')).toBe(false)
+  })
+
+  it('neutralises the legacy max-height on the list and keeps the auto-fit card grid', () => {
+    const services = createFakeServices()
+    renderWithServices(<GroupTemplateModal />, { services })
+    openGroupTemplate(services)
+
+    // 定高由壳给；legacy 的 max-height min(720,100vh-240) 必须显式中立，
+    // 否则 T4 删规则那天列表会突然换高，且可能与 s5-2 的「列表内部可滚」打架
+    const list = document.getElementById('group-template-list')!
+    expect(list.classList.contains('grid-cols-[repeat(auto-fit,minmax(520px,1fr))]')).toBe(true)
+    expect(list.classList.contains('max-h-none')).toBe(true)
+    expect(list.classList.contains('overflow-auto')).toBe(true)
+    expect(list.classList.contains('min-h-0')).toBe(true)
+  })
+
+  /*
+   * B 组的状态值不变量（legacy 1396–1398 / 1359–1361 是各自一条分组规则、同一批
+   * 声明；两族里没有别的同特异性规则靠源码顺序取胜）。Tailwind 把 hover/focus-visible
+   * 变体排在基础工具类之后，一旦 active 与 hover 写成不同值，悬停选中项就会看到 hover
+   * 的值（T2 的事故形态）。这里用「变体类集合必须逐字相等」把它钉死。
+   */
+  it('keeps hover / focus-visible / selected values identical for both option and category chip', () => {
+    const services = createFakeServices()
+    renderWithServices(<GroupTemplateModal />, { services })
+    openGroupTemplate(services)
+
+    const variantsOf = (element: Element, prefix: string) => [...element.classList]
+      .filter(name => name.startsWith(prefix))
+      .map(name => name.slice(prefix.length))
+      .sort()
+
+    for (const selector of ['.group-template-option', '.group-template-category-filter']) {
+      const element = document.querySelector(selector)!
+      expect(variantsOf(element, 'hover:').length).toBeGreaterThan(0)
+      expect(variantsOf(element, 'aria-pressed:')).toEqual(variantsOf(element, 'hover:'))
+      expect(variantsOf(element, 'focus-visible:')).toEqual(variantsOf(element, 'hover:'))
+    }
+
+    // 选中态由 aria-pressed 驱动（.active 只是 legacy 钩子，不承担视觉）
+    const option = document.querySelector<HTMLElement>('.group-template-option')!
+    expect(option.getAttribute('aria-pressed')).toBe('false')
+    expect(option.classList.contains('active')).toBe(false)
   })
 })
