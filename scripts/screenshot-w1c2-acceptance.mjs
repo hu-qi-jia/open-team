@@ -1,6 +1,6 @@
 /*
  * W1-C2 阶段验收探针：AllNotesModal 换 Radix Dialog 后的回归——
- * 980px 宽度/居中、双栏工作区、关闭路径（关闭钮、Escape、遮罩点击）、
+ * 1160px 宽度/居中、双栏工作区、关闭路径（关闭钮、Escape、遮罩点击）、
  * 关闭再重开编辑器重建、双主题截图。断言失败置 exitCode 3。
  */
 import puppeteer from 'puppeteer'
@@ -118,7 +118,8 @@ try {
 
   const dark = await probe()
   check('dialog mounted as role=dialog', dark?.role === 'dialog', JSON.stringify(dark))
-  check('dialog width 980px', dark?.width === '980px', dark?.width)
+  // S5-T2：全部笔记弹窗宽度由 legacy 的 980 改为 1160（2xl），用户已批准；期望随之更新。
+  check('dialog width 1160px', dark?.width === '1160px', dark?.width)
   check('workspace targets rendered (global + chat)', dark?.listItems === 2, String(dark?.listItems))
   check('toolbar rendered', dark?.toolbarButtons === 7, String(dark?.toolbarButtons))
   check('prosemirror editor created', dark?.editorMounted && dark.editorChildCount > 0, `children=${dark?.editorChildCount}`)
@@ -142,7 +143,7 @@ try {
   await page.waitForSelector('#all-notes-modal', { timeout: 5000 })
   await sleep(500)
   const reopened = await probe()
-  check('reopened dialog width still 980px', reopened?.width === '980px', reopened?.width)
+  check('reopened dialog width still 1160px', reopened?.width === '1160px', reopened?.width)
   check('editor rebuilt after reopen', reopened?.editorMounted && reopened.editorChildCount > 0, `children=${reopened?.editorChildCount}`)
   const contentAfterReopen = await page.evaluate(() => document.querySelector('#all-notes-editor .ProseMirror')?.textContent ?? '')
   check('persisted note content shown after reopen', contentAfterReopen.includes('验收探针笔记内容'), contentAfterReopen.slice(0, 40))
@@ -169,7 +170,7 @@ try {
   await page.waitForSelector('#all-notes-modal', { timeout: 5000 })
   await sleep(400)
   const light = await probe()
-  check('light theme width still 980px', light?.width === '980px', light?.width)
+  check('light theme width still 1160px', light?.width === '1160px', light?.width)
   await shot(page, '02-all-notes-light')
   await page.keyboard.press('Escape')
   await sleep(400)

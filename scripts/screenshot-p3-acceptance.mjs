@@ -223,8 +223,13 @@ try {
   await shot(page, '06-all-notes-modal')
   await page.keyboard.press('Escape')
   await new Promise(resolve => setTimeout(resolve, 300))
-  const closed = await page.evaluate(() => document.getElementById('all-notes-modal')?.hidden)
-  check('Escape closes all-notes modal', closed === true)
+  // Radix 关闭时**卸载**节点，所以「关」= 节点不存在，而不是 hidden=true。
+  // 原写法 `?.hidden === true` 恒为 undefined（前置既存，自 36e2d90 起），现按两种关闭形态判定。
+  const closedState = await page.evaluate(() => {
+    const el = document.getElementById('all-notes-modal')
+    return { present: Boolean(el), hidden: el?.hidden ?? null }
+  })
+  check('Escape closes all-notes modal', !closedState.present || closedState.hidden === true, JSON.stringify(closedState))
 
   // ---- 7. 角色卡：提示词详情弹窗 ----
   await page.evaluate(() => {
