@@ -242,7 +242,7 @@ export function Composer() {
   }
 
   return (
-    <form id="composer" className="composer mx-6 mb-4 rounded-lg border border-border bg-card p-2 shadow-sm focus-within:ring-1 focus-within:ring-ring" onSubmit={handleFormSubmit}>
+    <form id="composer" className="composer mx-6 mb-4 rounded-lg border border-border bg-card p-2 shadow-sm relative focus-within:ring-1 focus-within:ring-ring" onSubmit={handleFormSubmit}>
       <div id="reference-draft" className="reference-draft mx-3 mt-2.5 flex items-center justify-between gap-3" hidden={!view.reference}>
         {view.reference && (
           <>

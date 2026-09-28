@@ -1531,39 +1531,15 @@ select:focus {
   line-height: 1;
 }
 
-#message-input {
-  min-height: 98px;
-  max-height: 150px;
-  width: 100%;
-  border: 0;
-  background: transparent;
-  resize: none;
-  padding: 10px 56px 10px 2px;
-}
-
-#message-input:focus {
-  box-shadow: none;
-}
-
 /* S2 Task 5：.composer-actions 族退役——底行回归文档流 flex 行
  * （左 @提及 图标钮 + 预览文案，右发送钮），由 Composer.tsx 行内
  * utilities 提供（.composer-actions 类保留作选择器钩子；预览行
  * 不再被 display:none 隐藏）。 */
 
-#send-message {
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  padding: 0;
-  border-radius: 8px;
-  font-size: 0;
-}
-
-#send-message::before {
-  content: "➤";
-  font-size: 17px;
-  transform: translateX(1px);
-}
+/* S2 Task 5 R1：输入框/发送钮两条 id 规则族退役——声明逐条被
+ * utilities/preflight 覆盖（min-h-9、max-h-40、px-3 py-2、h-8、text-sm、
+ * rounded-md；40px 图标钮形态连同 ➤ 伪元素一并作废），由 Composer.tsx
+ * 行内 utilities 与 Button 原语接管。 */
 
 .role-list,
 .template-list {

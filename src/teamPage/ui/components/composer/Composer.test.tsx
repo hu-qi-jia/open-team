@@ -437,6 +437,22 @@ describe('team page composer v2 visual', () => {
     expect(form.className).not.toContain('rounded-2xl')
   })
 
+  it('composer form keeps position relative as the mention panel containing block', () => {
+    renderComposer()
+
+    const form = document.querySelector('#composer')!
+    expect(form.className).toContain('relative')
+  })
+
+  it('retires composer id rules from legacy.css while keeping the mention panel family', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+
+    expect(css).not.toMatch(/#message-input\s*[,{]/)
+    expect(css).not.toContain('#send-message')
+    expect(css).not.toContain('#reference-draft')
+    expect(css).toMatch(/\.mention-panel\s*[,{]/)
+  })
+
   it('mention button inserts @ and focuses textarea', () => {
     renderComposer()
 

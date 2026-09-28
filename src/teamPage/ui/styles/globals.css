@@ -373,17 +373,6 @@
   }
 
   /*
-   * V3 输入区：legacy 的 #send-message 是 40px 图标钮（font-size:0 +
-   * ➤ 伪元素）；React 化后发送钮是文字 Button，宽度交还内容、伪元素去掉。
-   */
-  #send-message {
-    width: auto;
-  }
-  #send-message::before {
-    content: none;
-  }
-
-  /*
    * V5 iframe 工作台层（role 真实 AI 窗口所在，结构不动）：纯黑底与
    * 激活组青色描边压为 zinc；role 壳卡片化后与主体风格连续。
    */
