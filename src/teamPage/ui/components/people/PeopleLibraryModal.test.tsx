@@ -216,7 +216,9 @@ describe('team page people library modal', () => {
     expect(modal.classList.contains('max-w-lg')).toBe(false)
     expect(modal.classList.contains('p-0')).toBe(true)
     // 正文内边距由 bodyClassName 补回（本弹窗自己不带 padding）
-    const bodyRow = modal.lastElementChild as HTMLElement
+    // 正文行按 data-slot 定位，不再用 lastElementChild——S6/S7 给壳加 footer 后
+    // 最后一个子元素会变成 footer 行，这个选择器会指错（S5/T1 加固）
+    const bodyRow = modal.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
     expect(bodyRow.classList.contains('min-h-0')).toBe(true)
     expect(bodyRow.classList.contains('p-6')).toBe(true)
     // 描述 id 不再被显式 id 顶掉 Radix 自动 id：content 的 aria-describedby
@@ -307,7 +309,9 @@ describe('team page people library modal', () => {
     // 内容行（头部之后那一行）：fixed 模式自带 overflow-auto，必须被
     // bodyClassName 的 overflow-hidden 抵回去——全弹窗唯一的滚动容器是
     // #people-library-list，多一层滚动容器就会让「列表区可滚动」失准
-    const bodyRow = modal.lastElementChild as HTMLElement
+    // 正文行按 data-slot 定位，不再用 lastElementChild——S6/S7 给壳加 footer 后
+    // 最后一个子元素会变成 footer 行，这个选择器会指错（S5/T1 加固）
+    const bodyRow = modal.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
     expect(bodyRow.classList.contains('min-h-0')).toBe(true)
     expect(bodyRow.classList.contains('overflow-hidden')).toBe(true)
     expect(bodyRow.querySelector('#people-library-list')).not.toBeNull()

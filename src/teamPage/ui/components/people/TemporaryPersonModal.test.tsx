@@ -76,7 +76,9 @@ describe('team page temporary person modal', () => {
     expect(modal!.classList.contains('p-0')).toBe(true)
     // 正文内边距必须靠 bodyClassName 补回来（本弹窗自己不带任何 padding，
     // jsdom 不算布局，漏了单测抓不到）
-    const bodyRow = modal!.lastElementChild as HTMLElement
+    // 正文行按 data-slot 定位，不再用 lastElementChild——S6/S7 给壳加 footer 后
+    // 最后一个子元素会变成 footer 行，这个选择器会指错（S5/T1 加固）
+    const bodyRow = modal!.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
     expect(bodyRow.classList.contains('min-h-0')).toBe(true)
     expect(bodyRow.classList.contains('p-6')).toBe(true)
     expect(bodyRow.querySelector('#add-temporary-person-form')).not.toBeNull()
