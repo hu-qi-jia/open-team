@@ -50,3 +50,14 @@ export function isChatListItemsEqual(left: ChatListItemVM[], right: ChatListItem
       && item.hasActivity === other.hasActivity
   })
 }
+
+/*
+ * §4.2 搜索框的纯过滤：按群名做大小写不敏感的 substring 匹配，空/空白
+ * 查询原样返回全量。查询词是组件本地 UI 态（不入 store/持久化），在
+ * ChatList 渲染期对 selector 派生结果调用。
+ */
+export function filterChatListItems(items: ChatListItemVM[], query: string): ChatListItemVM[] {
+  const keyword = query.trim().toLowerCase()
+  if (!keyword) return items
+  return items.filter(item => item.name.toLowerCase().includes(keyword))
+}

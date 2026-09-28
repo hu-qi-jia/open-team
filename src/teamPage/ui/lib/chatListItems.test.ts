@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { GroupChat, GroupMessage, OpenTeamStore } from '../../../group/types'
 import { createDefaultStore } from '../../../group/store'
 import { createTeamPageState } from '../../appState'
-import { deriveChatListItems, isChatListItemsEqual } from './chatListItems'
+import { deriveChatListItems, filterChatListItems, isChatListItemsEqual, type ChatListItemVM } from './chatListItems'
 
 describe('deriveChatListItems', () => {
   it('flattens the store chat order into primitive view models', () => {
@@ -71,6 +71,31 @@ describe('isChatListItemsEqual', () => {
     expect(isChatListItemsEqual(base, [{ ...base[0], active: false }])).toBe(false)
     expect(isChatListItemsEqual(base, [{ ...base[0], summary: 'changed' }])).toBe(false)
     expect(isChatListItemsEqual(base, [])).toBe(false)
+  })
+})
+
+describe('filterChatListItems', () => {
+  const items = [
+    { id: 'a', name: '设计组', initial: '设', tone: 'role-tone-1', summary: 's1', timeText: '刚刚', active: true, hasActivity: false },
+    { id: 'b', name: 'Dev', initial: 'D', tone: 'role-tone-2', summary: 's2', timeText: '刚刚', active: false, hasActivity: false },
+  ] satisfies ChatListItemVM[]
+
+  it('matches name case-insensitively', () => {
+    expect(filterChatListItems([{ id: 'a', name: '设计组' }, { id: 'b', name: 'Dev' }] as ChatListItemVM[], 'dev'))
+      .toEqual([{ id: 'b', name: 'Dev' }])
+  })
+
+  it('matches Chinese name substrings', () => {
+    expect(filterChatListItems(items, '设计').map(item => item.id)).toEqual(['a'])
+  })
+
+  it('returns every item for an empty or whitespace-only query', () => {
+    expect(filterChatListItems(items, '')).toEqual(items)
+    expect(filterChatListItems(items, '   ')).toEqual(items)
+  })
+
+  it('returns nothing when no name matches', () => {
+    expect(filterChatListItems(items, '不存在的群聊')).toEqual([])
   })
 })
 

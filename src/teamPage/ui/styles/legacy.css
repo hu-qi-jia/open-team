@@ -539,70 +539,13 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.1);
 }
 
-.chat-list {
-  --chat-list-row-height: 70px;
-  display: flex;
-  min-height: 0;
-  max-height: calc(var(--chat-list-row-height) * 10 + 28px);
-  flex-direction: column;
-  gap: 5px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 6px 10px 18px;
-  scrollbar-width: none;
-}
-
-.chat-list::-webkit-scrollbar {
-  display: none;
-}
-
-.chat-item {
-  position: relative;
-  display: grid;
-  flex: 0 0 var(--chat-list-row-height);
-  grid-template-columns: 40px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
-  min-height: var(--chat-list-row-height);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 9px 10px;
-  background: rgba(5, 12, 20, 0.18);
-  color: var(--text);
-  cursor: pointer;
-  text-align: left;
-  transition: 0.16s ease;
-}
-
-.chat-item.has-activity {
-  background: transparent;
-}
-
-.chat-item.has-activity .chat-avatar::after {
-  content: "";
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 8px;
-  height: 8px;
-  border: 2px solid #18181b;
-  border-radius: 999px;
-  background: #ff4d4f;
-}
-
-.chat-item:hover,
-.chat-item.active {
-  background:
-    radial-gradient(circle at 18% 28%, rgba(161, 161, 170, 0.16), transparent 45%),
-    linear-gradient(90deg, rgba(24, 54, 76, 0.7), rgba(13, 30, 45, 0.56));
-}
-
-.chat-item.active {
-  border-color: rgba(161, 161, 170, 0.25);
-  box-shadow: inset 0 0 0 1px rgba(161, 161, 170, 0.06), 0 18px 36px rgba(0, 0, 0, 0.2);
-}
+/* S2 Task 7：.chat-list/.chat-item 族退役——容器滚动/留白改由 ChatList 的
+ * utilities 提供（滚动条隐藏以 [scrollbar-width:none] 工具类续命），条目
+ * 几何/hover/active 改由条目 utilities，未读红点（.chat-avatar::after）改由
+ * Badge 压角；图标条档形态走 sidebar 的 group-data-[collapsible=icon] 变体。
+ * .chat-list/.chat-item 类名保留作 E2E/legacy 选择器钩子。共享选择器
+ * .chat-row/.chat-name（role-list、模板弹窗仍在用）与浅色 .chat-avatar
+ * 平涂/role-tone 色板不属于本族，暂留待对应表面迁移。 */
 
 .chat-row, .role-row, .template-actions {
   display: flex;
@@ -611,84 +554,12 @@ select:focus {
   gap: 10px;
 }
 
-.chat-item-title {
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.chat-avatar {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 780;
-  line-height: 1;
-  background:
-    radial-gradient(circle at 32% 25%, rgba(255, 255, 255, 0.34), transparent 22%),
-    linear-gradient(145deg, rgba(106, 126, 140, 0.96), rgba(38, 47, 58, 0.96));
-  box-shadow: 0 13px 28px rgba(0, 0, 0, 0.32), inset 0 0 0 1px rgba(255, 255, 255, 0.11);
-}
-
-.chat-item-body {
-  min-width: 0;
-}
-
-.chat-item-side {
-  display: grid;
-  justify-items: end;
-  gap: 6px;
-  min-width: 38px;
-}
-
-.chat-time {
-  color: #71717a;
-  font-size: 10px;
-  font-weight: 680;
-  line-height: 1.35;
-  white-space: nowrap;
-}
-
 .chat-name,
 .role-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 760;
-}
-
-.chat-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 0;
-  justify-content: flex-start;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 16px;
-  line-height: 1.35;
-  text-align: left;
-}
-
-.chat-name:hover {
-  color: #ffffff;
-}
-
-.summary-line {
-  display: block;
-  overflow: hidden;
-  margin-top: 3px;
-  color: #71717a;
-  font-size: 13px;
-  line-height: 1.45;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .status-pill {
@@ -3366,24 +3237,9 @@ select:focus {
   box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.12);
 }
 
-:root[data-theme="light"] .chat-item {
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .chat-item:hover,
-:root[data-theme="light"] .chat-item.active {
-  background: #f2f3f5;
-}
-
-:root[data-theme="light"] .chat-item.active {
-  border-color: rgba(17, 24, 39, 0.08);
-  box-shadow: none;
-}
-
-:root[data-theme="light"] .chat-name:hover {
-  color: var(--text);
-}
-
+/* S2 Task 7：.chat-item/.chat-name:hover 的浅色变体随本族一并退役——
+ * hover/active 底色已由条目 utilities（bg-accent 系）承担；.chat-avatar 的
+ * 浅色描边与 role-tone 平涂色板仍被未迁移的浅色头像视觉使用，暂留。 */
 :root[data-theme="light"] .chat-avatar {
   border: 1px solid rgba(17, 24, 39, 0.1);
   background: #6b7280;

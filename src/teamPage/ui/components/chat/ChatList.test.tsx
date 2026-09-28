@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import type { GroupChat, OpenTeamStore } from '../../../../group/types'
 import { createDefaultStore } from '../../../../group/store'
 import { createTeamPageState } from '../../../appState'
 import { ChatList } from './ChatList'
+import { AppShellFrame } from '../shell/AppShellFrame'
+import { resetSidebarPrefsForTests } from '../../hooks/useSidebarPrefs'
 import { renderWithServices, type RenderWithServicesOptions } from '../../test/TestProviders'
 
 afterEach(() => {
@@ -165,20 +169,20 @@ function makeServices(overrides: Record<string, unknown>) {
   } as unknown as NonNullable<RenderWithServicesOptions['services']>
 }
 
-function makeState(order: string[], selectedChatId: string) {
+function makeState(order: string[], selectedChatId: string, names?: string[]) {
   const state = createTeamPageState()
   const store: OpenTeamStore = createDefaultStore()
   store.chatOrder = order
-  store.chatsById = Object.fromEntries(order.map(id => [id, makeChat(id)]))
+  store.chatsById = Object.fromEntries(order.map((id, index) => [id, makeChat(id, names?.[index])]))
   state.store = store
   state.selectedChatId = selectedChatId
   return state
 }
 
-function makeChat(id: string): GroupChat {
+function makeChat(id: string, name = `群聊 ${id}`): GroupChat {
   return {
     id,
-    name: `群聊 ${id}`,
+    name,
     mode: 'collaborative',
     roleIds: [],
     messageIds: [],
@@ -188,3 +192,114 @@ function makeChat(id: string): GroupChat {
     updatedAt: 1,
   }
 }
+
+/*
+ * S2 Task 7（§4.2 精修）：搜索框受控过滤 + 图标条档 Avatar-only 形态。
+ * 搜索框在侧栏组合（AppShellFrame）里，因此这两个用例照 AppShellFrame.test
+ * 的装配方式挂 #app[data-app-size] 后渲染整壳；档位默认开合由
+ * useSidebarPrefs 单例决定，用例前重置防串态。
+ */
+describe('ChatList sidebar search', () => {
+  beforeEach(() => {
+    resetSidebarPrefsForTests()
+    document.body.innerHTML = '<div id="app" class="app-shell" data-app-size="wide"></div>'
+  })
+
+  afterEach(() => {
+    cleanup()
+    document.body.innerHTML = ''
+  })
+
+  it('search input filters the visible chat list', async () => {
+    const user = userEvent.setup()
+    renderWithServices(<AppShellFrame>workspace</AppShellFrame>, {
+      state: makeState(['chat-1', 'chat-2'], 'chat-1', ['设计组', 'Dev']),
+    })
+
+    const search = screen.getByRole('textbox', { name: '搜索群聊' })
+    await user.type(search, '设计')
+
+    expect(screen.getByRole('button', { name: '切换到 设计组' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '切换到 Dev' })).toBeNull()
+
+    // 清空搜索恢复全量（过滤是受控纯派生，不入持久化）
+    await user.clear(search)
+    expect(screen.getByRole('button', { name: '切换到 设计组' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '切换到 Dev' })).toBeTruthy()
+  })
+
+  it('falls back to a no-match hint instead of the no-chats empty state', async () => {
+    const user = userEvent.setup()
+    renderWithServices(<AppShellFrame>workspace</AppShellFrame>, {
+      state: makeState(['chat-1'], 'chat-1', ['设计组']),
+    })
+
+    await user.type(screen.getByRole('textbox', { name: '搜索群聊' }), '不存在')
+
+    expect(screen.getByText('没有匹配的群聊')).toBeTruthy()
+    expect(screen.queryByText('还没有群聊')).toBeNull()
+  })
+})
+
+describe('ChatList icon-strip form (medium tier)', () => {
+  beforeEach(() => {
+    resetSidebarPrefsForTests()
+    document.body.innerHTML = '<div id="app" class="app-shell" data-app-size="medium"></div>'
+  })
+
+  afterEach(() => {
+    cleanup()
+    document.body.innerHTML = ''
+  })
+
+  it('icon-mode items show avatar-only with tooltip and keep the overflow menu reachable', () => {
+    renderWithServices(<AppShellFrame>workspace</AppShellFrame>, {
+      state: makeState(['chat-1'], 'chat-1', ['设计组']),
+    })
+
+    // medium 档默认收起 → 侧栏确实进入图标条形态（变体类的生效前提）
+    expect(document.querySelector('[data-collapsible="icon"]')).not.toBeNull()
+
+    // 群名文本容器在图标条档隐藏（视觉只剩居中 Avatar）
+    const title = document.querySelector('.chat-item-title')
+    expect(title?.className).toContain('group-data-[collapsible=icon]:hidden')
+    const summary = document.querySelector('.summary-line')
+    expect(summary?.className).toContain('group-data-[collapsible=icon]:hidden')
+    expect(document.querySelector('.chat-time')?.className).toContain('group-data-[collapsible=icon]:hidden')
+
+    // 群名经触发元素 aria-label 与 Avatar tooltip（title）可达
+    const item = screen.getByRole('button', { name: '切换到 设计组' })
+    expect(item.getAttribute('aria-label')).toContain('设计组')
+    expect(item.querySelector('.chat-avatar')?.getAttribute('title')).toBe('设计组')
+
+    // 溢出动作菜单（重命名/导出/删除…）在图标条档仍可达
+    expect(screen.getByRole('button', { name: '打开 设计组 的群聊菜单' })).toBeTruthy()
+  })
+})
+
+describe('ChatList legacy.css retirement', () => {
+  it('retires the .chat-list/.chat-item families from legacy.css', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+
+    for (const retired of [
+      '.chat-list',
+      '.chat-item',
+      '.chat-item-title',
+      '.chat-item-body',
+      '.chat-item-side',
+      '.chat-time {',
+      '.summary-line {',
+      '.chat-name {',
+      '.chat-name:hover',
+    ]) {
+      expect(cssWithoutComments, `expected ${retired} to be retired`).not.toContain(retired)
+    }
+
+    // 共享规则保留：role-list / 模板弹窗（.role-row/.role-name/.template-actions）
+    // 与浅色 role-tone 平涂尚未迁移
+    expect(cssWithoutComments).toContain('.role-row')
+    expect(cssWithoutComments).toContain('.role-name')
+    expect(cssWithoutComments).toContain('.chat-avatar.role-tone-0')
+  })
+})

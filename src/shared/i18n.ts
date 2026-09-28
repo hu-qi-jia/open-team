@@ -26,6 +26,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   '还没有群聊': 'No chats yet',
   '在上方创建一个群聊，然后从人员库添加人员。': 'Create a chat above, then add people from the library.',
   '新建群聊': 'New chat',
+  '搜索群聊': 'Search chats',
+  '没有匹配的群聊': 'No matching chats',
   '编辑名称': 'Edit name',
   '复制群聊': 'Duplicate chat',
   '导出记录': 'Export records',

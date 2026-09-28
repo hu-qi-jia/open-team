@@ -6,7 +6,7 @@ import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { getAppState } from '../../lib/appStore'
 import { showError } from '../../lib/toast'
-import { deriveChatListItems, isChatListItemsEqual, type ChatListItemVM } from '../../lib/chatListItems'
+import { deriveChatListItems, filterChatListItems, isChatListItemsEqual, type ChatListItemVM } from '../../lib/chatListItems'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,7 @@ import {
 } from '../ui/alert-dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu'
 import { Button } from '../ui/button'
+import { Badge } from '../ui/badge'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 
 /*
@@ -27,11 +28,16 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '..
  * - 切群 / 重命名 / 复制走 services.runCommand 与 services.switchChat
  * - 清空 / 删除的 window.confirm 升级为 AlertDialog（已知视觉偏差，按计划）
  * - 「关闭群聊」原样无确认；导出为纯客户端下载
+ * - §4.2 精修：query 由侧栏组合（AppShellFrame 搜索框，组件本地态）下推，
+ *   经 filterChatListItems 纯过滤；图标条档（sidebar collapsible=icon，S1 的
+ *   group-data-[collapsible=icon] 变体机制）每项只露居中 Avatar + 未读 Badge，
+ *   群名走触发元素 aria-label 与 Avatar title（tooltip），溢出动作菜单保留。
  */
-export function ChatList() {
+export function ChatList({ query = '' }: { query?: string }) {
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
   const services = useServices()
   const items = useStoreSelector(deriveChatListItems, isChatListItemsEqual)
+  const visibleItems = filterChatListItems(items, query)
   const [confirmTarget, setConfirmTarget] = useState<{ kind: 'clear' | 'delete'; chat: ChatListItemVM } | undefined>(undefined)
 
   const ui = (source: string) => translateUi(source, language)
@@ -82,7 +88,7 @@ export function ChatList() {
   }
 
   return (
-    <div id="chat-list" className="chat-list min-h-0 flex-1 space-y-0.5 overflow-y-auto px-2 py-1.5">
+    <div id="chat-list" className="chat-list min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain px-2 py-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden group-data-[collapsible=icon]:px-1">
       {items.length === 0 ? (
         <Empty className="my-4 p-3">
           <EmptyHeader>
@@ -91,12 +97,16 @@ export function ChatList() {
             <EmptyDescription className="text-xs">{ui('在上方创建一个群聊，然后从人员库添加人员。')}</EmptyDescription>
           </EmptyHeader>
         </Empty>
-      ) : items.map(chat => (
+      ) : visibleItems.length === 0 ? (
+        <p className="px-2 py-3 text-xs text-muted-foreground">{ui('没有匹配的群聊')}</p>
+      ) : visibleItems.map(chat => (
         <section
           key={chat.id}
           className={[
             'chat-item group relative flex w-full cursor-pointer items-center gap-2.5 rounded-lg bg-none px-2 py-2 text-left outline-none transition-colors',
             'focus-visible:ring-2 focus-visible:ring-ring',
+            // 图标条档：行内边距收平、内容居中，防 48px 条内溢出（S1 评审项）
+            'group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:py-1.5',
             chat.active ? 'active bg-accent text-accent-foreground' : 'hover:bg-accent/60',
             chat.hasActivity ? 'has-activity' : '',
           ].join(' ')}
@@ -112,21 +122,28 @@ export function ChatList() {
             switchTo(chat.id)
           }}
         >
-          <div className={`chat-avatar ${chat.tone} flex size-9 shrink-0 items-center justify-center rounded-md bg-none bg-secondary text-xs font-medium text-secondary-foreground`}>{chat.initial}</div>
-          <div className="chat-item-body min-w-0 flex-1">
-            <div className="chat-row chat-item-title">
-              <button type="button" className="chat-name truncate text-sm font-medium leading-tight">{chat.name}</button>
+          {/* 头像壳：图标条档缩为 size-8 居中，未读角标（原 .chat-avatar::after 红点）
+              改为 Badge 压角，两档通用；群名经 title 提供悬停 tooltip */}
+          <span className="relative shrink-0" aria-hidden="true">
+            <div className={`chat-avatar ${chat.tone} flex size-9 shrink-0 items-center justify-center rounded-md bg-none bg-secondary text-xs font-medium text-secondary-foreground group-data-[collapsible=icon]:size-8`} title={chat.name}>{chat.initial}</div>
+            {chat.hasActivity && (
+              <Badge variant="destructive" className="absolute -right-0.5 -top-0.5 size-4 rounded-full px-1 text-[10px]" />
+            )}
+          </span>
+          <div className="chat-item-body min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <div className="chat-row chat-item-title flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+              <button type="button" className="chat-name cursor-pointer truncate text-sm font-medium leading-tight">{chat.name}</button>
             </div>
-            <div className="summary-line truncate text-xs text-muted-foreground">{chat.summary}</div>
+            <div className="summary-line mt-0.5 truncate text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">{chat.summary}</div>
           </div>
-          <div className="chat-item-side flex shrink-0 flex-col items-end gap-1">
-            <span className="chat-time text-[11px] tabular-nums text-muted-foreground/80">{chat.timeText}</span>
+          <div className="chat-item-side flex shrink-0 flex-col items-end gap-1 group-data-[collapsible=icon]:absolute group-data-[collapsible=icon]:bottom-0 group-data-[collapsible=icon]:right-0 group-data-[collapsible=icon]:gap-0">
+            <span className="chat-time text-[11px] tabular-nums text-muted-foreground/80 group-data-[collapsible=icon]:hidden">{chat.timeText}</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon-xs"
-                  className="text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+                  className="text-muted-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100 group-data-[collapsible=icon]:size-4! group-data-[collapsible=icon]:bg-background/80 group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:text-[10px]"
                   aria-label={menuAriaLabel(language, chat.name)}
                 >⋯</Button>
               </DropdownMenuTrigger>

@@ -1,10 +1,11 @@
-import type { CSSProperties, ReactNode } from 'react'
-import { Boxes, LayoutGrid, Users } from 'lucide-react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
+import { Boxes, LayoutGrid, Search, Users } from 'lucide-react'
 import { useServices } from '../../context/ServicesContext'
 import { useT } from '../../hooks/useT'
 import { useAppSizeTier } from '../../hooks/useAppShellChrome'
 import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '../ui/sidebar'
+import { Input } from '../ui/input'
 import { ChatList } from '../chat/ChatList'
 import { QuickCreateChatProvider, QuickCreateChatTrigger } from './QuickCreateChat'
 import { StoreSummary } from './StoreSummary'
@@ -25,6 +26,8 @@ export function AppShellFrame({ children }: { children: ReactNode }) {
   const services = useServices()
   const tier = useAppSizeTier()
   const sidebar = useSidebarPrefs()
+  // §4.2 搜索词：组件本地 UI 态（不入 store/持久化），经 prop 下推 ChatList 过滤
+  const [chatQuery, setChatQuery] = useState('')
 
   const collapsible = tier === 'compact' ? 'offcanvas' : 'icon'
   const open = sidebar.userOpen ?? tier === 'wide'
@@ -52,11 +55,25 @@ export function AppShellFrame({ children }: { children: ReactNode }) {
             <div className="px-2 pb-1.5 group-data-[collapsible=icon]:px-0">
               <QuickCreateChatTrigger />{/* 全宽 primary 观感，样式调整见 QuickCreateChat.tsx */}
             </div>
+            {/* §4.2 搜索框：受控过滤群列表；图标条形态整行隐藏（同 StoreSummary，
+                48px 条内放不下 h-9 输入框，且该档条目本就只露 Avatar） */}
+            <div className="px-2 pb-1.5 group-data-[collapsible=icon]:hidden">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                <Input
+                  value={chatQuery}
+                  onChange={event => setChatQuery(event.target.value)}
+                  className="h-9 pl-8"
+                  placeholder={t('搜索群聊')}
+                  aria-label={t('搜索群聊')}
+                />
+              </div>
+            </div>
           </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupContent>
-                <ChatList />{/* #chat-list id 保留，条目视觉沿现状，S2 精修（含搜索框） */}
+                <ChatList query={chatQuery} />{/* #chat-list id 保留；§4.2 精修（搜索过滤 + 图标条形态） */}
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
