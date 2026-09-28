@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { cn } from 'cn'
-import { Users } from 'lucide-react'
+import { ArrowUpRight, FileText, LogIn, RotateCw, Trash2, Users } from 'lucide-react'
 import type { GroupRole, RoleStatus } from '../../../../group/types'
 import { getAllRoleTemplates } from '../../../../group/roleTemplates'
 import { localizeRoleTemplate, normalizeLanguage, translateUi } from '../../../../shared/i18n'
@@ -248,7 +248,7 @@ export function RolePanel() {
               type="button"
               aria-label={ui('AI 站点登录')}
               onClick={() => services.openAiSiteLogin()}
-            >◇</Button>
+            ><LogIn aria-hidden="true" /></Button>
           </div>
         </SheetHeader>
         {/* 原 .role-scroll 的 padding/overflow（legacy 14px 14px 22px）已翻成 utilities */}
@@ -463,7 +463,7 @@ function RoleCard(props: RoleCardProps) {
           <span className="role-meta-item shrink-0">{roleConnectionStatusText(role, ui)}</span>
         </div>
         {role.status === 'error' && (
-          <div className="reference-box mt-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
+          <div className="reference-box mx-0 mb-0 mt-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
         )}
       </div>
       <div className="role-card-actions flex flex-col gap-0.5">
@@ -479,7 +479,7 @@ function RoleCard(props: RoleCardProps) {
             event.stopPropagation()
             props.onShowPromptDetail()
           }}
-        ><PromptDetailIcon /></Button>
+        ><FileText className="size-3.5" aria-hidden="true" /></Button>
         <Button
           type="button"
           variant="ghost"
@@ -493,7 +493,7 @@ function RoleCard(props: RoleCardProps) {
             event.stopPropagation()
             props.onRefresh()
           }}
-        >↻</Button>
+        ><RotateCw className="size-3.5" aria-hidden="true" /></Button>
         <Button
           type="button"
           variant="ghost"
@@ -505,7 +505,7 @@ function RoleCard(props: RoleCardProps) {
             event.stopPropagation()
             props.onJump()
           }}
-        >↗</Button>
+        ><ArrowUpRight className="size-3.5" aria-hidden="true" /></Button>
         <Button
           type="button"
           variant="ghost"
@@ -520,38 +520,12 @@ function RoleCard(props: RoleCardProps) {
             event.stopPropagation()
             props.onRequestDelete()
           }}
-        ><TrashIcon /></Button>
+        ><Trash2 className="size-3.5" aria-hidden="true" /></Button>
       </div>
     </Card>
   )
 }
 
-function TrashIcon(): React.ReactNode {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" className="size-3.5" fill="currentColor">
-      <path d="M9 4h6l1 2h4v2H4V6h4l1-2Zm-2 6h10l-.7 9.1A2 2 0 0 1 14.3 21H9.7a2 2 0 0 1-2-1.9L7 10Zm3 2v6h1.6v-6H10Zm2.4 0v6H14v-6h-1.6Z" />
-    </svg>
-  )
-}
-
-function PromptDetailIcon(): React.ReactNode {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      focusable="false"
-      className="size-3.5"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M7 3.8h6.4L17 7.4V20H7V3.8Z" />
-      <path d="M13.2 4v3.6h3.6" />
-      <path d="M9.6 11h4.8" />
-      <path d="M9.6 14h4.8" />
-      <path d="M9.6 17h2.8" />
-    </svg>
-  )
-}
+// 成员卡的动作图标统一走 lucide（原为自绘 <svg> + 文本字形 ↻/↗ 混用，
+// 字体度量与 svg 的视觉中心不同 → 同一列按钮的 icon 看起来对不齐）。
+// PromptDetailIcon / TrashIcon 两个本文件私有组件已随之下线。

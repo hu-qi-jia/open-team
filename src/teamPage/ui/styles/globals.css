@@ -160,9 +160,11 @@
     /*
      * 注意：不能把 legacy 的 --muted 重映射到 --muted-foreground——
      * shadcn token 块（未分层）里的 --muted 是 muted 背景 token，
-     * bg-muted 等 utilities 依赖它；legacy 里把 var(--muted) 当文字色
-     * 用的规则（浅色 .message-name 等）由组件内
-     * text-muted-foreground utilities 逐个覆盖。
+     * bg-muted 等 utilities 依赖它。
+     * 2026-09-28：legacy 侧曾指望「组件内 text-muted-foreground utilities
+     * 逐个覆盖」，实测漏网者两主题双双不可读（取到的是背景 token）；已改为
+     * 在 legacy.css 源头把文字色指到 --muted-foreground，legacy 的 --muted
+     * 声明一并删除。
      */
     --subtle: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
     --brand: var(--primary);
@@ -325,12 +327,6 @@
     transform: none;
   }
 
-  .app-shell.fullscreen .floating-toolbar {
-    left: auto;
-    right: 18px;
-    top: 6px;
-  }
-
   /* S2 Task 4：.app-shell.fullscreen .message-inner / .messages 两条随
      legacy 消息族退役——消息几何（水平内边距、宽度上限）已由 Task 3 的
      720px 列容器统一承担，全屏态不再有独立的放宽逻辑。 */
@@ -453,7 +449,8 @@
   .markdown-body blockquote {
     border-left: 3px solid rgba(83, 230, 166, 0.6);
     padding-left: 10px;
-    color: var(--muted);
+    /* 与 legacy 同因：文字色不能用背景 token --muted（2026-09-28 修） */
+    color: var(--muted-foreground);
   }
 
   .markdown-body a {
@@ -518,7 +515,7 @@
     border-radius: 999px;
     padding: 0 9px;
     background: rgba(113, 113, 122, 0.08);
-    color: var(--muted);
+    color: var(--muted-foreground);
     cursor: pointer;
     font-size: 11px;
     font-weight: 820;
@@ -595,7 +592,10 @@
   .add-person-site-option {
     border-color: rgba(113, 113, 122, 0.22);
     background: rgba(113, 113, 122, 0.08);
-    color: var(--muted);
+    /* 不能再写死的 color：此前是 var(--muted)（背景 token，死值），且在
+       暗色下同特异性、源序更晚，把上方 .site-pill-<站点> 的站别色压掉，
+       站点 pill 全变深灰不可读。交给 .site-pill / .site-pill-<站点> 定色
+       （浅色另有 :root[data-theme="light"] .add-person-site-option.active） */
   }
 
   .add-person-site-option.active {

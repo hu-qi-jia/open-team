@@ -7,7 +7,7 @@ import { useSidebarPrefs } from '../../hooks/useSidebarPrefs'
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from '../ui/sidebar'
 import { Input } from '../ui/input'
 import { ChatList } from '../chat/ChatList'
-import { QuickCreateChatProvider, QuickCreateChatTrigger } from './QuickCreateChat'
+import { QuickCreateChatForm, QuickCreateChatProvider, QuickCreateChatTrigger } from './QuickCreateChat'
 import { StoreSummary } from './StoreSummary'
 import { SettingsMenu } from './SettingsMenu'
 import { SidebarResizeHandle } from './SidebarResizeHandle'
@@ -61,6 +61,10 @@ export function AppShellFrame({ children }: { children: ReactNode }) {
             <div className="px-2 pb-1.5 group-data-[collapsible=icon]:px-0">
               <QuickCreateChatTrigger />{/* 全宽 primary 观感，样式调整见 QuickCreateChat.tsx */}
             </div>
+            {/* 快速建群表单：原位展开（非浮层），展开时把下方 SidebarContent 往下推。
+                AppShell v2 建新壳时漏挂了这行（旧 Sidebar.tsx 有、计划里漏写），
+                导致触发钮点击后状态翻转却无人消费 = 「点了没反应」。 */}
+            <QuickCreateChatForm />
             {/* §4.2 搜索框：受控过滤群列表；图标条形态整行隐藏（同 StoreSummary，
                 48px 条内放不下 h-9 输入框，且该档条目本就只露 Avatar） */}
             <div className="px-2 pb-1.5 group-data-[collapsible=icon]:hidden">

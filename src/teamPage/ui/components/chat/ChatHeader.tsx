@@ -96,9 +96,11 @@ export function ChatHeader() {
 
   return (
     <TooltipProvider delayDuration={200}>
-      {/* compact 档右侧让出窗控圆点带（floating-toolbar absolute right:18px +
-          3×11px 圆点 ≈ 63px；78px 让位留 ~15px 间距，圆点几何零改动，R2-b） */}
-      <header className={`flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-4${tier === 'compact' ? ' pr-[78px]' : ''}`}>
+      {/* 右侧让出窗控钮带（#floating-toolbar = absolute top-1.5 right-3 起的
+          3×24px 钮 + 2×2px 间距 = 88px；pr-[96px] 留 8px 间距）。此前只在
+          compact 档让位 78px，wide/medium 档三钮直接压在头部按钮上——三档
+          统一让位（用户 2026-09-28 报的窗控钮问题之一）。 */}
+      <header className="flex h-14 shrink-0 items-center gap-1 border-b border-border bg-background px-4 pr-[96px]">
         {tier === 'compact' && (
           <Tooltip>
             <TooltipTrigger asChild>

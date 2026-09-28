@@ -308,8 +308,11 @@ function AddPersonRow({ item, store, language, ui, checked, onToggle, onToggleSi
       : addPersonMetaText(item, language)
   return (
     <div className="select-row">
+      {/* 裸 checkbox 会被 legacy 的全局 `input{height:36px;padding:0 11px;width:100%}`
+          撑成 36px 高、横向 padding 22px 的盒子（legacy 层晚于 preflight，压得住） */}
       <input
         type="checkbox"
+        className="size-4 shrink-0"
         value={item.key}
         checked={checked}
         disabled={item.chatSites.length === 0}

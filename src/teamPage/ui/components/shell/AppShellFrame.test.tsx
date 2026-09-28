@@ -78,6 +78,46 @@ describe('AppShellFrame chat search reset on icon-rail collapse', () => {
   })
 })
 
+/*
+ * ① 「新建群聊」点了没反应（用户 2026-09-28 报）：AppShell v2 建新壳时漏挂
+ * <QuickCreateChatForm/>，触发钮自己把 open 翻成 true 却无人消费 → 表单永不出现。
+ * 本用例钉的就是「壳级挂载」这件事本身：QuickCreateChat.test.tsx 自己把表单拼进
+ * 测试树，所以缺陷存在时它仍然全绿，拦不住漏挂。
+ * 顺带钉住图标条形态的补救：收起态点触发钮必须先展开侧栏（否则 48px 条内表单不可见）。
+ */
+describe('AppShellFrame quick-create form mounting', () => {
+  beforeEach(() => {
+    resetSidebarPrefsForTests()
+    document.body.innerHTML = '<div id="app" class="app-shell" data-app-size="wide"></div>'
+  })
+
+  it('mounts #create-chat-form when the trigger is clicked', async () => {
+    const user = userEvent.setup()
+    renderWithServices(<AppShellFrame>workspace</AppShellFrame>, { state: makeState(['设计组']) })
+
+    expect(document.querySelector('#create-chat-form')).toBeNull()
+
+    const trigger = screen.getByRole('button', { name: '新建群聊' })
+    await user.click(trigger)
+
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    expect(document.querySelector('#create-chat-form')).not.toBeNull()
+  })
+
+  it('expands the icon rail before opening the form from a collapsed sidebar', async () => {
+    const user = userEvent.setup()
+    renderWithServices(<AppShellFrame>workspace</AppShellFrame>, { state: makeState(['设计组']) })
+
+    await user.click(screen.getByRole('button', { name: 'Toggle Sidebar' }))
+    expect(document.querySelector('[data-state="collapsed"]')).not.toBeNull()
+
+    await user.click(screen.getByRole('button', { name: '新建群聊' }))
+
+    expect(document.querySelector('[data-state="expanded"]')).not.toBeNull()
+    expect(document.querySelector('#create-chat-form')).not.toBeNull()
+  })
+})
+
 // 群列表夹具：最小合法 GroupChat（沿用 ChatList.test.tsx 的本地夹具写法）
 function makeState(names: string[]) {
   const state = createTeamPageState()

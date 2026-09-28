@@ -25,10 +25,11 @@ function useQuickCreateChat(): QuickCreateChatContextValue {
 
 /*
  * 快速建群（原 #quick-create-chat + #create-chat-form 整体 React 化）。
- * 触发钮在 sidebar panel-header 内、表单在其后（原 DOM 结构保持——表单展开时
- * 原地把 #chat-list 往下推，不用浮层）。因此拆成复合组件经 context 共享状态。
- *
- * 已知偏差（后续用户重设计时再换 Popover）：原交互就是原位展开，非浮层。
+ * 触发钮在 SidebarHeader 内、表单紧随其后（新壳 AppShellFrame 渲染二者——
+ * AppShell v2 建壳时曾漏挂表单，S3 后修复）。交互是**原位展开**非浮层：
+ * 表单展开时把下方 SidebarContent / #chat-list 往下推。
+ * 图标条形态（collapsible=icon 且收起）下表单整段 hidden，触发钮点击会
+ * 先展开侧栏再开表单，避免「点了没反应」。
  * 「从模板中创建」经 uiBus 打开 <GroupTemplateModal/>（P4d 起 React 侧
  * 直连）；模板确认后弹窗经 'close-create-chat-popover' 命令收回本表单。
  */
@@ -59,7 +60,7 @@ export function QuickCreateChatTrigger() {
   // 隐藏），tooltip 仅在收起态弹出（同 SidebarMenuButton 的 hidden 门控）。
   // 展开态（wide / compact 唤出）保持全宽 primary + 文字。id/aria/逻辑不动。
   // 组件必须位于 SidebarProvider 内（tooltip 由其 TooltipProvider 承载）。
-  const { isMobile, state } = useSidebar()
+  const { isMobile, state, setOpen } = useSidebar()
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -70,7 +71,12 @@ export function QuickCreateChatTrigger() {
           aria-label={t('新建群聊')}
           aria-controls="chat-create-popover"
           aria-expanded={open}
-          onClick={openPopover}
+          onClick={() => {
+            // 图标条形态（medium 档，或 wide 手动收起）里表单在 48px 条内不可见：
+            // 先展开侧栏再开表单，否则用户看到的是「点了没反应」。
+            if (state === 'collapsed') setOpen(true)
+            openPopover()
+          }}
         >
           <Plus className="size-4 shrink-0" aria-hidden="true" />
           <span className="truncate group-data-[collapsible=icon]:hidden">{t('新建群聊')}</span>
@@ -112,7 +118,7 @@ export function QuickCreateChatForm() {
   }
 
   return (
-    <form id="create-chat-form" className="chat-create mx-3 mb-2 space-y-3 rounded-lg border border-border bg-popover p-3 shadow-sm" onSubmit={submit}>
+    <form id="create-chat-form" className="chat-create mx-2 space-y-3 rounded-lg border border-border bg-popover p-3 shadow-sm group-data-[collapsible=icon]:hidden" onSubmit={submit}>
       <div id="chat-create-popover">
         <h3 className="text-sm font-semibold">{t('新建群聊')}</h3>
       </div>
