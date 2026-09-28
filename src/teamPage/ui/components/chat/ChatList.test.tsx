@@ -12,6 +12,7 @@ import { createTeamPageState } from '../../../appState'
 import { ChatList } from './ChatList'
 import { AppShellFrame } from '../shell/AppShellFrame'
 import { resetSidebarPrefsForTests } from '../../hooks/useSidebarPrefs'
+import { SidebarProvider } from '../ui/sidebar'
 import { renderWithServices, type RenderWithServicesOptions } from '../../test/TestProviders'
 
 afterEach(() => {
@@ -22,16 +23,32 @@ describe('ChatList', () => {
   it('renders chat items with name, summary, time and active state', () => {
     const state = makeState(['chat-1', 'chat-2'], 'chat-1')
 
-    renderWithServices(<ChatList />, { state })
+    renderChatList({ state })
 
-    expect(screen.getByRole('button', { name: '切换到 群聊 chat-1' }).className).toContain('active')
-    expect(screen.getByRole('button', { name: '切换到 群聊 chat-2' }).className).not.toContain('active')
+    // SidebarMenuButton 原语类名自带 data-[active=true]:* 变体串，钩子用 classList 断言
+    expect(screen.getByRole('button', { name: '切换到 群聊 chat-1' }).classList.contains('active')).toBe(true)
+    expect(screen.getByRole('button', { name: '切换到 群聊 chat-2' }).classList.contains('active')).toBe(false)
+    expect(screen.getByRole('button', { name: '切换到 群聊 chat-1' }).getAttribute('data-active')).toBe('true')
     expect(screen.getByText('群聊 chat-1')).toBeTruthy()
     expect(document.querySelector('#chat-list .summary-line')?.textContent).toContain('暂无消息')
   })
 
+  it('renders items as SidebarMenu/SidebarMenuButton with isActive wiring', () => {
+    renderChatList({ state: makeState(['chat-1', 'chat-2'], 'chat-1') })
+
+    // §4.2 词汇锁定：ul[data-sidebar=menu] > li > button[data-sidebar=menu-button]
+    expect(document.querySelector('[data-sidebar="menu"]')).not.toBeNull()
+    const buttons = [...document.querySelectorAll('[data-sidebar="menu-button"]')]
+    expect(buttons).toHaveLength(2)
+    expect(buttons[0]!.getAttribute('data-active')).toBe('true')
+    expect(buttons[0]!.classList.contains('active')).toBe(true)
+    expect(buttons[1]!.getAttribute('data-active')).toBe('false')
+    // 选中视觉走 isActive（data-active → bg-sidebar-accent，与 --accent 同值）
+    expect(buttons[0]!.className).toContain('data-[active=true]:bg-sidebar-accent')
+  })
+
   it('shows the empty state when there are no chats', () => {
-    renderWithServices(<ChatList />, {})
+    renderChatList({})
 
     expect(screen.getByText('还没有群聊')).toBeTruthy()
     expect(screen.getByText('在上方创建一个群聊，然后从人员库添加人员。')).toBeTruthy()
@@ -39,17 +56,23 @@ describe('ChatList', () => {
 
   it('switches chats through services.switchChat on click and keyboard', async () => {
     const user = userEvent.setup()
-    const { services } = renderWithServices(<ChatList />, { state: makeState(['chat-1', 'chat-2'], 'chat-1') })
+    const { services } = renderChatList({ state: makeState(['chat-1', 'chat-2'], 'chat-1') })
 
     await user.click(screen.getByRole('button', { name: '切换到 群聊 chat-2' }))
 
     expect(services.switchChat).toHaveBeenCalledWith('chat-2')
+
+    // SidebarMenuButton 是原生 button：聚焦后 Enter 原生触发切群
+    screen.getByRole('button', { name: '切换到 群聊 chat-1' }).focus()
+    await user.keyboard('{Enter}')
+
+    expect(services.switchChat).toHaveBeenCalledWith('chat-1')
   })
 
   it('renames a chat via the prompt and GROUP_CHAT_UPDATE', async () => {
     const user = userEvent.setup()
     const prompt = vi.spyOn(window, 'prompt').mockReturnValue('  新名字  ')
-    const { services } = renderWithServices(<ChatList />, { state: makeState(['chat-1'], 'chat-1') })
+    const { services } = renderChatList({ state: makeState(['chat-1'], 'chat-1') })
 
     await openChatMenu(user, '群聊 chat-1')
     await user.click(screen.getByRole('menuitem', { name: '编辑名称' }))
@@ -61,7 +84,7 @@ describe('ChatList', () => {
 
   it('duplicates a chat through GROUP_CHAT_DUPLICATE', async () => {
     const user = userEvent.setup()
-    const { services } = renderWithServices(<ChatList />, { state: makeState(['chat-1'], 'chat-1') })
+    const { services } = renderChatList({ state: makeState(['chat-1'], 'chat-1') })
 
     await openChatMenu(user, '群聊 chat-1')
     await user.click(screen.getByRole('menuitem', { name: '复制群聊' }))
@@ -84,7 +107,7 @@ describe('ChatList', () => {
     }) as typeof document.createElement)
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
-    renderWithServices(<ChatList />, { state: makeState(['chat-1'], 'chat-1') })
+    renderChatList({ state: makeState(['chat-1'], 'chat-1') })
 
     await openChatMenu(user, '群聊 chat-1')
     await user.click(screen.getByRole('menuitem', { name: '导出记录' }))
@@ -104,7 +127,7 @@ describe('ChatList', () => {
   it('closes chat frames without confirmation, then drops the host frames', async () => {
     const user = userEvent.setup()
     const iframeHost = { removeChat: vi.fn(), restoreChat: vi.fn() }
-    const { services } = renderWithServices(<ChatList />, {
+    const { services } = renderChatList({
       state: makeState(['chat-1'], 'chat-1'),
       services: makeServices({ iframeHost }),
     })
@@ -118,7 +141,7 @@ describe('ChatList', () => {
 
   it('clears messages only after the AlertDialog confirmation', async () => {
     const user = userEvent.setup()
-    const { services } = renderWithServices(<ChatList />, { state: makeState(['chat-1'], 'chat-1') })
+    const { services } = renderChatList({ state: makeState(['chat-1'], 'chat-1') })
 
     await openChatMenu(user, '群聊 chat-1')
     await user.click(screen.getByRole('menuitem', { name: '清空消息' }))
@@ -139,7 +162,7 @@ describe('ChatList', () => {
 
   it('deletes a chat only after the AlertDialog confirmation', async () => {
     const user = userEvent.setup()
-    const { services } = renderWithServices(<ChatList />, { state: makeState(['chat-1'], 'chat-1') })
+    const { services } = renderChatList({ state: makeState(['chat-1'], 'chat-1') })
 
     await openChatMenu(user, '群聊 chat-1')
     await user.click(screen.getByRole('menuitem', { name: '删除群聊' }))
@@ -155,6 +178,14 @@ describe('ChatList', () => {
 
 async function openChatMenu(user: ReturnType<typeof userEvent.setup>, chatName: string): Promise<void> {
   await user.click(screen.getByRole('button', { name: `打开 ${chatName} 的群聊菜单` }))
+}
+
+// SidebarMenuButton 无条件消费 useSidebar()，裸 <ChatList/> 渲染需套 SidebarProvider
+function renderChatList(options: RenderWithServicesOptions = {}) {
+  return renderWithServices(
+    <SidebarProvider><ChatList /></SidebarProvider>,
+    options,
+  )
 }
 
 function makeServices(overrides: Record<string, unknown>) {

@@ -73,7 +73,7 @@ export function AppShellFrame({ children }: { children: ReactNode }) {
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupContent>
-                <ChatList query={chatQuery} />{/* #chat-list id 保留；§4.2 精修（搜索过滤 + 图标条形态） */}
+                <ChatList query={chatQuery} />{/* #chat-list id 保留；条目为 SidebarMenu/SidebarMenuButton 词汇（§4.2 精修：搜索过滤 + 图标条形态） */}
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
