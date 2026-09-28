@@ -20,22 +20,31 @@
  * - 共享族（T3 的「不得删」清单）：打开「全部笔记」弹窗，.notes-editor /
  *   .note-tool-btn 仍有非零尺寸与 legacy 声明的背景/边框/内边距；
  * - legacy 审计（s3-12）：**剥注释口径**（先例：ChatList.test.tsx 的
- *   legacy retirement 用例）——legacy.css 中 .role-panel/.role-scroll/
- *   .role-card/.role-avatar/.role-meta/.status-pill/.status-/.notes-panel/
- *   .notes-resize-handle/.panel-header/.note-scope- 零命中；
- *   .orchestration-stage-canvas 只断言「宿主基块（裸选择器规则）」零命中
- *   ——`.orchestration-stage-canvas .x6-*` 后代族 10 条 + 浅色 1 条属 S6 范围，
- *   T3 报告已声明保留（CanvasPortal.test.tsx 同口径）；
+ *   legacy retirement 用例）——legacy.css 中退役 + 归位共 23 个 token 零命中
+ *   （T2/T3 的 11 个族 + T2 台账声明零残留的 role 族 9 个 + T4 归位后 legacy
+ *   已归零的 3 簇 `.role-site-badge`/`.role-frame-site`/`.orchestration-person-site`；
+ *   `.role-panel-actions` 被前缀 token `.role-panel` 吸收）；
+ *   `.orchestration-stage-canvas` 断「宿主基块（裸选择器规则）零命中」+ 逐处扫描
+ *   每一处出现都必须是「空格 + .x6-」后代选择器 + 计数硬断言 === 11
+ *   （深色 10 + 浅色 1，属 **S6 范围**、T3 报告已声明保留——**S6 退役后本数需
+ *   归零并改数**；`CanvasPortal.test.tsx` 只断 React 侧类名，不读 legacy.css）；
  *   .role-tone-/.site-pill 在 legacy 零命中且在 globals.css **components 层**
  *   命中；T4 范围扩张的 4 簇（.add-person-site-option 族、.role-site-badge、
  *   #iframe-host .role-frame-site、.orchestration-person-site）同样在
- *   components 层；dist/team.css 按 @layer 切块复核（退役族全层零命中、
+ *   components 层（其中 `.add-person-site-option` 在 legacy 还剩 1 条浅色例外，
+ *   记录在案、不写硬零）；dist/team.css 按 @layer 切块复核（退役族全层零命中、
  *   色板落在 components 层）并确认新增 utilities 真的进了产物
  *   （紧贴 ${ 被静默吞掉的复检）。
  *
  * s3-1..s3-11 的可视断言组在暗色与亮色各跑一遍（s3-7 的亮色段另断抽屉背景
  * = --background，对应 T2 报告的「浅色 --card 白/深色近黑」），断言标签带
- * (dark)/(light) 相位后缀；s3-0 为亮色主题生效 sanity；s3-12 与主题无关，跑一次。
+ * (dark)/(light) 相位后缀；s3-0 为亮色主题生效 sanity；s3-12 是主题无关的静态
+ * 审计，单次执行（DoD「dark+light 双段」的字面要求经控制者裁定记为已接受偏差；
+ * S7 复拍时按新清单重跑）。
+ * s3-5 的 ③ 用「在钮元素上派发指针序列」绕过抽屉的几何遮挡，断的是终态语义
+ * （恰一次翻转），**不承担证伪 RolePanel 外点 guard 的职责**（理由见该处注释）。
+ * 退出码三态：1 = 脚本自身异常（未捕获 throw，例如元素缺失时 getComputedStyle(null)），
+ * 2 = 页面/控制台报错，3 = 断言失败。
  * s3-2 的窄视口钳制半段排在每段最末（见 runDrawerClampChecks 的注释：该检查会把
  * 钳过的壳几何写进 localStorage，相位中途做会让后续截图与壳尺寸漂移）。
  * 断言失败置 exitCode 3；控制台/页面报错置 exitCode 2。
@@ -441,12 +450,18 @@ try {
       dismissSequence.length === 1 && dismissSequence[0] === false && dismissed.open === false,
       `transitions ${JSON.stringify(dismissSequence)} (raw ${dismissed.log.length} mutations)`)
 
-    // ③ 开合钮自身：打开态下点该钮 → 终态与点击前相反，且不得「关→再开」。
+    // ③ 开合钮自身：打开态下点该钮，**测的是行为**——一次激活只翻转一次状态、
+    // 终态与点击前相反（`open` 序列去重后长度 === 1），不出现「关→再开」。
     // 几何事实（实测，非 S3 回归）：抽屉打开时它自己就盖住头部右端的钮位
-    // （legacy .role-panel 亦为 absolute right:0/z-4、宽 min(380px,100%-54px)，
-    // 覆盖范围只会更大），真实命中路径恒落在抽屉上——故这里用「在钮元素上派发
-    // 完整指针序列」的等价写法把事件送进该钮的两个处理器（Radix 外点延迟判定 +
-    // React onClick），这正是双触发风险的唯一入口；断言强度不变。
+    // （退役前 legacy .role-panel 亦为 absolute right:0/z-4、宽 min(380px,100%-54px)，
+    // 覆盖范围只会更大），真实命中路径恒落在抽屉上——故用「在钮元素上派发完整
+    // 指针序列」绕过这层几何遮挡，把事件送进该钮的处理器。
+    // ⚠ 本断言**不能证伪 RolePanel 的 onInteractOutside guard 存废**：Radix 的
+    // deferPointerDownOutside 把外点判定推迟到 click 之后（晚于 React 那个幂等的
+    // 关闭 onClick，setTimeout(0) 结算），摘掉 guard 后同一序列的输出逐字节相同
+    // （评审对照实验：把 #toggle-people-drawer 的 id 摘掉复跑，结果不变）。
+    // guard 的存废由 RolePanel.test 的非主键 pointerdown 路径守卫，本脚本不承担
+    // 该职责；这里只覆盖「打开态点该钮」这条交互路径的终态语义。
     await openDrawerByClick()
     const preToggle = await drawerState()
     const toggleProbe = await page.evaluate(async () => {
@@ -597,6 +612,18 @@ try {
       if (!panel) return null
       const rect = panel.getBoundingClientRect()
       const cs = getComputedStyle(panel)
+      // shadow 判据的对照探针：Card 原语自带 shadow-sm，若 T3 的 shadow-md 掉了，
+      // 面板的 computed shadow 会等于 shadow-sm 而不是 none——所以「非 none」恒真，
+      // 必须用 shadow-md 的签名 + 与 shadow-sm 探针不等来判定（见下方负对照断言）。
+      const shadowProbe = className => {
+        const probe = document.createElement('span')
+        probe.className = className
+        probe.style.display = 'none'
+        document.body.append(probe)
+        const shadow = getComputedStyle(probe).boxShadow
+        probe.remove()
+        return shadow
+      }
       return {
         slot: panel.getAttribute('data-slot'),
         role: panel.getAttribute('role'),
@@ -611,6 +638,8 @@ try {
         zIndex: cs.zIndex,
         cardColor: colorMatchesVar(panel, '--card'),
         boxShadow: cs.boxShadow,
+        shadowMdProbe: shadowProbe('shadow-md'),
+        shadowSmProbe: shadowProbe('shadow-sm'),
         inApp: Boolean(panel.closest('#app')),
         inlineLeft: panel.style.left,
       }
@@ -619,11 +648,20 @@ try {
       card?.position === 'fixed' && card.rectTop === 72 && Math.abs(card.rectRight - (card.viewportWidth - 24)) <= 1
       && !card.inApp && card.inlineLeft === '',
       JSON.stringify({ position: card?.position, rectTop: card?.rectTop, rectRight: card?.rectRight, viewportWidth: card?.viewportWidth, inApp: card?.inApp }))
-    check(`s3-8 (${phase}) notes card visuals: radius 10px, z-index 18, bg --card, shadow not none, data-slot=card`,
+    check(`s3-8 (${phase}) notes card visuals: radius 10px, z-index 18, bg --card, data-slot=card`,
       card?.slot === 'card' && card.tag === 'DIV' && card.radius === '10px' && card.zIndex === '18'
-      && card.cardColor === true && card.boxShadow !== 'none',
-      `slot ${card?.slot}/${card?.tag}, radius ${card?.radius}, z ${card?.zIndex}, --card match ${card?.cardColor}, shadow ${card?.boxShadow}`)
-    record(`s3-8 (${phase}) notes card box-shadow`, card?.boxShadow ?? 'missing')
+      && card.cardColor === true,
+      `slot ${card?.slot}/${card?.tag}, radius ${card?.radius}, z ${card?.zIndex}, --card match ${card?.cardColor}`)
+    const SHADOW_MD_SIGNATURE = '0px 4px 6px -1px'
+    check(`s3-8 (${phase}) notes card carries the shadow-md surface (Card base shadow-sm would survive if T3's class were dropped)`,
+      card !== null && card.boxShadow.includes(SHADOW_MD_SIGNATURE) && card.boxShadow !== card.shadowSmProbe,
+      `panel ${card?.boxShadow} | matches shadow-md probe: ${card?.boxShadow === card?.shadowMdProbe}`)
+    // 负对照：把同一判据套到页内 shadow-sm 探针上必须为 false（证明判据能红，不是恒真）
+    check(`s3-8 (${phase}) shadow-md predicate discriminates (negative control on a shadow-sm probe)`,
+      card !== null && card.shadowMdProbe.includes(SHADOW_MD_SIGNATURE) === true
+      && card.shadowSmProbe.includes(SHADOW_MD_SIGNATURE) === false,
+      `shadow-md probe ${card?.shadowMdProbe} | shadow-sm probe ${card?.shadowSmProbe}`)
+    record(`s3-8 (${phase}) notes card box-shadow`, `panel ${card?.boxShadow ?? 'missing'} | shadow-md probe ${card?.shadowMdProbe ?? '-'} | shadow-sm probe ${card?.shadowSmProbe ?? '-'}`)
     if (screenshots) await shot(page, `notes-open-${phase}`)
   }
 
@@ -873,24 +911,62 @@ try {
   const distLayers = layerBlocks(distCss)
   const distLayer = name => distLayers.filter(block => block.name === name).map(block => block.body).join('\n')
 
-  record('s3-12 legacy.css sanity', `raw ${legacyRaw.length} chars → comment-stripped ${legacyCss.length} chars; legacy 源里含 role-tone-/site-pill 字样的注释 ${legacyRaw.split('\n').filter(line => /role-tone|site-pill/.test(line)).length} 行（已按剥注释口径排除）`)
+  // 行数统计只按「含该字样的行」计（**不判定是否位于注释内**）；剥注释口径下这些行不参与断言
+  const paletteLineCount = legacyRaw.split('\n').filter(line => /role-tone|site-pill/.test(line)).length
+  record('s3-12 legacy.css sanity', `raw ${legacyRaw.length} chars → comment-stripped ${legacyCss.length} chars; raw 源里含 role-tone-/site-pill 字样的行 ${paletteLineCount} 行（未判定注释归属；剥注释后这些字样零命中）`)
 
-  // ① legacy.css 里 T2/T3 退役族的零命中
-  const retiredFamilies = ['.role-panel', '.role-scroll', '.role-card', '.role-avatar', '.role-meta', '.status-pill', '.status-', '.notes-panel', '.notes-resize-handle', '.panel-header', '.note-scope-']
-  const retiredHits = retiredFamilies.filter(token => legacyCss.includes(token))
-  check('s3-12 legacy.css has zero residue for the T2/T3 retired families (comments stripped)',
+  // ① legacy.css 里 T2/T3 退役族的零命中。
+  //    T2 台账里声明零残留的 role 族 token 共 17 个：`.role-panel-actions` 已被前缀
+  //    token `.role-panel` 吸收（本断言是子串匹配），其余 9 个本轮补入
+  //    （.role-list/.role-form/.role-description/.role-site-menu/.role-site-option/
+  //    .role-prompt-detail/.role-refresh/.role-jump/.role-delete）。
+  //    `.role-name`/`.role-row`/`.role-site-control`/`.mention-avatar` 是共享幸存者
+  //    （见 ⑤ 的存活断言），刻意不在退役清单里。
+  const retiredFamilies = [
+    '.role-panel', '.role-scroll', '.role-card', '.role-avatar', '.role-meta', '.status-pill', '.status-',
+    '.notes-panel', '.notes-resize-handle', '.panel-header', '.note-scope-',
+    '.role-list', '.role-form', '.role-description', '.role-site-menu', '.role-site-option',
+    '.role-prompt-detail', '.role-refresh', '.role-jump', '.role-delete',
+  ]
+  // T4 搬走、legacy 侧实测已归零的族外 3 簇（它们在 dist 的 components 层仍有规则，
+  // 故只进 legacy 零残留断言，不进 ⑥ 的「dist 全层零命中」）
+  const legacyRelocatedFamilies = ['.role-site-badge', '.role-frame-site', '.orchestration-person-site']
+  const legacyZeroTokens = [...retiredFamilies, ...legacyRelocatedFamilies]
+  const retiredHits = legacyZeroTokens.filter(token => legacyCss.includes(token))
+  check('s3-12 legacy.css has zero residue for the retired + relocated families (comments stripped)',
     retiredHits.length === 0,
-    retiredHits.length === 0 ? `${retiredFamilies.length} tokens all absent` : `still present: ${retiredHits.join(', ')}`)
+    retiredHits.length === 0 ? `${legacyZeroTokens.length} tokens all absent` : `still present: ${retiredHits.join(', ')}`)
+  // 记录在案的例外（不写成硬零）：浅色共享组内的
+  // :root[data-theme="light"] .add-person-site-option —— 搬前搬后都被同特异性更晚的
+  // 浅色 .site-pill/.site-pill-* 压住（长期 dead），属 S4 人员库重写范围。
+  record('s3-12 legacy.css recorded exception', `:root[data-theme="light"] .add-person-site-option 仍有 1 条（legacy.css 原文 2832 行；搬前即 dead、S4 范围），故未列入硬零断言；其余 .add-person-site-option 规则均在 components 层（globals.css×8 / dist components×8）`)
 
-  // ② .orchestration-stage-canvas：只断宿主基块（裸选择器）退役
-  //    ——`.orchestration-stage-canvas .x6-*` 后代族 + 浅色 1 条属 S6 范围，T3 报告
-  //    已声明保留，CanvasPortal.test.tsx 同口径。
+  // ② .orchestration-stage-canvas：宿主基块（裸选择器）必须退役；
+  //    `.orchestration-stage-canvas .x6-*` 后代族 11 条（深色 10 + 浅色 1）属 **S6 范围**、
+  //    T3 报告已声明保留——本数被硬断言，**S6 退役后本数需归零并同步改数**。
+  //    另外逐处扫描：每一处出现都必须紧跟「空格 + .x6-」，防止 :hover / 复合形态
+  //    （.orchestration-stage-canvas:hover{、.orchestration-stage-canvas.x6-x{）漏网。
   const canvasHostRule = /\.orchestration-stage-canvas\s*[,{]/
   const canvasDescendantCount = countOccurrences(legacyCss, '.orchestration-stage-canvas')
   check('s3-12 legacy.css retires the bare .orchestration-stage-canvas host block',
     canvasHostRule.test(legacyCss) === false,
-    `bare selector rule ${canvasHostRule.test(legacyCss) ? 'still present' : 'absent'}; retained .x6-* descendant rules ${canvasDescendantCount}`
+    `bare selector rule ${canvasHostRule.test(legacyCss) ? 'still present' : 'absent'}`
   )
+  check('s3-12 legacy.css keeps exactly the 11 S6-scope .orchestration-stage-canvas .x6-* descendant rules (S6 retirement must zero this number)',
+    canvasDescendantCount === 11,
+    `occurrences ${canvasDescendantCount}`
+  )
+  const canvasViolations = []
+  const canvasScan = /\.orchestration-stage-canvas/g
+  for (let match = canvasScan.exec(legacyCss); match !== null; match = canvasScan.exec(legacyCss)) {
+    const tail = legacyCss.slice(match.index + match[0].length, match.index + match[0].length + 8)
+    if (!/^\s+\.x6-/.test(tail)) canvasViolations.push(legacyCss.slice(match.index, match.index + 64).replace(/\s+/g, ' '))
+  }
+  check('s3-12 every legacy .orchestration-stage-canvas occurrence is a .x6-* descendant selector',
+    canvasViolations.length === 0,
+    canvasViolations.length === 0
+      ? `${canvasDescendantCount}/${canvasDescendantCount} hits are "… .x6-…"`
+      : `${canvasViolations.length} violation(s): ${canvasViolations.join(' | ')}`)
 
   // ③ .role-tone- / .site-pill：legacy 零命中（剥注释）、globals components 层命中
   const paletteTokens = ['.role-tone-', '.site-pill']
@@ -909,14 +985,21 @@ try {
     movedCompanions.every(token => countOccurrences(globalsComponents, token) > 0),
     companionHits.join(' '))
 
-  // ⑤ 共享族原样存活（T3 的「不得删」清单）
-  const sharedFamilies = ['.notes-editor', '.note-tool-btn', '.note-toolbar', '.all-note-', '.tiny', '.reference-box', '.mention-shortcut', '.section-title']
+  // ⑤ 共享族原样存活（T3 的「不得删」清单 + role 族里刻意保留的 4 个 token：
+  //    .role-row/.role-name 与模板卡共用、.role-site-control 被 AddPersonModal 使用
+  //    （T2 偏差 4）、.mention-avatar 被 MentionPicker 使用）
+  const sharedFamilies = [
+    '.notes-editor', '.note-tool-btn', '.note-toolbar', '.all-note-', '.tiny', '.reference-box', '.mention-shortcut', '.section-title',
+    '.role-row', '.role-name', '.role-site-control', '.mention-avatar',
+  ]
   const sharedHits = sharedFamilies.map(token => `${token}×${countOccurrences(legacyCss, token)}`)
   check('s3-12 shared families survive in legacy.css',
     sharedFamilies.every(token => countOccurrences(legacyCss, token) > 0),
     sharedHits.join(' '))
 
-  // ⑥ 构建产物：按 @layer 切块复核（退役族全层零命中；色板落在 components 层）
+  // ⑥ 构建产物：按 @layer 切块复核（退役族全层零命中；色板落在 components 层）。
+  //    只断 retiredFamilies（真退役、任何层都不该再有规则）；T4 归位的 3 簇
+  //    （legacyRelocatedFamilies）在 components 层**应该**有规则，故不在此列（见 ④）。
   const distRetiredRows = retiredFamilies.map(token => ({
     token,
     rows: distLayers.map(block => [block.name, countOccurrences(block.body, token)]).filter(([, count]) => count > 0),
