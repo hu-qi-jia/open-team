@@ -127,12 +127,16 @@ export function GroupTemplateModal() {
       // 清单里（层序只对「写了的属性」生效），不中立就会压过 760 的定高
       contentClassName="group-template-modal min-h-0"
       closeOn="escape-only"
-      // 正文行两件都在抵消壳：grid-rows 两行容纳「工具行 + 列表」（minmax(0,1fr)
-      // 底行必须能收缩，1fr 的最小尺寸是 auto 会撑破）；overflow-hidden 抵掉
+      // 正文行四件都在抵消壳：grid-rows 两行容纳「工具行 + 列表」（minmax(0,1fr)
+      // 底行必须能收缩，1fr 的最小尺寸是 auto 会撑破）；gap-4 是补回原语
+      // ui/dialog.tsx 的 gap-4——旧路径下 4 个子元素间各有 16px，壳用 gap-0 收掉后
+      // 「工具行 ↔ 列表」的间距凭空归零（复审实测：分类条底边 → 列表顶边 0px，
+      // legacy 同口径是 16px；这是既有渲染值，不是偏好）；overflow-hidden 抵掉
       // height="fixed" 给正文行加的 overflow-auto——整壳唯一的滚动容器是
       // #group-template-list；px-6 则是补回壳 p-0 收掉的原语内边距（头/脚各自
-      // px-6 py-4 补过，正文没有别的来源；jsdom 不算布局，靠 T5 的 s5-1b 量）
-      bodyClassName="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden px-6 py-4"
+      // px-6 py-4 补过，这两块归壳的既有约定，本任务不动；jsdom 不算布局，
+      // 靠真浏览器探针与 T5 的 s5-1b 量）
+      bodyClassName="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-4 overflow-hidden px-6 py-4"
       footerClassName="group-template-footer flex justify-end"
       footer={(
         <Button id="confirm-group-template-create" type="button" disabled={!selectedTemplate} onClick={confirmCreate}>
@@ -242,8 +246,12 @@ function GroupTemplateOption({ template, language, ui, selected, onSelect }: Gro
     <button
       type="button"
       className={cn(
-        // 底色从 legacy 的 linear-gradient + rgba(24,24,27,.52) 收敛成实底 token
-        // （渐变是旧调色板的装饰，shadcn 口径的卡片是实底 + 边框）
+        // 这里只接管了 legacy 的 background-color（rgba(24,24,27,.52) → bg-card）；
+        // legacy 的 background-image（linear-gradient(145deg, rgba(161,161,170,.08),
+        // transparent 46%)，legacy.css:1388-1390）**至今仍在生效**——bg-card 是
+        // background-color，压不住 background-image。实测（复审 2026-09-29）：
+        // 暗色下 option.background-image 仍带这层渐变，只有把 legacy 规则整条摘掉
+        // 它才消失。即它将在 **T4 删规则那天**才消失 → 记入「T4 时点的可见变化」
         'group-template-option relative grid min-h-[190px] cursor-pointer content-start gap-[11px] rounded-md border border-border bg-card p-4 text-left text-foreground',
         // 三态同值 + --glow remap（globals.css:177/207 两主题同值 0 0 0 1px var(--border)）
         // → ring-1 ring-border；理由同上面的分类片

@@ -297,6 +297,10 @@ describe('GroupTemplateModal', () => {
     expect(body.classList.contains('grid')).toBe(true)
     expect(body.classList.contains('grid-rows-[auto_minmax(0,1fr)]')).toBe(true)
     expect(body.classList.contains('min-h-0')).toBe(true)
+    // gap-4 补回原语 ui/dialog.tsx 的 gap-4：旧路径下 4 个子元素间各有 16px，
+    // 壳用 gap-0 收掉后「工具行 ↔ 列表」的可见间距凭空归零（真浏览器实测
+    // 分类条底边 → 列表顶边 0px，legacy 同口径 16px；jsdom 不算布局，只能钉类名）
+    expect(body.classList.contains('gap-4')).toBe(true)
     expect(body.classList.contains('px-6')).toBe(true)
     expect(body.classList.contains('overflow-hidden')).toBe(true)
     expect(body.classList.contains('overflow-auto')).toBe(false)
@@ -338,6 +342,15 @@ describe('GroupTemplateModal', () => {
       expect(variantsOf(element, 'aria-pressed:')).toEqual(variantsOf(element, 'hover:'))
       expect(variantsOf(element, 'focus-visible:')).toEqual(variantsOf(element, 'hover:'))
     }
+
+    // 浅色块 2348–2356 里那条「浅色专属 .active 内阴影」
+    // （inset 0 0 0 1px rgba(113,113,122,.14)，同规则还挂着 .theme-option/.mode-option）
+    // 必须显式中立：B 组本身没有这个属性，不中立则浅色下 active 比 hover 多一层
+    // （破坏上一条不变量），而且 T4 摘掉 2351 行那天它会无声消失。
+    // jsdom 算不出 box-shadow 的最终计算值，这里只钉类名——真浏览器实测（两主题）
+    // 与 legacy 剥离对照见 T3 报告 §7 与 _scratch/t3-probe-*.txt。
+    const chip = document.querySelector<HTMLElement>('.group-template-category-filter')!
+    expect(chip.classList.contains('shadow-none')).toBe(true)
 
     // 选中态由 aria-pressed 驱动（.active 只是 legacy 钩子，不承担视觉）
     const option = document.querySelector<HTMLElement>('.group-template-option')!
