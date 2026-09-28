@@ -1,5 +1,6 @@
 // src/teamPage/ui/hooks/useAppShellChrome.test.tsx
 // @vitest-environment jsdom
+import { useRef } from 'react'
 import { act, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { useAppShellChromeState, useAppSizeTier } from './useAppShellChrome'
@@ -10,6 +11,12 @@ function TierProbe() {
 function ChromeProbe() {
   const { minimized, fullscreen } = useAppShellChromeState()
   return <output>minimized={String(minimized)} fullscreen={String(fullscreen)}</output>
+}
+function ChromeRenderCountProbe() {
+  const renders = useRef(0)
+  renders.current += 1
+  const { minimized, fullscreen } = useAppShellChromeState()
+  return <output>renders={renders.current} minimized={String(minimized)} fullscreen={String(fullscreen)}</output>
 }
 
 describe('useAppShellChrome hooks', () => {
@@ -52,5 +59,21 @@ describe('useAppShellChrome hooks', () => {
       app.classList.add('fullscreen')
     })
     expect(screen.getByText('minimized=false fullscreen=true')).toBeTruthy()
+  })
+
+  // S1 清账回归：快照是对象态（{ minimized, fullscreen }），任何一个字段变化
+  // ——哪怕是拖拽期 dragging 这类与渲染输出无关的 class 写入——都必须产出
+  // 新快照对象并触发消费者重渲，不得因字段值未变而被 React 判等吞掉。
+  it('无关 class 字段变化后消费者仍重渲（render 计数）', async () => {
+    render(<ChromeRenderCountProbe />)
+    expect(screen.getByText('renders=1 minimized=false fullscreen=false')).toBeTruthy()
+    await act(async () => {
+      document.getElementById('app')!.classList.add('dragging')
+    })
+    expect(screen.getByText('renders=2 minimized=false fullscreen=false')).toBeTruthy()
+    await act(async () => {
+      document.getElementById('app')!.classList.add('minimized')
+    })
+    expect(screen.getByText('renders=3 minimized=true fullscreen=false')).toBeTruthy()
   })
 })

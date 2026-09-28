@@ -29,6 +29,13 @@ describe('shared i18n configuration', () => {
     // 侧栏拖宽手柄（S1 Task 7）
     expect(translateUi('调整侧栏宽度', 'en')).toBe('Resize sidebar')
     expect(translateUi('拖拽调整宽度，双击重置', 'en')).toBe('Drag to resize, double-click to reset')
+    // 浮窗铬件 aria-label/title 与 Composer 引用草稿取消钮（S2 Task 2）
+    expect(translateUi('缩小窗口', 'en')).toBe('Minimize window')
+    expect(translateUi('全屏窗口', 'en')).toBe('Fullscreen window')
+    expect(translateUi('调整窗口大小', 'en')).toBe('Resize window')
+    expect(translateUi('调整窗口宽度', 'en')).toBe('Resize width')
+    expect(translateUi('调整窗口高度', 'en')).toBe('Resize height')
+    expect(translateUi('取消引用', 'en')).toBe('Cancel quote')
   })
 
   it('localizes built-in people from the same configuration', () => {

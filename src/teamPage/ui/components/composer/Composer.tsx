@@ -6,6 +6,7 @@ import { runCommandWithReconnect } from '../../../sendWithReconnect'
 import { useServices } from '../../context/ServicesContext'
 import { getAppState, getAppStateVersion, notifyAppState } from '../../lib/appStore'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
+import { useT } from '../../hooks/useT'
 import { showError } from '../../lib/toast'
 import { deriveComposerPreview, resolveMessageTargets } from '../../lib/composerPreview'
 import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
@@ -37,6 +38,7 @@ interface ComposerApi {
 
 export function Composer() {
   const services = useServices()
+  const t = useT()
   const version = useStoreSelector(getAppStateVersion)
   const selectedChatId = useStoreSelector(state => state.selectedChatId)
 
@@ -241,7 +243,7 @@ export function Composer() {
               variant="ghost"
               size="icon-xs"
               className="ml-1 shrink-0 text-muted-foreground"
-              aria-label="取消引用"
+              aria-label={t('取消引用')}
               onClick={() => {
                 getAppState().selectedReference = undefined
                 notifyAppState()

@@ -41,6 +41,12 @@ export function readSidebarPrefsFromStorage(): SidebarPrefs {
 let prefs: SidebarPrefs = readSidebarPrefsFromStorage()
 const listeners = new Set<() => void>()
 
+/** 仅供测试：把模块单例恢复为初始字面量并通知全部订阅者，防止用例间串状态。 */
+export function resetSidebarPrefsForTests(): void {
+  prefs = { width: SIDEBAR_DEFAULT_WIDTH }
+  for (const listener of listeners) listener()
+}
+
 function updatePrefs(next: SidebarPrefs): void {
   prefs = next
   try {

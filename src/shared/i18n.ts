@@ -9,6 +9,8 @@ const UI_TRANSLATIONS: Record<string, string> = {
   '缩小窗口': 'Minimize window',
   '全屏窗口': 'Fullscreen window',
   '调整窗口大小': 'Resize window',
+  '调整窗口宽度': 'Resize width',
+  '调整窗口高度': 'Resize height',
   'OpenTeam 导航': 'OpenTeam navigation',
   '群聊': 'Chats',
   '查看全部笔记': 'View all notes',

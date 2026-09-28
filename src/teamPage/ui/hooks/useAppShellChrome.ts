@@ -24,7 +24,11 @@ export function useAppSizeTier(): AppSizeTier {
 
   useEffect(() => {
     const app = requireAppShell()
-    const observer = new MutationObserver(() => setTier(tierFromAttr(app.getAttribute('data-app-size'))))
+    const sync = (): void => setTier(tierFromAttr(app.getAttribute('data-app-size')))
+    // 挂载即对齐一次：闭掉「观察者就位前的写入」漏渲窗口；档位未变时
+    // React 按值判等跳过，不产生多余重渲。
+    sync()
+    const observer = new MutationObserver(sync)
     observer.observe(app, { attributes: true, attributeFilter: ['data-app-size'] })
     return () => observer.disconnect()
   }, [])
@@ -46,7 +50,16 @@ export function useAppShellChromeState(): AppShellChromeState {
 
   useEffect(() => {
     const app = requireAppShell()
-    const observer = new MutationObserver(() => setState(read()))
+    // class 变化一律函数式更新出「全新快照对象」：任何字段变化（包括与渲染
+    // 输出无关的 class 写入，如拖拽期 dragging）都必然以新引用通知消费者，
+    // 不会因字段值未变被 React 判等吞掉（S1 清账回归锁定该行为）。
+    const observer = new MutationObserver(() => setState(() => read()))
+    // 挂载即对齐一次：闭掉「观察者就位前的 class 写入」漏渲窗口；快照未变时
+    // 返回旧引用，React 判等跳过，不产生多余重渲。
+    setState(prev => {
+      const next = read()
+      return prev.minimized === next.minimized && prev.fullscreen === next.fullscreen ? prev : next
+    })
     observer.observe(app, { attributes: true, attributeFilter: ['class'] })
     return () => observer.disconnect()
   }, [])

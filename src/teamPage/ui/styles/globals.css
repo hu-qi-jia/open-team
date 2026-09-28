@@ -460,4 +460,16 @@
   .app-shell header [role='button'] {
     cursor: pointer;
   }
+
+  /*
+   * 最小化时 #iframe-host 的编排窗口组标题悬空残影（S1 T9 发现）：floatingWindow
+   * 只把 #app 收进托盘，#iframe-host 是 body 直子级、不在 #app 裁剪范围内，
+   * 里面的 .chat-frame-group-title 仍悬在原位。runtime 不动，纯 CSS 规避；
+   * 放 utilities 层恒压 legacy 层的同选择器规则（层序恒胜，不靠特异性）。
+   * 注意 :has() 参数不能带引号（简报里的 :has('#app.minimized') 是非法选择器，
+   * 浏览器会整条丢弃）——须写裸选择器 :has(#app.minimized)。
+   */
+  body:has(#app.minimized) .chat-frame-group-title {
+    display: none;
+  }
 }
