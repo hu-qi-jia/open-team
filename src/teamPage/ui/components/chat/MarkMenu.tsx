@@ -10,6 +10,9 @@ const FALLBACK_HEIGHT_PX = 148
  * 放不下则到下方；水平居中并夹在视口内。portal 到 body——原实现也是
  * document.body.append(markMenu)。每次渲染（含换色）后重新测量定位，
  * 与原「重建菜单节点 → 测量 → 摆位」节奏一致。
+ * S2 Task 6：换 popover 视觉——fixed 定位坐标仍由下方 useLayoutEffect
+ * 逐字写入（legacy 的 .mark-menu 定位规则已退役），色钮底色改由行内
+ * CSS 变量 + bg-[rgba(var(--mark-color-rgb),…)] utilities 消费。
  */
 export function MarkMenu({ controller }: { controller: MarkMenuController }) {
   const { selectedMark } = controller
@@ -34,13 +37,13 @@ export function MarkMenu({ controller }: { controller: MarkMenuController }) {
   if (!selectedMark) return null
 
   return createPortal(
-    <div ref={menuRef} className="mark-menu">
-      <div className="mark-color-row" aria-label="高亮颜色">
+    <div ref={menuRef} className="mark-menu fixed z-50 flex flex-col rounded-md border border-border bg-popover p-1 shadow-md">
+      <div className="mark-color-row flex items-center gap-1.5 border-b border-border px-1 pb-1.5" aria-label="高亮颜色">
         {MESSAGE_HIGHLIGHT_COLORS.map(color => (
           <button
             key={color.value}
             type="button"
-            className="mark-color-btn"
+            className={`mark-color-btn size-5 rounded-full bg-[rgba(var(--mark-color-rgb),0.9)] ring-offset-2 ring-offset-popover${selectedMark.color === color.value ? ' ring-2 ring-ring' : ''}`}
             aria-label={`高亮颜色：${color.label}`}
             aria-pressed={selectedMark.color === color.value}
             style={{ '--mark-color-rgb': messageHighlightColorRgb(color.value) } as React.CSSProperties}
@@ -65,6 +68,7 @@ function MarkMenuButton({ label, onClick, children }: { label: string; onClick: 
     <button
       type="button"
       aria-label={label}
+      className="cursor-pointer text-left rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
       onClick={event => {
         event.preventDefault()
         event.stopPropagation()

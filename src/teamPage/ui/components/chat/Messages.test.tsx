@@ -217,13 +217,16 @@ describe('team page messages (React)', () => {
     expect(entrySource).not.toContain('messageNodeCache')
     expect(entrySource).toContain('messageActions')
 
+    // S2 Task 6：图钉定位/悬停显现由 ImageGrid.tsx 行内 utilities 提供
+    const gridSource = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/chat/ImageGrid.tsx'), 'utf8')
+    expect(gridSource).toContain('message-image-download absolute right-2 bottom-2')
+    expect(gridSource).toContain('group-hover/image:opacity-100')
+
+    // .message-image-* / .mark-menu 族随迁移退役：剥掉退役注释后不得复现
     const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-    const selectorIndex = css.indexOf('.message-image-download.message-tool-btn')
-    expect(selectorIndex).toBeGreaterThan(-1)
-    const rule = css.slice(selectorIndex, css.indexOf('}', selectorIndex))
-    expect(rule).toContain('position: absolute')
-    expect(rule).toContain('right: 8px')
-    expect(rule).toContain('bottom: 8px')
+    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    expect(cssWithoutComments).not.toContain('.message-image')
+    expect(cssWithoutComments).not.toContain('.mark-menu')
   })
 
   it('does not mark a role as failed from the UI when a thinking bubble expires', () => {

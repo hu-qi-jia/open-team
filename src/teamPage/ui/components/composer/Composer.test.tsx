@@ -444,13 +444,14 @@ describe('team page composer v2 visual', () => {
     expect(form.className).toContain('relative')
   })
 
-  it('retires composer id rules from legacy.css while keeping the mention panel family', () => {
+  it('retires composer id rules and the mention panel family from legacy.css', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
 
     expect(css).not.toMatch(/#message-input\s*[,{]/)
     expect(css).not.toContain('#send-message')
     expect(css).not.toContain('#reference-draft')
-    expect(css).toMatch(/\.mention-panel\s*[,{]/)
+    // S2 Task 6：面板视觉迁入 MentionPicker.tsx utilities，legacy 族一并退役
+    expect(css).not.toMatch(/\.mention-panel\s*[,{]/)
   })
 
   it('mention button inserts @ and focuses textarea', () => {

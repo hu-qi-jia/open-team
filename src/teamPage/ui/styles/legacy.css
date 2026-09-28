@@ -1254,138 +1254,12 @@ select:focus {
  * 行内 utilities 提供；类名保留作选择器钩子。markdown 排版规则已原样
  * 搬迁至 globals.css components 层。 */
 
-.message-image-grid {
-  display: grid;
-  gap: 4px;
-  min-width: min(420px, 62vw);
-  padding: 6px;
-}
-
-.message-body + .message-image-grid {
-  padding-top: 0;
-}
-
-.message-image-grid.image-count-1 {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.message-image-grid.image-count-2,
-.message-image-grid.image-count-3,
-.message-image-grid.image-count-4 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.message-image-tile {
-  position: relative;
-  display: grid;
-  min-height: 150px;
-  overflow: hidden;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.22);
-}
-
-.message-image-grid.image-count-1 .message-image-tile {
-  min-height: min(440px, 58vw);
-}
-
-.message-image-preview {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-height: inherit;
-  border: 0;
-  padding: 0;
-  background: transparent;
-  cursor: zoom-in;
-}
-
-.message-image-preview:disabled {
-  cursor: wait;
-}
-
-.message-image-preview img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  max-height: 520px;
-  object-fit: cover;
-}
-
-.message-image-grid.image-count-1 .message-image-preview img {
-  object-fit: contain;
-}
-
-.message-image-download.message-tool-btn {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  z-index: 2;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: rgba(8, 12, 15, 0.62);
-  color: #ffffff;
-  opacity: 0.88;
-  backdrop-filter: blur(8px);
-  transition: opacity 0.14s ease, background 0.14s ease;
-}
-
-.message-image-download.message-tool-btn::after {
-  top: auto;
-  bottom: calc(100% + 7px);
-  transform: translate(-50%, -4px);
-}
-
-.message-image-tile:hover .message-image-download,
-.message-image-tile:focus-within .message-image-download {
-  opacity: 1;
-}
-
-.message-image-download.message-tool-btn:hover,
-.message-image-download.message-tool-btn:focus-visible {
-  background: rgba(8, 12, 15, 0.78);
-}
-
-.message-image-download.message-tool-btn:hover::after,
-.message-image-download.message-tool-btn:focus-visible::after {
-  transform: translate(-50%, 0);
-}
-
-.message-image-download.message-tool-btn:disabled {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.message-image-loading::after {
-  content: "图片加载中";
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  color: rgba(243, 245, 246, 0.62);
-  font-size: 12px;
-  pointer-events: none;
-}
-
-.message-image-error {
-  place-items: center;
-  align-content: center;
-  gap: 8px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  padding: 18px;
-  color: rgba(243, 245, 246, 0.72);
-  font-size: 12px;
-  text-align: center;
-}
-
-.message-image-retry {
-  border: 0;
-  border-radius: 999px;
-  padding: 5px 10px;
-  background: rgba(255, 255, 255, 0.1);
-  color: inherit;
-  cursor: pointer;
-}
+/* S2 Task 6：.message-image-* 全族退役（含兄弟规则 .message-body +
+ * .message-image-grid 的 padding-top 归零——网格改走 mt-1.5 utilities 后
+ * 该规则再无可归位的顶边距）——视觉改由 ImageGrid.tsx 行内 utilities
+ * 提供：多图 grid-cols-2 / 单图 w-48，tile 圆角裁切 rounded-md border；
+ * 加载文案由 ::after content 改为显式节点，下载浮层换 ghost 样式
+ * （bg-background/80 + backdrop-blur-sm）。类名保留作选择器钩子。 */
 
 .reference-box {
   display: -webkit-box;
@@ -1481,55 +1355,12 @@ select:focus {
  * .reference-draft / .reference-draft-preview 类保留作选择器钩子；
  * hidden 折叠交给 preflight 的 [hidden] 规则）。 */
 
-.mention-panel {
-  position: absolute;
-  left: 12px;
-  bottom: calc(100% + 8px);
-  z-index: 2;
-  width: min(280px, calc(100% - 24px));
-  max-height: 260px;
-  overflow: auto;
-  border: 1px solid rgba(113, 113, 122, 0.26);
-  border-radius: 8px;
-  background: #18181b;
-  box-shadow: var(--shadow);
-}
-
-.mention-option {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  border-radius: 0;
-  padding: 7px 12px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  text-align: left;
-}
-
-.mention-option:hover,
-.mention-option.active {
-  background: rgba(161, 161, 170, 0.12);
-}
-
-.mention-name {
-  min-width: 0;
-  flex: 1 1 auto;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mention-site-badge {
-  flex: 0 0 auto;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 999px;
-  padding: 2px 6px;
-  font-size: 10px;
-  font-weight: 820;
-  line-height: 1;
-}
+/* S2 Task 6：.mention-panel 族（.mention-panel / .mention-option（含
+ * :hover/.active）/ .mention-name / .mention-site-badge）退役——面板换
+ * popover 视觉，锚定与裁切由 MentionPicker.tsx 行内 utilities 提供
+ * （absolute bottom-full left-0 right-0 + overflow-hidden，内层
+ * max-h-52 overflow-y-auto 滚动）；选项行换 CommandItem utilities，
+ * 徽标复用 SiteBadge 同款 utilities。类名保留作选择器钩子。 */
 
 /* S2 Task 5：.composer-actions 族退役——底行回归文档流 flex 行
  * （左 @提及 图标钮 + 预览文案，右发送钮），由 Composer.tsx 行内
@@ -1877,61 +1708,13 @@ select:focus {
  * messageHighlightsDom 的内联样式（--message-highlight-rgb 变量机制保留）
  * + rounded-[2px] utility 提供；类名保留作选择器/测试钩子。 */
 
-.mark-menu {
-  position: fixed;
-  z-index: 12;
-  display: grid;
-  grid-template-columns: repeat(3, max-content);
-  align-items: center;
-  gap: 4px;
-  border: 1px solid rgba(161, 161, 170, 0.24);
-  border-radius: 8px;
-  padding: 5px;
-  background: rgba(8, 16, 24, 0.98);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36), var(--glow);
-}
-
-.mark-color-row {
-  display: flex;
-  grid-column: 1 / -1;
-  gap: 6px;
-  padding: 2px 3px 5px;
-  border-bottom: 1px solid rgba(113, 113, 122, 0.1);
-}
-
-.mark-menu button {
-  min-height: 30px;
-  border-radius: 6px;
-  padding: 0 9px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 740;
-}
-
-.mark-menu button:hover,
-.mark-menu button:focus-visible {
-  background: rgba(161, 161, 170, 0.12);
-}
-
-.mark-menu .mark-color-btn {
-  --mark-color-rgb: 248, 184, 78;
-  width: 22px;
-  min-width: 22px;
-  height: 22px;
-  min-height: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 50%;
-  padding: 0;
-  background: rgba(var(--mark-color-rgb), 0.9);
-  box-shadow: inset 0 0 0 2px rgba(8, 16, 24, 0.72);
-}
-
-.mark-menu .mark-color-btn[aria-pressed="true"] {
-  border-color: #ffffff;
-  box-shadow: inset 0 0 0 2px rgba(8, 16, 24, 0.82), 0 0 0 2px rgba(161, 161, 170, 0.34);
-}
+/* S2 Task 6：.mark-menu / .mark-color-row / .mark-color-btn（含
+ * [aria-pressed="true"] 选中态与浅色变体）各族退役——容器/动作项换
+ * popover 视觉 utilities，fixed 定位坐标仍由 MarkMenu.tsx 的
+ * useLayoutEffect 逐字写入（原 position:fixed/z-index 随规则并入容器
+ * 行内 utilities）；色钮换 size-5 圆点，底色由行内 --mark-color-rgb
+ * 变量 + bg-[rgba(…)] utilities 消费，选中态换 ring-2 ring-ring。
+ * 类名保留作选择器钩子。 */
 
 .modal-card {
   border: 1px solid rgba(113, 113, 122, 0.14);
@@ -3457,7 +3240,7 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create, :root[data-theme="light"] .mention-panel, :root[data-theme="light"] .role-site-menu, :root[data-theme="light"] .mark-menu {
+:root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create, :root[data-theme="light"] .role-site-menu {
   border-color: rgba(113, 113, 122, 0.2);
   background: #ffffff;
   box-shadow: var(--shadow), var(--glow);
@@ -3551,8 +3334,6 @@ select:focus {
   color: #27272a;
 }
 
-:root[data-theme="light"] .mention-option:hover,
-:root[data-theme="light"] .mention-option.active,
 :root[data-theme="light"] .role-site-option:hover,
 :root[data-theme="light"] .role-site-option.active,
 :root[data-theme="light"] .group-template-option:hover,
@@ -3560,19 +3341,10 @@ select:focus {
 :root[data-theme="light"] .group-template-category-filter:hover,
 :root[data-theme="light"] .group-template-category-filter:focus-visible,
 :root[data-theme="light"] .template-category-chip:hover,
-:root[data-theme="light"] .template-category-chip:focus-visible,
-:root[data-theme="light"] .mark-menu button:hover,
-:root[data-theme="light"] .mark-menu button:focus-visible {
+:root[data-theme="light"] .template-category-chip:focus-visible {
   border-color: rgba(113, 113, 122, 0.28);
   background: #ffffff;
   color: #27272a;
-}
-
-:root[data-theme="light"] .mention-option:hover,
-:root[data-theme="light"] .mention-option.active {
-  background: #f4f4f5;
-  color: #3f3f46;
-  box-shadow: inset 3px 0 0 #52525b;
 }
 
 :root[data-theme="light"] .field {
@@ -3718,19 +3490,6 @@ select:focus {
   border-color: rgba(113, 113, 122, 0.2);
 }
 
-:root[data-theme="light"] .message-image-tile {
-  background: #eef1f3;
-}
-
-:root[data-theme="light"] .message-image-error {
-  border-color: rgba(113, 113, 122, 0.24);
-  color: rgba(31, 41, 51, 0.72);
-}
-
-:root[data-theme="light"] .message-image-retry {
-  background: rgba(63, 63, 70, 0.08);
-}
-
 :root[data-theme="light"] .message-tool-btn::after {
   background: #ffffff;
   color: var(--text);
@@ -3798,16 +3557,6 @@ select:focus {
 :root[data-theme="light"] .all-note-target:focus-visible {
   border-color: rgba(113, 113, 122, 0.18);
   background: #ffffff;
-}
-
-:root[data-theme="light"] .mark-menu .mark-color-btn {
-  border-color: rgba(80, 102, 122, 0.22);
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.78);
-}
-
-:root[data-theme="light"] .mark-menu .mark-color-btn[aria-pressed="true"] {
-  border-color: #27272a;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.82), 0 0 0 2px rgba(113, 113, 122, 0.28);
 }
 
 :root[data-theme="light"] .template-prompt-preview {
