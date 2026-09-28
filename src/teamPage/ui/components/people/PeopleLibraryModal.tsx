@@ -17,17 +17,23 @@ import {
   visibleChatSite,
 } from '../../lib/peopleLibrary'
 import { showError } from '../../lib/toast'
+import { AppModal } from '../common/AppModal'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
+import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Input } from '../ui/input'
 import { CategoryFilter, EmptyState, TypeTabs } from './primitives'
 
 /*
  * 人员库弹窗（原 peopleLibraryView 主体 React 化，P4；W1 起外壳换 Radix
  * Dialog——#people-library-modal id 移到 DialogContent，Escape/遮罩点击
  * 关闭经 onOpenChange 走 close；删除确认 AlertDialog 移出 Dialog 成为
- * fragment 兄弟）。内部 id 逐字保留。与原实现的对译关系：
+ * fragment 兄弟。**S4 起外壳改由公共组合壳 `common/AppModal` 承担**：
+ * id / aria-labelledby / 宽度类 / bg-popover / 自绘 × 全部移交 AppModal
+ * （本文件不再出现 DialogContent），定高用 height="fixed"。内容区样式
+ * 从 legacy 翻成 utilities，同 commit 退役了对应规则）。
+ * 内部 id 逐字保留。与原实现的对译关系：
  * - 开启入口：Rail 的 #open-people-library → uiBus 'open-people-library'
  *   （打开即重置搜索/类型/分类/页码，同原 openPeopleLibraryEl 处理器）；
  * - renderTemplates → items useMemo（store 版本驱动）：类型无条目回退
@@ -137,110 +143,117 @@ export function PeopleLibraryModal() {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={next => { if (!next) close() }}>
-        <DialogContent
-          id="people-library-modal"
-          aria-labelledby="people-library-title"
-          showCloseButton={false}
-          className="people-library-modal w-[min(640px,calc(100vw-48px))] max-w-none sm:max-w-none bg-popover"
-        >
-          <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
-            <div>
-              <DialogTitle id="people-library-title">{ui('人员库')}</DialogTitle>
-              <DialogDescription className="tiny">{ui('维护可复用人员人设；加入群聊后会复制为独立人员。')}</DialogDescription>
-            </div>
-            <div className="chat-row flex items-center gap-2">
-              <Button id="new-template" type="button" size="sm" onClick={() => {
-                const state = getAppState()
-                state.selectedTemplateId = undefined
-                notifyAppState()
-                services.uiBus.emit('open-person-template-edit')
-              }}>{ui('新建')}</Button>
-              <Button id="close-people-library" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭人员库')} onClick={close}>×</Button>
-            </div>
-          </DialogHeader>
-          <div className="people-library-content">
-            <div className="people-library-pane">
-              <div className="section-title">
-                <h3>{ui('人员列表')}</h3>
-                <span id="people-library-summary" className="tiny">{ui(`${view.templates.length} 人`)}</span>
-              </div>
-              <div className="people-library-toolbar">
-                <input
-                  id="people-library-search"
-                  type="search"
-                  placeholder={ui('搜索人员名称、描述或提示词')}
-                  autoComplete="off"
-                  value={searchQuery}
-                  onChange={event => {
-                    setSearchQuery(event.target.value)
-                    setPage(0)
-                  }}
-                />
-                <TypeTabs
-                  active={view.effectiveType}
-                  builtinId="people-library-tab-builtin"
-                  customId="people-library-tab-custom"
-                  language={language}
-                  ariaLabel={ui('人员库类型')}
-                  onSelect={selectTab}
-                />
-                <CategoryFilter
-                  id="people-library-category-filter"
-                  active={category}
-                  categories={categoryOptions(view.allTemplates.filter(template => template.type === view.effectiveType).map(template => template.category))}
-                  language={language}
-                  ariaLabel={ui('人员分类')}
-                  onSelect={next => {
-                    setCategory(next)
-                    setPage(0)
-                  }}
-                />
-              </div>
-              <div id="people-library-list" className="template-list">
-                {view.templates.length === 0 ? (
-                  <EmptyState title={emptyTitle} body={emptyBody} />
-                ) : view.visible.map(template => (
-                  <TemplateCard
-                    key={template.id}
-                    template={template}
-                    store={view.store}
-                    language={language}
-                    ui={ui}
-                    used={isTemplateUsed(template.id, view.store)}
-                    onEdit={() => openTemplateEditor(template.id)}
-                    onDetail={() => openBuiltinDetail(template)}
-                    onDelete={() => setDeleteTarget(template)}
-                  />
-                ))}
-              </div>
-              <div id="people-library-pagination" className="pagination-bar">
-                {view.pageCount > 1 && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="pagination-btn"
-                      disabled={view.currentPage === 0}
-                      onClick={() => setPage(Math.max(0, view.currentPage - 1))}
-                    >{ui('上一页')}</Button>
-                    <span className="pagination-label">{view.currentPage + 1} / {view.pageCount}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="pagination-btn"
-                      disabled={view.currentPage >= view.pageCount - 1}
-                      onClick={() => setPage(Math.min(view.pageCount - 1, view.currentPage + 1))}
-                    >{ui('下一页')}</Button>
-                  </>
-                )}
-              </div>
-            </div>
+      <AppModal
+        open={open}
+        onOpenChange={next => { if (!next) close() }}
+        size="md"
+        height="fixed"
+        contentId="people-library-modal"
+        titleId="people-library-title"
+        title={ui('人员库')}
+        description={ui('维护可复用人员人设；加入群聊后会复制为独立人员。')}
+        headerActions={(
+          <Button id="new-template" type="button" size="sm" onClick={() => {
+            const state = getAppState()
+            state.selectedTemplateId = undefined
+            notifyAppState()
+            services.uiBus.emit('open-person-template-edit')
+          }}>{ui('新建')}</Button>
+        )}
+        closeId="close-people-library"
+        closeLabel={ui('关闭人员库')}
+        onClose={close}
+        // 两半都承重：p-6 补回壳用 p-0 收掉的原语基类内边距（本弹窗自身
+        // 不带任何 padding，jsdom 不算布局、漏了单测抓不到）；overflow-hidden
+        // 抵掉 height="fixed" 给内容行加的 overflow-auto，保证整壳唯一的
+        // 滚动容器是下面的 #people-library-list（否则两层滚动容器，
+        // 「列表区可滚动」的断言会失准）
+        bodyClassName="overflow-hidden p-6"
+      >
+        {/* 工具行 / 列表 / 分页的 4 行栅格（原 .people-library-pane 对译）：
+            头部与工具行不动，minmax(0,1fr) 那一行自己滚 */}
+        <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden">
+          <div className="section-title">
+            <h3>{ui('人员列表')}</h3>
+            <span id="people-library-summary" className="tiny">{ui(`${view.templates.length} 人`)}</span>
           </div>
-        </DialogContent>
-      </Dialog>
+          <div className="grid gap-2.5 mb-3">
+            <Input
+              id="people-library-search"
+              type="search"
+              placeholder={ui('搜索人员名称、描述或提示词')}
+              autoComplete="off"
+              value={searchQuery}
+              onChange={event => {
+                setSearchQuery(event.target.value)
+                setPage(0)
+              }}
+            />
+            <TypeTabs
+              active={view.effectiveType}
+              builtinId="people-library-tab-builtin"
+              customId="people-library-tab-custom"
+              language={language}
+              ariaLabel={ui('人员库类型')}
+              onSelect={selectTab}
+            />
+            <CategoryFilter
+              id="people-library-category-filter"
+              active={category}
+              categories={categoryOptions(view.allTemplates.filter(template => template.type === view.effectiveType).map(template => template.category))}
+              language={language}
+              ariaLabel={ui('人员分类')}
+              onSelect={next => {
+                setCategory(next)
+                setPage(0)
+              }}
+            />
+          </div>
+          <div id="people-library-list" className="template-list min-h-0 overflow-auto pr-0.5">
+            {view.templates.length === 0 ? (
+              <EmptyState title={emptyTitle} body={emptyBody} />
+            ) : view.visible.map(template => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                store={view.store}
+                language={language}
+                ui={ui}
+                used={isTemplateUsed(template.id, view.store)}
+                onEdit={() => openTemplateEditor(template.id)}
+                onDetail={() => openBuiltinDetail(template)}
+                onDelete={() => setDeleteTarget(template)}
+              />
+            ))}
+          </div>
+          {/* empty:hidden 承接原 `.pagination-bar:empty{display:none}`：这个
+              div 恒渲染，只有子节点条件渲染（pageCount > 1），不加就会在
+              单页时凭空多出 42px 空白 */}
+          <div id="people-library-pagination" className="pagination-bar empty:hidden flex items-center justify-center gap-2.5 min-h-[42px] pt-3">
+            {view.pageCount > 1 && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="pagination-btn"
+                  disabled={view.currentPage === 0}
+                  onClick={() => setPage(Math.max(0, view.currentPage - 1))}
+                >{ui('上一页')}</Button>
+                <span className="pagination-label min-w-[54px] text-center text-xs font-[760] text-muted-foreground">{view.currentPage + 1} / {view.pageCount}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="pagination-btn"
+                  disabled={view.currentPage >= view.pageCount - 1}
+                  onClick={() => setPage(Math.min(view.pageCount - 1, view.currentPage + 1))}
+                >{ui('下一页')}</Button>
+              </>
+            )}
+          </div>
+        </div>
+      </AppModal>
 
       <AlertDialog open={deleteTarget !== undefined} onOpenChange={nextOpen => { if (!nextOpen) setDeleteTarget(undefined) }}>
         <AlertDialogContent>
@@ -290,7 +303,17 @@ function TemplateCard({ template, store, language, ui, used, onEdit, onDetail, o
       <CardHeader className="gap-1 px-0">
         <CardTitle className="flex items-center gap-2 text-sm font-medium leading-tight">
           <span className="role-name truncate font-medium">{displayTemplate.name}</span>
-          <span className={`template-type-badge template-type-${template.type}`}>{ui(template.type === 'builtin' ? '内置' : '自定义')}</span>
+          {/* 原 .template-type-badge（min-height:20px / border-radius:999px /
+              padding:0 7px / font-size:11px / font-weight:820 / line-height:1）
+              换 Badge variant="outline"，差异走 className 由 twMerge 覆盖；
+              圆角 999px 由 Badge 基类的 rounded-full 承担。
+              两类色（原 .template-type-builtin / -custom 的暗色 rgba 与
+              浅色覆盖对）换语义 token：内置偏强、自定义偏弱。
+              `template-type-${type}` 拼接类名保留（探针钩子） */}
+          <Badge
+            variant="outline"
+            className={`template-type-badge template-type-${template.type} min-h-5 rounded-full px-[7px] py-0 text-[11px] leading-none font-[820] ${template.type === 'builtin' ? 'bg-muted text-foreground' : 'bg-muted/50 text-muted-foreground'}`}
+          >{ui(template.type === 'builtin' ? '内置' : '自定义')}</Badge>
         </CardTitle>
         <CardDescription className="text-xs leading-relaxed">{displayTemplate.description || ui('未填写人员库描述')}</CardDescription>
         {/* CardAction 是普通 div（无 flex/gap），相邻按钮会贴死 */}

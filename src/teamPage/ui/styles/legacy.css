@@ -1319,94 +1319,18 @@ select:focus {
   margin-top: 12px;
 }
 
-.people-library-modal {
-  display: grid;
-  height: min(760px, calc(100vh - 48px));
-  min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
-}
-
-.people-library-content {
-  min-height: 0;
-  overflow: hidden;
-}
-
-.people-library-pane {
-  display: grid;
-  min-height: 0;
-  height: 100%;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  overflow: hidden;
-}
-
-#people-library-list {
-  min-height: 0;
-  max-height: none;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.people-library-toolbar {
-  display: grid;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  min-height: 42px;
-  padding-top: 12px;
-}
-
-.pagination-bar:empty {
-  display: none;
-}
-
-.pagination-label {
-  min-width: 54px;
-  color: var(--muted-foreground);
-  font-size: 12px;
-  font-weight: 760;
-  text-align: center;
-}
-
-.pagination-btn {
-  min-height: 30px;
-  padding: 0 10px;
-}
-
-.template-edit {
-  min-height: 30px;
-  padding: 0 10px;
-}
-
-.template-type-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 999px;
-  padding: 0 7px;
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 820;
-  line-height: 1;
-}
-
-.template-type-builtin {
-  border-color: rgba(161, 161, 170, 0.34);
-  background: rgba(161, 161, 170, 0.1);
-  color: #d4d4d8;
-}
-
-.template-type-custom {
-  border-color: rgba(113, 113, 122, 0.22);
-  background: rgba(113, 113, 122, 0.08);
-}
+/*
+ * S4-T2：人员库弹窗这一族已退役——外壳交给公共组合壳 common/AppModal
+ * （height="fixed" 的 h-[min(760px,calc(100vh-48px))] +
+ * grid-rows-[auto_minmax(0,1fr)] + overflow-hidden 与 .people-library-modal
+ * 逐字等价），内容区样式翻成 utilities 写进 PeopleLibraryModal.tsx。
+ * 退役项：.people-library-modal / -content / -pane、#people-library-list、
+ * .people-library-toolbar、.pagination-bar(+:empty) / .pagination-label /
+ * .pagination-btn / .template-edit / .template-type-badge / -builtin /
+ * -custom。其中 .pagination-label / .pagination-btn / .template-edit /
+ * .template-type-badge / .template-type-<type> 的类名仍留在 JSX 上作探针钩子
+ * （.pagination-btn 与 .template-edit 的框体由 Button size="sm" 承担）。
+ */
 
 .template-editor-modal {
   width: min(520px, 100%);
@@ -1665,54 +1589,14 @@ select:focus {
   gap: 10px;
 }
 
-.template-type-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-}
-
-.template-type-tab {
-  min-height: 34px;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 8px;
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 760;
-}
-
-.template-type-tab.active {
-  border-color: rgba(161, 161, 170, 0.5);
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-}
-
-.template-category-filter {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.template-category-chip {
-  min-height: 28px;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 999px;
-  padding: 0 10px;
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 760;
-}
-
-.template-category-chip:hover,
-.template-category-chip:focus-visible,
-.template-category-chip.active {
-  border-color: rgba(161, 161, 170, 0.5);
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-}
+/*
+ * S4-T2：.template-type-tabs / .template-type-tab(+.active) /
+ * .template-category-filter / .template-category-chip(+:hover/:focus-visible/
+ * .active) 已退役——视觉值翻成 utilities 写进 people/primitives.tsx。
+ * 两个使用者（PeopleLibraryModal / AddPersonModal）都在本阶段范围内，
+ * 类名、role="tablist"、data-template-type / data-category、aria-selected
+ * 与 `active` 类名逐字保留作探针钩子。
+ */
 
 .select-row {
   display: grid;
@@ -2555,9 +2439,7 @@ select:focus {
 :root[data-theme="light"] .site-segment:has(input:checked),
 :root[data-theme="light"] .mode-option:has(input:checked),
 :root[data-theme="light"] .group-template-option.active,
-:root[data-theme="light"] .group-template-category-filter.active,
-:root[data-theme="light"] .template-type-tab.active,
-:root[data-theme="light"] .template-category-chip.active {
+:root[data-theme="light"] .group-template-category-filter.active {
   border-color: rgba(113, 113, 122, 0.36);
   background: #ffffff;
   color: #27272a;
@@ -2579,9 +2461,7 @@ select:focus {
 :root[data-theme="light"] .group-template-option:hover,
 :root[data-theme="light"] .group-template-option:focus-visible,
 :root[data-theme="light"] .group-template-category-filter:hover,
-:root[data-theme="light"] .group-template-category-filter:focus-visible,
-:root[data-theme="light"] .template-category-chip:hover,
-:root[data-theme="light"] .template-category-chip:focus-visible {
+:root[data-theme="light"] .group-template-category-filter:focus-visible {
   border-color: rgba(113, 113, 122, 0.28);
   background: #ffffff;
   color: #27272a;
@@ -2680,9 +2560,7 @@ select:focus {
 :root[data-theme="light"] .message-tool-btn:hover,
 :root[data-theme="light"] .message-tool-btn:focus-visible,
 :root[data-theme="light"] .note-tool-btn,
-:root[data-theme="light"] .template-type-tab,
 :root[data-theme="light"] .group-template-category-filter,
-:root[data-theme="light"] .template-category-chip,
 :root[data-theme="light"] .add-person-site-option {
   border-color: rgba(113, 113, 122, 0.16);
   background: #ffffff;
@@ -2783,12 +2661,6 @@ select:focus {
 
 :root[data-theme="light"] #iframe-host .role-frame-label {
   color: #3f3f46;
-}
-
-:root[data-theme="light"] .template-type-builtin {
-  border-color: rgba(113, 113, 122, 0.26);
-  background: #ffffff;
-  color: #52525b;
 }
 
 :root[data-theme="light"] .chat-create-template-btn,
