@@ -210,12 +210,6 @@ button {
     linear-gradient(180deg, rgba(6, 14, 23, 0.72), rgba(2, 8, 14, 0.68));
 }
 
-.role-panel {
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
-}
-
 .sidebar,
 .workspace {
   border-right: 1px solid rgba(95, 126, 150, 0.17);
@@ -252,18 +246,6 @@ button {
   flex: 0 0 auto;
   align-items: center;
   gap: 5px;
-}
-
-.role-panel .panel-header {
-  min-height: 72px;
-  padding-left: 22px;
-}
-
-.role-panel-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-left: auto;
 }
 
 .panel-header {
@@ -560,48 +542,6 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 760;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  width: fit-content;
-  border: 0;
-  border-radius: 999px;
-  padding: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 740;
-  white-space: nowrap;
-}
-
-.status-pill::before {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 10px currentColor;
-}
-
-.status-ready {
-  color: var(--success);
-}
-
-.status-thinking,
-.status-stopped,
-.status-running,
-.status-loading,
-.status-initializing {
-  color: var(--warning);
-}
-
-.status-error {
-  color: var(--danger);
 }
 
 .workspace {
@@ -1243,7 +1183,6 @@ select:focus {
  * rounded-md；40px 图标钮形态连同 ➤ 伪元素一并作废），由 Composer.tsx
  * 行内 utilities 与 Button 原语接管。 */
 
-.role-list,
 .template-list {
   display: grid;
   gap: 8px;
@@ -1252,31 +1191,6 @@ select:focus {
 /* 卡片等高不拉伸：少量卡片时按内容高度顶格排布 */
 .template-list {
   align-content: start;
-}
-
-.role-scroll {
-  position: relative;
-  min-height: 0;
-  overflow: auto;
-  padding: 14px 14px 22px;
-}
-
-.role-panel {
-  position: absolute;
-  top: 0;
-  right: 0;
-  z-index: 4;
-  width: min(380px, calc(100% - 54px));
-  height: 100%;
-  border-left: 1px solid var(--line);
-  background: rgba(7, 14, 22, 0.96);
-  box-shadow: -26px 0 60px rgba(0, 0, 0, 0.34);
-  transform: translateX(100%);
-  transition: transform 0.18s ease;
-}
-
-.role-panel.open {
-  transform: translateX(0);
 }
 
 .notes-panel {
@@ -1594,27 +1508,12 @@ select:focus {
   background: rgba(24, 24, 27, 0.54);
 }
 
-.role-card .role-row {
-  justify-content: flex-start;
-  min-width: 0;
-}
-
-.role-card .status-pill {
-  flex: 0 0 auto;
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  margin-left: 0;
-}
-
-.role-card.active,
 .template-card.active {
   border-color: rgba(161, 161, 170, 0.56);
   background: rgba(161, 161, 170, 0.1);
   box-shadow: var(--glow);
 }
 
-.role-avatar,
 .mention-avatar {
   display: inline-grid;
   place-items: center;
@@ -1648,91 +1547,8 @@ select:focus {
 .role-tone-4 { background: linear-gradient(135deg, #f58faf, #cf5d84); }
 .role-tone-5 { background: linear-gradient(135deg, #63dad3, #278f9a); }
 
-.role-card .role-name {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.role-card-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.role-delete,
-.role-prompt-detail,
-.role-refresh,
-.role-jump {
-  appearance: none;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: #a1a1aa;
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.role-prompt-detail {
-  opacity: 0.78;
-}
-
-.role-prompt-detail svg {
-  width: 16px;
-  height: 16px;
-}
-
-.role-delete svg {
-  width: 15px;
-  height: 15px;
-  fill: currentColor;
-}
-
-.role-jump {
-  font-size: 14px;
-  opacity: 0.72;
-}
-
-.role-refresh {
-  font-size: 14px;
-  opacity: 0.78;
-}
-
-.role-refresh:disabled {
-  cursor: not-allowed;
-  opacity: 0.34;
-}
-
-.role-refresh:not(:disabled):hover,
-.role-prompt-detail:hover,
-.role-jump:hover,
-.role-delete:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-}
-
-.role-delete:hover {
-  background: rgba(255, 95, 87, 0.12);
-  color: #ff8a82;
-}
-
-.role-meta {
-  justify-content: flex-start;
-  gap: 8px;
-  margin-top: 5px;
-  flex-wrap: wrap;
-}
-
-.role-meta-item {
-  color: var(--subtle);
-  font-size: 11px;
-  font-weight: 720;
-}
-
+/* 共享族（不得随 role 卡族退役）：AddPersonModal 的站点多选行仍靠本规则
+   提供 display/position（.add-person-site-control 只补 gap/wrap/justify）。 */
 .role-site-control {
   position: relative;
   display: inline-flex;
@@ -1853,43 +1669,6 @@ select:focus {
   line-height: 1;
 }
 
-.role-site-menu {
-  position: absolute;
-  left: 0;
-  top: calc(100% + 6px);
-  z-index: 9;
-  display: grid;
-  gap: 4px;
-  min-width: 128px;
-  border: 1px solid rgba(113, 113, 122, 0.2);
-  border-radius: 8px;
-  padding: 6px;
-  background: rgba(8, 16, 24, 0.96);
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34), var(--glow);
-}
-
-.role-site-option {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  min-height: 30px;
-  border-radius: 6px;
-  padding: 0 9px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 740;
-  text-align: left;
-}
-
-.role-site-option:hover,
-.role-site-option.active {
-  background: rgba(161, 161, 170, 0.1);
-  color: var(--text);
-}
-
-.role-description,
 .template-description {
   margin-top: 2px;
   color: var(--muted);
@@ -1897,7 +1676,6 @@ select:focus {
   line-height: 1.45;
 }
 
-.role-form,
 .modal-form {
   display: grid;
   gap: 12px;
@@ -3111,7 +2889,7 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create, :root[data-theme="light"] .role-site-menu {
+:root[data-theme="light"] .settings-menu, :root[data-theme="light"] .chat-create {
   border-color: rgba(113, 113, 122, 0.2);
   background: #ffffff;
   box-shadow: var(--shadow), var(--glow);
@@ -3205,8 +2983,6 @@ select:focus {
   color: #27272a;
 }
 
-:root[data-theme="light"] .role-site-option:hover,
-:root[data-theme="light"] .role-site-option.active,
 :root[data-theme="light"] .group-template-option:hover,
 :root[data-theme="light"] .group-template-option:focus-visible,
 :root[data-theme="light"] .group-template-category-filter:hover,
@@ -3305,7 +3081,6 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .role-card.active,
 :root[data-theme="light"] .template-card.active,
 :root[data-theme="light"] .all-note-target.active {
   border-color: rgba(113, 113, 122, 0.4);
@@ -3352,15 +3127,10 @@ select:focus {
   box-shadow: 0 8px 18px rgba(63, 63, 70, 0.14);
 }
 
-:root[data-theme="light"] .role-panel,
 :root[data-theme="light"] .notes-panel {
   border-color: rgba(113, 113, 122, 0.2);
   background: #ffffff;
   box-shadow: 0 24px 70px rgba(63, 63, 70, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.68);
-}
-
-:root[data-theme="light"] .role-panel {
-  box-shadow: -20px 0 50px rgba(63, 63, 70, 0.14);
 }
 
 :root[data-theme="light"] .notes-resize-handle,
@@ -3654,10 +3424,6 @@ select:focus {
     width: calc(100vw - 28px);
     height: calc(100vh - 28px);
     grid-template-columns: 48px minmax(188px, 230px) minmax(300px, 1fr);
-  }
-
-  .role-panel {
-    width: min(360px, calc(100% - 48px));
   }
 
   .workspace {

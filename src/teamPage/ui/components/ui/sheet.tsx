@@ -48,16 +48,26 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  // 新增：forceMount 透传给 Portal（Content 的 forceMount 默认继承 portal context，
+  // 只传 Content 则收起态整棵子树不挂载）；container 透传是为了让调用方把内容
+  // portal 进 #app（Radix 的 Portal 不继承容器的 context，嵌套一层外层 Portal
+  // 是无效的——内容仍会落到 document.body）。
+  forceMount,
+  container,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
+  container?: React.ComponentProps<typeof SheetPrimitive.Portal>["container"]
 }) {
   return (
-    <SheetPortal>
+    // 另：不需要 showOverlay 之类的 prop——Radix 的 DialogOverlay 在
+    // context.modal === false 时直接 return null，modal={false} 天然无遮罩。
+    <SheetPortal container={container} forceMount={forceMount}>
       <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
+        forceMount={forceMount}
         className={cn(
           "fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500",
           side === "right" &&

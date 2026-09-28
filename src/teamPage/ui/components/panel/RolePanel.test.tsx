@@ -157,7 +157,9 @@ describe('team page role panel cards', () => {
   it('inserts a mention from the avatar shortcut without selecting the card', async () => {
     const { services, state } = renderPanel({ withoutSelection: true })
 
-    const avatar = document.querySelector<HTMLElement>('.role-card .role-avatar')
+    // mention-shortcut 处理器挂在 AvatarFallback 上（Avatar 根只是容器，
+    // 同 brief 的 RoleCard 造型）；Fallback 铺满根元素，即用户看到的头像面
+    const avatar = document.querySelector<HTMLElement>('.role-card .role-avatar [data-slot="avatar-fallback"]')
     await act(async () => {
       avatar?.click()
     })
@@ -183,39 +185,99 @@ describe('team page role panel drawer chrome', () => {
       state.peopleDrawerOpen = true
       notifyAppState()
     })
-    await waitFor(() => expect(document.querySelector('aside.role-panel')?.className).toContain('open'))
+    await waitFor(() => expect(document.querySelector('.role-panel')?.classList.contains('open')).toBe(true))
 
     await user.click(document.querySelector<HTMLButtonElement>('#close-people-drawer')!)
 
     expect(state.peopleDrawerOpen).toBe(false)
-    await waitFor(() => expect(document.querySelector('aside.role-panel')?.className).not.toContain('open'))
+    await waitFor(() => expect(document.querySelector('.role-panel')?.classList.contains('open')).toBe(false))
   })
 
-  it('keeps the drawer open for clicks inside it, on the toggle, and inside radix portals', async () => {
+  it('keeps the sheet mounted while closed (forceMount) with data-state=closed', () => {
+    renderPanel()
+
+    const panel = document.querySelector('.role-panel')
+    expect(panel).not.toBeNull()
+    expect(panel?.getAttribute('data-state')).toBe('closed')
+  })
+
+  it('renders the drawer as a non-modal dialog', async () => {
     const { state } = renderPanel()
     act(() => {
       state.peopleDrawerOpen = true
       notifyAppState()
     })
-    await waitFor(() => expect(document.querySelector('aside.role-panel')?.className).toContain('open'))
+    await waitFor(() => expect(document.querySelector('.role-panel')?.getAttribute('data-state')).toBe('open'))
 
-    // 开关按钮属于 ChatHeader，本组件单独渲染时手动补一枚
-    const toggle = document.createElement('button')
-    toggle.id = 'toggle-people-drawer'
-    document.body.append(toggle)
-    const radixPortal = document.createElement('div')
-    radixPortal.setAttribute('data-radix-popper-content-wrapper', '')
-    document.body.append(radixPortal)
+    const panel = document.querySelector('.role-panel')!
+    expect(panel.getAttribute('role')).toBe('dialog')
+    // 非模态：Radix 只在 modal 时写 aria-modal / 渲染遮罩
+    expect(panel.getAttribute('aria-modal')).toBeNull()
+    expect(panel.querySelector('#role-list')).not.toBeNull()
+    // 「落在 #app 内」不在单测断言：RTL 环境没有 #app（portal 回落 body），
+    // 该契约由浏览器验收的 s3-1 覆盖
+  })
 
-    fireEvent.click(document.querySelector('aside.role-panel')!)
-    fireEvent.click(toggle)
-    fireEvent.click(radixPortal)
+  it('closes the drawer on an outside pointer interaction but not on clicks inside it', async () => {
+    const user = userEvent.setup()
+    const { state } = renderPanel({ iframeHost: { recoverRole: vi.fn() } })
+    act(() => {
+      state.peopleDrawerOpen = true
+      notifyAppState()
+    })
+    await waitFor(() => expect(document.querySelector('.role-panel')?.classList.contains('open')).toBe(true))
+
+    // 抽屉内容内点击：不关闭
+    await user.click(document.querySelector('.role-panel')!)
     expect(state.peopleDrawerOpen).toBe(true)
 
+    // 站点菜单传送至 body，但仍是抽屉的 React 后代（DropdownMenu 挂在 RoleCard 内），
+    // Radix 因此不判为「抽屉外」——旧实现里 [data-radix-popper-content-wrapper] 白名单退役
+    await user.click(document.querySelector<HTMLButtonElement>('.site-pill')!)
+    const option = await waitFor(() => {
+      const element = document.querySelector('.role-site-menu .role-site-option.active')
+      if (!element) throw new Error('site menu not open')
+      return element
+    })
+    await user.click(option)
+    expect(state.peopleDrawerOpen).toBe(true)
+
+    // 真实外点：Radix 只在主键（button === 0）时把外点判定推迟到随后的 click，
+    // 且要求 click 未被 stopPropagation 拦截 —— 两个事件都要发
+    fireEvent.pointerDown(document.body)
     fireEvent.click(document.body)
     await waitFor(() => expect(state.peopleDrawerOpen).toBe(false))
+  })
+
+  it('does not treat the header toggle as an outside interaction (no double toggle)', async () => {
+    const { state } = renderPanel()
+    act(() => {
+      state.peopleDrawerOpen = true
+      notifyAppState()
+    })
+    await waitFor(() => expect(document.querySelector('.role-panel')?.classList.contains('open')).toBe(true))
+
+    // 开关按钮属于 ChatHeader，本组件单独渲染时手动补一枚（接线复刻其 onClick）
+    const toggle = document.createElement('button')
+    toggle.id = 'toggle-people-drawer'
+    toggle.addEventListener('click', () => {
+      state.peopleDrawerOpen = !state.peopleDrawerOpen
+      notifyAppState()
+    })
+    document.body.append(toggle)
+
+    // 非主键 pointerdown 不做延迟（Radix 仅在 button === 0 时推迟到 click）：
+    // onInteractOutside 必须被 preventDefault，否则这里已被 Radix 先关一次
+    fireEvent.pointerDown(toggle, { button: 2 })
+    expect(state.peopleDrawerOpen).toBe(true)
+
+    // 主键路径：click 只由按钮自身处理器翻转一次（若 Radix 也当外点，净效果是「关→再开」）
+    fireEvent.pointerDown(toggle)
+    fireEvent.click(toggle)
+    await waitFor(() => expect(state.peopleDrawerOpen).toBe(false))
+    expect(state.peopleDrawerOpen).toBe(false)
+
     toggle.remove()
-    radixPortal.remove()
   })
 
   it('opens the AI site login page through the services bridge', async () => {
