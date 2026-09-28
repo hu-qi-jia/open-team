@@ -145,7 +145,9 @@ describe('team page role panel cards', () => {
     expect(modal.classList.contains('max-w-lg')).toBe(false)
     // 壳自己的 p-0（抵掉原语基类的 p-6）→ 正文内边距必须由 bodyClassName 补回
     expect(modal.classList.contains('p-0')).toBe(true)
-    const bodyRow = modal.lastElementChild as HTMLElement
+    // 定位正文行用显式的 data-slot 直查（`:scope >` 保留「直接子元素」语义）：
+    // lastElementChild 在 footer 槽落地后会指到 footer（S5/T1 起壳有该槽）
+    const bodyRow = modal.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
     expect(bodyRow.classList.contains('min-h-0')).toBe(true)
     expect(bodyRow.classList.contains('p-6')).toBe(true)
 

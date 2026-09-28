@@ -192,6 +192,73 @@ describe('team page all notes modal', () => {
     expect(document.querySelector('#all-notes-modal')).not.toBeNull()
     expect(services.runCommand).not.toHaveBeenCalled()
   })
+
+  /*
+   * 壳契约（S5 / T2）：弹窗迁到 common/AppModal 后，宽度/高度令牌、自绘关闭钮
+   * 的形状、footer 的条件渲染、正文行的内边距与「唯一滚动容器」都必须由壳的
+   * utilities 承担——这些属性 jsdom 不算布局，只能钉类名（与 S4 各迁移用例同口径）。
+   */
+  it('renders through the shared AppModal shell: 2xl width token, fixed height, svg close, no footer', async () => {
+    const { services } = renderModal()
+
+    await act(async () => {
+      services.uiBus.emit('open-all-notes')
+    })
+
+    const modal = document.querySelector<HTMLElement>('#all-notes-modal')!
+    // 宽度令牌 2xl（1160）与定高 760：原 .all-notes-modal 的 980 / max-height
+    // 由壳的 utilities 接管（legacy 层压不过 utilities 层）
+    expect(modal.classList.contains('w-[min(1160px,calc(100vw-48px))]')).toBe(true)
+    expect(modal.classList.contains('h-[min(760px,calc(100vh-48px))]')).toBe(true)
+    expect(modal.classList.contains('w-[min(980px,calc(100vw-48px))]')).toBe(false)
+
+    // 关闭钮：壳渲染的 svg 图标，不再是裸 `×` 文本节点
+    const close = document.querySelector<HTMLElement>('#close-all-notes')
+    expect(close).not.toBeNull()
+    expect(close!.querySelector('svg')).not.toBeNull()
+    expect(close!.textContent).not.toContain('×')
+    expect(close!.getAttribute('aria-label')).toBe('关闭全部笔记')
+
+    // 无 footer：壳条件渲染，多一个空节点都会让正文行的定位断言集体误红
+    expect(modal.querySelector('[data-slot="modal-footer"]')).toBeNull()
+
+    // 正文行：p-6 补回壳用 p-0 收掉的原语内边距（本弹窗自身不带 padding）；
+    // overflow-hidden 抵掉 height="fixed" 给的 overflow-auto——整壳唯一的滚动
+    // 容器必须是左栏 #all-notes-list（否则双滚动条）
+    const bodyRow = modal.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
+    expect(bodyRow.classList.contains('p-6')).toBe(true)
+    expect(bodyRow.classList.contains('overflow-hidden')).toBe(true)
+    expect(bodyRow.classList.contains('overflow-auto')).toBe(false)
+  })
+
+  it('keeps the two-column workspace and the <=760px single-column fallback as utilities', async () => {
+    const { services } = renderModal()
+
+    await act(async () => {
+      services.uiBus.emit('open-all-notes')
+    })
+
+    const workspace = document.querySelector<HTMLElement>('.all-notes-workspace')!
+    expect(workspace.classList.contains('grid-cols-[240px_minmax(0,1fr)]')).toBe(true)
+    expect(workspace.classList.contains('max-[760px]:grid-cols-1')).toBe(true)
+
+    const list = document.querySelector<HTMLElement>('#all-notes-list')!
+    expect(list.getAttribute('aria-label')).toBe('笔记范围')
+    expect(list.classList.contains('overflow-auto')).toBe(true)
+    expect(list.classList.contains('border-r')).toBe(true)
+    expect(list.classList.contains('max-[760px]:flex')).toBe(true)
+    expect(list.classList.contains('max-[760px]:overflow-x-auto')).toBe(true)
+    expect(list.classList.contains('max-[760px]:border-r-0')).toBe(true)
+
+    // 单栏断点下条目退化成横向卡片：min-width 160 是「列表横向可滚」的支点
+    const target = document.querySelector<HTMLElement>('[data-note-target-id="global"]')!
+    expect(target.classList.contains('max-[760px]:min-w-[160px]')).toBe(true)
+    expect(target.classList.contains('deleted-chat')).toBe(false)
+
+    // 右栏三行栅格：编辑器行吸收剩余高度
+    const editorShell = document.querySelector<HTMLElement>('.all-notes-editor-shell')!
+    expect(editorShell.classList.contains('grid-rows-[auto_auto_minmax(0,1fr)]')).toBe(true)
+  })
 })
 
 // ---------- 装配与工具 ----------
