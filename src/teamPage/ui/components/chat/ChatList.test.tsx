@@ -328,9 +328,12 @@ describe('ChatList legacy.css retirement', () => {
     }
 
     // 共享规则保留：role-list / 模板弹窗（.role-row/.role-name/.template-actions）
-    // 与浅色 role-tone 平涂尚未迁移
     expect(cssWithoutComments).toContain('.role-row')
     expect(cssWithoutComments).toContain('.role-name')
-    expect(cssWithoutComments).toContain('.chat-avatar.role-tone-0')
+
+    // S3 Task 4：浅色 role-tone 平涂随动态色板一并归位到 globals components 层
+    expect(cssWithoutComments).not.toContain('.chat-avatar.role-tone-0')
+    const globals = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/globals.css'), 'utf8')
+    expect(globals).toContain('.chat-avatar.role-tone-0')
   })
 })

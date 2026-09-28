@@ -488,6 +488,222 @@
   :root[data-theme="light"] .markdown-body td {
     border-color: rgba(113, 113, 122, 0.2);
   }
+
+  /*
+   * 动态色板（S3 归位）：原 legacy.css，供 RolePanel/MessageItem/人员库复用；
+   * utilities 层仍可覆盖。
+   * 逐字搬移：选择器与声明一字未改，只换层（legacy → components）。components
+   * 层恒压 legacy 层，故凡「原本靠源序/特异性压过本族基类」的上下文规则，必须
+   * 与基类同层、并按 legacy 中的原相对顺序一并搬来——否则层序反转会让基类反压
+   * 它们（浅色主题回退、角标 ⌄ 复现、激活态高亮消失）。下列四条族外规则即为此
+   * 类冲突者（均有 live 使用者，语义仍属各自表面，只是不能再留在 legacy）：
+   *   .add-person-site-option*        ← AddPersonModal.tsx:327（人员库站点多选行）
+   *   .role-site-badge                ← MessageItem.tsx:254（消息站点徽标）
+   *   #iframe-host .role-frame-site    ← iframeHost.ts:518（iframe 站点标签）
+   *   .orchestration-person-site      ← OrchestrationModal.tsx:677（编排人员行）
+   */
+  .role-tone-0 { background: linear-gradient(135deg, #76eaa8, #1d9f70); }
+  .role-tone-1 { background: linear-gradient(135deg, #7aa7ff, #3d64df); }
+  .role-tone-2 { background: linear-gradient(135deg, #ffc25d, #c77b24); }
+  .role-tone-3 { background: linear-gradient(135deg, #a989ff, #6c4fcb); }
+  .role-tone-4 { background: linear-gradient(135deg, #f58faf, #cf5d84); }
+  .role-tone-5 { background: linear-gradient(135deg, #63dad3, #278f9a); }
+
+  .site-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 24px;
+    border: 1px solid rgba(113, 113, 122, 0.18);
+    border-radius: 999px;
+    padding: 0 9px;
+    background: rgba(113, 113, 122, 0.08);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 820;
+    line-height: 1;
+  }
+
+  .site-pill::after {
+    content: "⌄";
+    color: currentColor;
+    font-size: 10px;
+    opacity: 0.72;
+  }
+
+  .add-person-site-option {
+    position: relative;
+    opacity: 0.48;
+  }
+
+  .add-person-site-option.active {
+    opacity: 1;
+  }
+
+  .add-person-site-option.disabled {
+    cursor: not-allowed;
+    opacity: 0.24;
+  }
+
+  .add-person-site-option::after {
+    content: none;
+  }
+
+  .add-person-site-option input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .site-pill-gemini {
+    border-color: rgba(161, 161, 170, 0.34);
+    background: rgba(161, 161, 170, 0.1);
+    color: #d4d4d8;
+  }
+
+  .site-pill-chatgpt {
+    border-color: rgba(83, 230, 166, 0.3);
+    background: rgba(83, 230, 166, 0.09);
+    color: #9ef4c8;
+  }
+
+  .site-pill-claude {
+    border-color: rgba(248, 184, 78, 0.32);
+    background: rgba(248, 184, 78, 0.1);
+    color: #f5cd82;
+  }
+
+  .site-pill-deepseek {
+    border-color: rgba(112, 142, 255, 0.34);
+    background: rgba(112, 142, 255, 0.1);
+    color: #a8bbff;
+  }
+
+  .site-pill-grok {
+    border-color: rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
+  }
+
+  .site-pill-external {
+    border-color: rgba(236, 113, 255, 0.34);
+    background: rgba(236, 113, 255, 0.1);
+    color: #f0abfc;
+  }
+
+  .add-person-site-option {
+    border-color: rgba(113, 113, 122, 0.22);
+    background: rgba(113, 113, 122, 0.08);
+    color: var(--muted);
+  }
+
+  .add-person-site-option.active {
+    border-color: rgba(161, 161, 170, 0.56);
+    background: rgba(161, 161, 170, 0.16);
+    color: #e4e4e7;
+    box-shadow: inset 0 0 0 1px rgba(161, 161, 170, 0.18);
+  }
+
+  .role-site-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 18px;
+    flex: 0 0 auto;
+    border: 1px solid rgba(113, 113, 122, 0.18);
+    border-radius: 999px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 820;
+    line-height: 1;
+  }
+
+  #iframe-host .role-frame-site {
+    flex: 0 0 auto;
+    border: 1px solid rgba(161, 161, 170, 0.25);
+    border-radius: 999px;
+    padding: 1px 6px;
+    background: rgba(161, 161, 170, 0.1);
+    color: #d4d4d8;
+    font-size: 10px;
+    font-weight: 760;
+    line-height: 1.35;
+  }
+
+  .orchestration-person-site {
+    min-height: 20px;
+    flex: 0 0 auto;
+    padding: 0 7px;
+    cursor: default;
+    font-size: 10px;
+  }
+
+  .orchestration-person-site::after {
+    content: none;
+  }
+
+  :root[data-theme="light"] .add-person-site-option.active {
+    border-color: rgba(113, 113, 122, 0.36);
+    background: #ffffff;
+    color: #27272a;
+    box-shadow: inset 0 0 0 1px rgba(113, 113, 122, 0.14);
+  }
+
+  :root[data-theme="light"] .chat-avatar.role-tone-0 { background: #42b883; }
+  :root[data-theme="light"] .chat-avatar.role-tone-1 { background: #4f8df7; }
+  :root[data-theme="light"] .chat-avatar.role-tone-2 { background: #f0a23a; }
+  :root[data-theme="light"] .chat-avatar.role-tone-3 { background: #8b6be8; }
+  :root[data-theme="light"] .chat-avatar.role-tone-4 { background: #e66f8f; }
+  :root[data-theme="light"] .chat-avatar.role-tone-5 { background: #33a6a4; }
+
+  :root[data-theme="light"] .site-pill {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+    box-shadow: none;
+  }
+
+  :root[data-theme="light"] #iframe-host .role-frame-site {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .site-pill-gemini {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .site-pill-chatgpt {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .site-pill-claude {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .site-pill-deepseek {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .site-pill-grok {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .site-pill-external {
+    border-color: rgba(17, 24, 39, 0.12);
+    background: #f6f7f8;
+    color: #52525b;
+  }
 }
 
 /*

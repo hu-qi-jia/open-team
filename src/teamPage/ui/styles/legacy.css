@@ -4,8 +4,9 @@
  * 声明在此必输，原本就是死值），只保留 remap 刻意不接管的 --muted
  * （shadcn 侧同名为背景 token，legacy 侧是文字色，见 globals 注释）。
  * 其余零散旧值（danger/warning/success 语义色）也随 remap 走
- * chart/destructive tokens。动态色板家族（role-tone-* / site-pill-* /
- * template-type-* 等）的字面量仍留在下方各规则里。
+ * chart/destructive tokens。动态色板家族里的 role-tone-* / site-pill-*
+ * 已于 S3 Task 4 归位到 globals.css components 层；其余色板
+ * （template-type-* 等）的字面量仍留在下方各规则里。
  */
 :root,
 :root[data-theme="dark"] {
@@ -512,7 +513,8 @@ select:focus {
  * Badge 压角；图标条档形态走 sidebar 的 group-data-[collapsible=icon] 变体。
  * .chat-list/.chat-item 类名保留作 E2E/legacy 选择器钩子。共享选择器
  * .chat-row/.chat-name（role-list、模板弹窗仍在用）与浅色 .chat-avatar
- * 平涂/role-tone 色板不属于本族，暂留待对应表面迁移。 */
+ * 平涂不属于本族，暂留待对应表面迁移（其 role-tone 变体已随 S3 Task 4
+ * 迁往 globals.css components 层）。 */
 
 .chat-row, .role-row, .template-actions {
   display: flex;
@@ -1419,12 +1421,12 @@ select:focus {
   background: linear-gradient(135deg, #d4d4d8, #a1a1aa);
 }
 
-.role-tone-0 { background: linear-gradient(135deg, #76eaa8, #1d9f70); }
-.role-tone-1 { background: linear-gradient(135deg, #7aa7ff, #3d64df); }
-.role-tone-2 { background: linear-gradient(135deg, #ffc25d, #c77b24); }
-.role-tone-3 { background: linear-gradient(135deg, #a989ff, #6c4fcb); }
-.role-tone-4 { background: linear-gradient(135deg, #f58faf, #cf5d84); }
-.role-tone-5 { background: linear-gradient(135deg, #63dad3, #278f9a); }
+/* 动态色板 .role-tone-* / .site-pill* 已于 S3 Task 4 归位到 globals.css
+ * components 层（含浅色变体，及 .add-person-site-option / .role-site-badge /
+ * #iframe-host .role-frame-site / .orchestration-person-site 这几位「靠源序压过
+ * 基类」的冲突伴侣——它们随色板同层搬迁）。仍留在本文件的相关声明只有浅色
+ * :root[data-theme="light"] .add-person-site-option（长期被同特异性的浅色
+ * .site-pill/.site-pill-* 压住，属人员库重写范围）。 */
 
 /* 共享族（不得随 role 卡族退役）：AddPersonModal 的站点多选行仍靠本规则
    提供 display/position（.add-person-site-control 只补 gap/wrap/justify）。 */
@@ -1437,115 +1439,6 @@ select:focus {
   gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-end;
-}
-
-.site-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 24px;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 999px;
-  padding: 0 9px;
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 820;
-  line-height: 1;
-}
-
-.site-pill::after {
-  content: "⌄";
-  color: currentColor;
-  font-size: 10px;
-  opacity: 0.72;
-}
-
-.add-person-site-option {
-  position: relative;
-  opacity: 0.48;
-}
-
-.add-person-site-option.active {
-  opacity: 1;
-}
-
-.add-person-site-option.disabled {
-  cursor: not-allowed;
-  opacity: 0.24;
-}
-
-.add-person-site-option::after {
-  content: none;
-}
-
-.add-person-site-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.site-pill-gemini {
-  border-color: rgba(161, 161, 170, 0.34);
-  background: rgba(161, 161, 170, 0.1);
-  color: #d4d4d8;
-}
-
-.site-pill-chatgpt {
-  border-color: rgba(83, 230, 166, 0.3);
-  background: rgba(83, 230, 166, 0.09);
-  color: #9ef4c8;
-}
-
-.site-pill-claude {
-  border-color: rgba(248, 184, 78, 0.32);
-  background: rgba(248, 184, 78, 0.1);
-  color: #f5cd82;
-}
-
-.site-pill-deepseek {
-  border-color: rgba(112, 142, 255, 0.34);
-  background: rgba(112, 142, 255, 0.1);
-  color: #a8bbff;
-}
-
-.site-pill-grok {
-  border-color: rgba(255, 255, 255, 0.34);
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-}
-
-.site-pill-external {
-  border-color: rgba(236, 113, 255, 0.34);
-  background: rgba(236, 113, 255, 0.1);
-  color: #f0abfc;
-}
-
-.add-person-site-option {
-  border-color: rgba(113, 113, 122, 0.22);
-  background: rgba(113, 113, 122, 0.08);
-  color: var(--muted);
-}
-
-.add-person-site-option.active {
-  border-color: rgba(161, 161, 170, 0.56);
-  background: rgba(161, 161, 170, 0.16);
-  color: #e4e4e7;
-  box-shadow: inset 0 0 0 1px rgba(161, 161, 170, 0.18);
-}
-
-.role-site-badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 18px;
-  flex: 0 0 auto;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 999px;
-  padding: 0 6px;
-  font-size: 10px;
-  font-weight: 820;
-  line-height: 1;
 }
 
 .template-description {
@@ -2091,18 +1984,6 @@ select:focus {
   text-overflow: ellipsis;
 }
 
-#iframe-host .role-frame-site {
-  flex: 0 0 auto;
-  border: 1px solid rgba(161, 161, 170, 0.25);
-  border-radius: 999px;
-  padding: 1px 6px;
-  background: rgba(161, 161, 170, 0.1);
-  color: #d4d4d8;
-  font-size: 10px;
-  font-weight: 760;
-  line-height: 1.35;
-}
-
 #iframe-host .role-frame {
   width: 100%;
   height: 100%;
@@ -2514,18 +2395,6 @@ select:focus {
   min-width: 0;
 }
 
-.orchestration-person-site {
-  min-height: 20px;
-  flex: 0 0 auto;
-  padding: 0 7px;
-  cursor: default;
-  font-size: 10px;
-}
-
-.orchestration-person-site::after {
-  content: none;
-}
-
 .orchestration-workspace {
   position: relative;
   min-width: 0;
@@ -2834,8 +2703,7 @@ select:focus {
 :root[data-theme="light"] .group-template-option.active,
 :root[data-theme="light"] .group-template-category-filter.active,
 :root[data-theme="light"] .template-type-tab.active,
-:root[data-theme="light"] .template-category-chip.active,
-:root[data-theme="light"] .add-person-site-option.active {
+:root[data-theme="light"] .template-category-chip.active {
   border-color: rgba(113, 113, 122, 0.36);
   background: #ffffff;
   color: #27272a;
@@ -2886,20 +2754,14 @@ select:focus {
 
 /* S2 Task 7：.chat-item/.chat-name:hover 的浅色变体随本族一并退役——
  * hover/active 底色已由条目 utilities（bg-accent 系）承担；.chat-avatar 的
- * 浅色描边与 role-tone 平涂色板仍被未迁移的浅色头像视觉使用，暂留。 */
+ * 浅色描边仍被未迁移的浅色头像视觉使用，暂留（role-tone 平涂色板已于
+ * S3 Task 4 归位到 globals.css components 层）。 */
 :root[data-theme="light"] .chat-avatar {
   border: 1px solid rgba(17, 24, 39, 0.1);
   background: #6b7280;
   color: #ffffff;
   box-shadow: none;
 }
-
-:root[data-theme="light"] .chat-avatar.role-tone-0 { background: #42b883; }
-:root[data-theme="light"] .chat-avatar.role-tone-1 { background: #4f8df7; }
-:root[data-theme="light"] .chat-avatar.role-tone-2 { background: #f0a23a; }
-:root[data-theme="light"] .chat-avatar.role-tone-3 { background: #8b6be8; }
-:root[data-theme="light"] .chat-avatar.role-tone-4 { background: #e66f8f; }
-:root[data-theme="light"] .chat-avatar.role-tone-5 { background: #33a6a4; }
 
 :root[data-theme="light"] .chat-time,
 :root[data-theme="light"] .summary-line,
@@ -2971,13 +2833,6 @@ select:focus {
   border-color: rgba(113, 113, 122, 0.16);
   background: #ffffff;
   color: var(--muted);
-}
-
-:root[data-theme="light"] .site-pill {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-  box-shadow: none;
 }
 
 :root[data-theme="light"] .orchestration-review-line span:first-child {
@@ -3101,48 +2956,6 @@ select:focus {
 
 :root[data-theme="light"] .group-template-roles span {
   border-color: rgba(113, 113, 122, 0.16);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] #iframe-host .role-frame-site {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .site-pill-gemini {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .site-pill-chatgpt {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .site-pill-claude {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .site-pill-deepseek {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .site-pill-grok {
-  border-color: rgba(17, 24, 39, 0.12);
-  background: #f6f7f8;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .site-pill-external {
-  border-color: rgba(17, 24, 39, 0.12);
   background: #f6f7f8;
   color: #52525b;
 }
