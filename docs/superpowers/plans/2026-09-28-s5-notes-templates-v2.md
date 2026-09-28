@@ -133,6 +133,28 @@
 本阶段顺手订正，**不要**据它去 legacy 里找规则。
 `.all-note-target.deleted-chat` / `.active` 是**复合选择器**，`deleted-chat` 无独立规则。
 
+### E. `.btn` 的实测判定（2026-09-29 编排者实测；T3 的「按实测决定去留」到此结案）
+
+计划原本把 `.btn` 留给 T3「按实测决定」，现已测清——**它是个封闭系统**：
+
+| 出处 | 内容 |
+| --- | --- |
+| `legacy.css:2358-2362` | **全仓唯一一条 `.btn` 规则**，且**只有浅色**：`border-color: rgba(113,113,122,.2); background:#ffffff; color: var(--text)` |
+| `GroupTemplateModal.tsx:170,171` | **全仓唯一的 2 个消费者**（空态两个动作钮，`variant="ghost" size="sm"`） |
+| `GroupTemplateModal.test.tsx:143,153` | 用 `.group-template-empty-actions .btn` 定位并点击 |
+
+**判定：这条规则两个主题下都不可见（惰性），可删。** 逐条理由：
+- `background: #ffffff` —— 亮色 `--popover` = `oklch(1 0 0)` = **纯白**（`globals.css:26`），
+  即**白底压白底**；暗色下这条规则根本不匹配，且 `ghost` 变体不写底座 `bg-*`（只有 `hover:bg-accent`）。
+- `color: var(--text)` —— `--text` 在 `globals.css:159/198` 被重映射为 `var(--foreground)`，
+  与它本来就会继承到的颜色**同值**。
+- `border-color` —— 无 `border` 宽度工具类，单独声明 `border-color` 不产生任何可见效果。
+
+→ **T4 删 `2358-2362`**，删前删后各拍一次浅色截图留证（T5 的 `s5-8` 已覆盖亮/暗对比度）。
+→ **T3 顺手摘掉 `className="btn"`**，把 `GroupTemplateModal.test.tsx:143/153` 的选择器改成
+`.group-template-empty-actions button`（**纯选择器改写，断言语义不动**）——让「`.btn` 只是个 legacy 残影」
+这件事不再挂在 TSX 上。容器钩子 `.group-template-empty-actions` 保留（它是纯钩子，见 D 节）。
+
 ---
 
 ## ⚠️ 本阶段特有的三条硬耦合（会直接挂测试，先看这里）
@@ -309,7 +331,12 @@
 → 3. 判定独占/共享 → 4. 独占的删 → 5. `npm run build` 后**复拍**。
 
 **应删（本阶段独占族，逐条 grep 复核后）**：基线 C 里 A 组与 B 组列出的全部选择器及其浅色对应，包含
-媒体查询 `@media (max-width: 760px)` 里那三条（若已全部翻成响应式 utilities）。
+媒体查询 `@media (max-width: 760px)` 里那三条（若已全部翻成响应式 utilities），外加
+**基线 E 的 `2358-2362`（`.btn` 的浅色规则，已实测两主题皆惰性）**。
+
+⚠️ **浅色块「整条删」只有 8 条**（A 组 2525/2529/2533/2537-2538，B 组 2370-2373/2575/2581/2587），
+**其余全是「从分组选择器里摘掉成员」**——按基线 C 的两张逐行表做，**不许按行号区间粗删**。
+T3 在本任务之前已摘掉 `.btn` 的 TSX 消费者，所以这条可以整条删。
 
 **不许删**：`notes-editor` / `note-toolbar` / `note-tool-btn` / `note-toolbar-spacer` / `all-note-toolbar`
 （`NotesPanel` 在用 **且被守卫测试钉住**）、`tiny`、`.modal-form`（S6/S7 的账，本阶段不动）。
