@@ -330,13 +330,9 @@
     top: 6px;
   }
 
-  .app-shell.fullscreen .message-inner {
-    max-width: min(86%, 980px);
-  }
-
-  .app-shell.fullscreen .messages {
-    padding-inline: 34px;
-  }
+  /* S2 Task 4：.app-shell.fullscreen .message-inner / .messages 两条随
+     legacy 消息族退役——消息几何（水平内边距、宽度上限）已由 Task 3 的
+     720px 列容器统一承担，全屏态不再有独立的放宽逻辑。 */
 
   .app-shell.dragging,
   .app-shell.resizing {
@@ -411,6 +407,96 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     background: var(--card);
+  }
+
+  /*
+   * S2 Task 4：.markdown-body 排版族自 legacy.css 原样搬迁（规则内容逐字
+   * 保留，仅换层）。消费者目前只有消息流（MessageItem 的 markdown 正文）；
+   * 浅色覆盖（code/pre/a/th/td）一并搬入。
+   */
+  .markdown-body > :first-child {
+    margin-top: 0;
+  }
+
+  .markdown-body > :last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown-body p,
+  .markdown-body ul,
+  .markdown-body ol,
+  .markdown-body blockquote,
+  .markdown-body pre,
+  .markdown-body table {
+    margin: 0 0 10px;
+  }
+
+  .markdown-body ul,
+  .markdown-body ol {
+    padding-left: 22px;
+  }
+
+  .markdown-body li + li {
+    margin-top: 4px;
+  }
+
+  .markdown-body code {
+    border-radius: 4px;
+    padding: 1px 4px;
+    background: rgba(255, 255, 255, 0.12);
+    font-family: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, monospace;
+    font-size: 0.92em;
+  }
+
+  .markdown-body pre {
+    overflow-x: auto;
+    border-radius: 6px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.28);
+  }
+
+  .markdown-body pre code {
+    padding: 0;
+    background: transparent;
+  }
+
+  .markdown-body blockquote {
+    border-left: 3px solid rgba(83, 230, 166, 0.6);
+    padding-left: 10px;
+    color: var(--muted);
+  }
+
+  .markdown-body a {
+    color: #d4d4d8;
+  }
+
+  .markdown-body table {
+    display: block;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  .markdown-body th,
+  .markdown-body td {
+    border: 1px solid rgba(113, 113, 122, 0.24);
+    padding: 5px 8px;
+  }
+
+  :root[data-theme="light"] .markdown-body code {
+    background: #ffffff;
+  }
+
+  :root[data-theme="light"] .markdown-body pre {
+    background: #ffffff;
+  }
+
+  :root[data-theme="light"] .markdown-body a {
+    color: #52525b;
+  }
+
+  :root[data-theme="light"] .markdown-body th,
+  :root[data-theme="light"] .markdown-body td {
+    border-color: rgba(113, 113, 122, 0.2);
   }
 }
 

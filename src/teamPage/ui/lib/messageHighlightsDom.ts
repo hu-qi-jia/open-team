@@ -48,8 +48,12 @@ function wrapTextRange(root: HTMLElement, startOffset: number, endOffset: number
     const selected = range.node.splitText(range.start)
     selected.splitText(range.end - range.start)
     const mark = document.createElement('span')
-    mark.className = 'message-highlight'
+    // §4.4 @高亮重塑：legacy .message-highlight 规则退役，视觉改由 utilities
+    // （圆角）+ 内联样式（底色/内阴影，沿用 --message-highlight-rgb 变量机制）承担
+    mark.className = 'message-highlight rounded-[2px]'
     mark.style.setProperty('--message-highlight-rgb', messageHighlightColorRgb(color))
+    mark.style.background = 'rgba(var(--message-highlight-rgb), 0.32)'
+    mark.style.boxShadow = 'inset 0 -1px 0 rgba(var(--message-highlight-rgb), 0.72)'
     selected.parentNode?.insertBefore(mark, selected)
     mark.append(selected)
   }

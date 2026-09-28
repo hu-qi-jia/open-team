@@ -888,57 +888,9 @@ select:focus {
  * 尺寸/内边距/居中列改由 Messages.tsx 的 utilities 提供（#messages 上的
  * .messages 类保留作 E2E/legacy 选择器钩子）。 */
 
-.message-row {
-  display: flex;
-  width: 100%;
-  align-items: flex-start;
-}
-
-.message-row.user {
-  justify-content: flex-end;
-}
-
-.message-row.system {
-  justify-content: center;
-}
-
-.message-inner {
-  display: flex;
-  max-width: min(78%, 720px);
-  align-items: flex-start;
-  gap: 9px;
-}
-
-.message-row.user .message-inner {
-  flex-direction: row-reverse;
-}
-
-.message-stack {
-  display: flex;
-  min-width: 0;
-  max-width: 100%;
-  flex-direction: column;
-  align-items: flex-start;
-}
-
-.message-row.user .message-stack {
-  align-items: flex-end;
-}
-
-.message-name {
-  display: inline-flex;
-  max-width: 100%;
-  align-items: center;
-  gap: 6px;
-  overflow: hidden;
-  margin: 0 0 4px 2px;
-  color: #a1a1aa;
-  font-size: 11px;
-  font-weight: 650;
-  line-height: 1.3;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+/* S2 Task 4：.message-row/.message-inner/.message-stack/.message-name 族退役——
+ * 行/内层/名称行几何与配色改由 MessageItem/ReplyControlBubble 的行内
+ * utilities 提供（类名保留作选择器钩子，useMarkMenu 等仍在用）。 */
 
 .message-name-text {
   min-width: 0;
@@ -1270,17 +1222,9 @@ select:focus {
   dominant-baseline: middle;
 }
 
-.orchestration-message-label {
-  padding: 7px 12px 0;
-  color: #9fd6df;
-  font-size: 11px;
-  font-weight: 780;
-  line-height: 1.35;
-}
-
-.message-row.user .orchestration-message-label {
-  color: rgba(4, 46, 35, 0.72);
-}
+/* S2 Task 4：.orchestration-message-label 规则退役——标签视觉由
+ * OrchestrationMessageLabel 的行内 utilities（mb-1/rounded-sm/bg-muted/
+ * text-[10px] 等）承担；.orchestration-review-* 保留归 S6。 */
 
 .orchestration-review-summary {
   display: grid;
@@ -1304,186 +1248,11 @@ select:focus {
  * 两类元素保留类名作钩子，视觉已由行内 utilities 承担（原 72% 上限随
  * 720px 列容器自然收窄，不再需要）。 */
 
-.thinking-dots::after {
-  content: "...";
-  display: inline-block;
-  width: 28px;
-  animation: pulseDots 1.2s steps(4, end) infinite;
-}
-
-@keyframes pulseDots {
-  0% { content: ""; }
-  25% { content: "."; }
-  50% { content: ".."; }
-  75%, 100% { content: "..."; }
-}
-
-.message-avatar {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 38px;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 8px;
-  color: white;
-  overflow: hidden;
-  font-size: 14px;
-  font-weight: 780;
-  line-height: 1;
-  white-space: nowrap;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
-}
-
-.message-avatar[hidden] {
-  visibility: hidden;
-  display: grid;
-}
-
-.message-bubble {
-  position: relative;
-  max-width: 100%;
-  border: 0;
-  border-radius: 8px;
-  background: #27272a;
-  color: #f3f5f6;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
-}
-
-.message-bubble::before {
-  content: "";
-  position: absolute;
-  top: 13px;
-  border: 6px solid transparent;
-}
-
-.message-row.assistant .message-bubble::before {
-  left: -11px;
-  border-right-color: #27272a;
-}
-
-.message-row.user .message-bubble {
-  background: #35d18c;
-  color: #111111;
-}
-
-.message-row.user .message-bubble::before {
-  right: -11px;
-  border-left-color: #35d18c;
-}
-
-.message-row.thinking .message-bubble {
-  background: #232a22;
-  color: #d8f1dc;
-}
-
-.message-row.stopped .message-bubble {
-  background: #252522;
-  color: #efe4c8;
-}
-
-.message-row.thinking .message-bubble::before,
-.message-row.stopped .message-bubble::before {
-  border-right-color: #232a22;
-}
-
-.message-row.stopped .message-bubble::before {
-  border-right-color: #252522;
-}
-
-.message-mentions {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-right: 6px;
-}
-
-.message-mention {
-  color: #0b6b39;
-  font-weight: 820;
-}
-
-.message-body {
-  margin-top: 0;
-  padding: 12px 16px 12px;
-  white-space: pre-wrap;
-  word-break: break-word;
-  color: inherit;
-  font-size: 16px;
-  line-height: 1.6;
-}
-
-.message-body.markdown-body {
-  white-space: normal;
-}
-
-.markdown-body > :first-child {
-  margin-top: 0;
-}
-
-.markdown-body > :last-child {
-  margin-bottom: 0;
-}
-
-.markdown-body p,
-.markdown-body ul,
-.markdown-body ol,
-.markdown-body blockquote,
-.markdown-body pre,
-.markdown-body table {
-  margin: 0 0 10px;
-}
-
-.markdown-body ul,
-.markdown-body ol {
-  padding-left: 22px;
-}
-
-.markdown-body li + li {
-  margin-top: 4px;
-}
-
-.markdown-body code {
-  border-radius: 4px;
-  padding: 1px 4px;
-  background: rgba(255, 255, 255, 0.12);
-  font-family: ui-monospace, "SFMono-Regular", "SF Mono", Consolas, monospace;
-  font-size: 0.92em;
-}
-
-.markdown-body pre {
-  overflow-x: auto;
-  border-radius: 6px;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.28);
-}
-
-.markdown-body pre code {
-  padding: 0;
-  background: transparent;
-}
-
-.markdown-body blockquote {
-  border-left: 3px solid rgba(83, 230, 166, 0.6);
-  padding-left: 10px;
-  color: var(--muted);
-}
-
-.markdown-body a {
-  color: #d4d4d8;
-}
-
-.markdown-body table {
-  display: block;
-  overflow-x: auto;
-  border-collapse: collapse;
-}
-
-.markdown-body th,
-.markdown-body td {
-  border: 1px solid rgba(113, 113, 122, 0.24);
-  padding: 5px 8px;
-}
+/* S2 Task 4：.thinking-dots（→ Spinner 原语）、.message-avatar（→ Avatar/
+ * AvatarFallback 原语）、.message-bubble（含 ::before 气泡尾）、
+ * .message-mentions/.message-mention、.message-body 各族退役——视觉改由
+ * 行内 utilities 提供；类名保留作选择器钩子。markdown 排版规则已原样
+ * 搬迁至 globals.css components 层。 */
 
 .message-image-grid {
   display: grid;
@@ -1642,33 +1411,9 @@ select:focus {
   padding: 0 8px 7px;
 }
 
-.message-row.thinking .message-body,
-.message-row.stopped .message-body {
-  min-width: 180px;
-  padding-right: 46px;
-}
-
-.message-row.thinking .message-tools,
-.message-row.stopped .message-tools {
-  position: absolute;
-  top: 50%;
-  right: 7px;
-  transform: translateY(-50%);
-  margin: 0;
-  padding: 0;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.14s ease;
-}
-
-.message-row.thinking:hover .message-tools,
-.message-row.thinking:focus-within .message-tools,
-.message-row.stopped .message-tools,
-.message-row.stopped:hover .message-tools,
-.message-row.stopped:focus-within .message-tools {
-  opacity: 1;
-  pointer-events: auto;
-}
+/* S2 Task 4：.message-row.thinking/.stopped 的 .message-body/.message-tools
+ * 定位规则退役——ReplyControlBubble 状态行重排为「左文右钮」单行
+ * （justify-between），按钮不再绝对定位于气泡右缘。 */
 
 .message-tool-btn {
   position: relative;
@@ -2194,13 +1939,9 @@ select:focus {
   }
 }
 
-.message-highlight {
-  --message-highlight-rgb: 248, 184, 78;
-  border-radius: 3px;
-  padding: 0 2px;
-  background: rgba(var(--message-highlight-rgb), 0.32);
-  box-shadow: inset 0 -1px 0 rgba(var(--message-highlight-rgb), 0.72);
-}
+/* S2 Task 4：.message-highlight 规则退役——高亮视觉改由
+ * messageHighlightsDom 的内联样式（--message-highlight-rgb 变量机制保留）
+ * + rounded-[2px] utility 提供；类名保留作选择器/测试钩子。 */
 
 .mark-menu {
   position: fixed;
@@ -3953,7 +3694,6 @@ select:focus {
 
 :root[data-theme="light"] .chat-time,
 :root[data-theme="light"] .summary-line,
-:root[data-theme="light"] .message-name,
 :root[data-theme="light"] .group-template-summary,
 :root[data-theme="light"] .group-template-meta,
 :root[data-theme="light"] .group-template-role-count,
@@ -4011,43 +3751,6 @@ select:focus {
   box-shadow: var(--glow);
 }
 
-:root[data-theme="light"] .message-bubble {
-  background: #ffffff;
-  color: #27272a;
-  box-shadow: 0 8px 20px rgba(63, 63, 70, 0.12);
-}
-
-:root[data-theme="light"] .message-row.assistant .message-bubble::before {
-  border-right-color: #ffffff;
-}
-
-:root[data-theme="light"] .message-row.user .message-bubble {
-  background: #b0f0a7;
-  color: #0d3324;
-}
-
-:root[data-theme="light"] .message-row.user .message-bubble::before {
-  border-left-color: #b0f0a7;
-}
-
-:root[data-theme="light"] .message-row.thinking .message-bubble {
-  background: #eef8ed;
-  color: #28462d;
-}
-
-:root[data-theme="light"] .message-row.stopped .message-bubble {
-  background: #fbf5e6;
-  color: #60451c;
-}
-
-:root[data-theme="light"] .message-row.thinking .message-bubble::before {
-  border-right-color: #eef8ed;
-}
-
-:root[data-theme="light"] .message-row.stopped .message-bubble::before {
-  border-right-color: #fbf5e6;
-}
-
 :root[data-theme="light"] .orchestration-review-summary,
 :root[data-theme="light"] .reference-box,
 :root[data-theme="light"] .message-tool-btn:hover,
@@ -4070,25 +3773,13 @@ select:focus {
   box-shadow: none;
 }
 
-:root[data-theme="light"] .orchestration-review-line span:first-child,
-:root[data-theme="light"] .message-row.user .orchestration-message-label {
+:root[data-theme="light"] .orchestration-review-line span:first-child {
   color: rgba(63, 63, 70, 0.68);
 }
 
-:root[data-theme="light"] .markdown-body code {
-  background: #ffffff;
-}
+/* S2 Task 4：浅色 .markdown-body 覆盖规则随暗色族一并搬迁至 globals.css
+ * components 层（.message-tool-btn::after 的共享声明留在此处）。 */
 
-:root[data-theme="light"] .markdown-body pre {
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .markdown-body a {
-  color: #52525b;
-}
-
-:root[data-theme="light"] .markdown-body th,
-:root[data-theme="light"] .markdown-body td,
 :root[data-theme="light"] .message-tool-btn::after {
   border-color: rgba(113, 113, 122, 0.2);
 }

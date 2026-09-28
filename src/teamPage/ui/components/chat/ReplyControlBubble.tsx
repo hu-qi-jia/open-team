@@ -3,6 +3,8 @@ import { roleMentionLabel, type RoleMentionLabelOptions } from '../../../../grou
 import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
 import { showError } from '../../lib/toast'
 import { useServices } from '../../context/ServicesContext'
+import { Avatar, AvatarFallback } from '../ui/avatar'
+import { Spinner } from '../ui/spinner'
 import { MessageToolButton, SiteBadge, SiteJumpButton } from './MessageItem'
 
 export interface ReplyControlBubbleProps {
@@ -35,21 +37,25 @@ export function ReplyControlBubble({ role, showName = true, showAvatar = true, m
 
   return (
     <article
-      className={`message-row message assistant ${stopped ? 'stopped' : 'thinking'}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex px-6 py-1.5`}
+      className={`message-row message assistant ${stopped ? 'stopped' : 'thinking'}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex py-1.5`}
     >
       <div className="message-inner flex w-full min-w-0 items-start gap-3">
-        <div
-          className={`message-avatar ${roleToneClass(role.name)}${showAvatar ? ' mention-shortcut' : ''} flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-none bg-secondary shadow-none text-xs font-medium text-secondary-foreground select-none`}
+        <Avatar
+          className={`message-avatar size-7 shrink-0 cursor-pointer select-none${showAvatar ? ' mention-shortcut' : ''}`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
           onContextMenu={onMentionContextMenu}
-        >{roleAvatarLabel(role.name)}</div>
+        >
+          <AvatarFallback className={`${roleToneClass(role.name)} text-xs font-medium text-secondary-foreground`}>
+            {roleAvatarLabel(role.name)}
+          </AvatarFallback>
+        </Avatar>
 
         <div className="message-stack flex min-w-0 flex-1 flex-col items-start gap-1">
           {showName && (
             <div
-              className="message-name mention-shortcut flex cursor-pointer items-center gap-1.5 text-[13px] font-medium text-muted-foreground"
+              className="message-name mention-shortcut flex min-w-0 cursor-pointer items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-medium text-muted-foreground"
               title={mentionTitle}
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
@@ -60,23 +66,29 @@ export function ReplyControlBubble({ role, showName = true, showAvatar = true, m
             </div>
           )}
 
-          <div className="message-bubble min-w-0 max-w-full bg-transparent text-foreground shadow-none before:hidden">
-            <div className={`message-body text-sm leading-relaxed${stopped ? '' : ' thinking-dots'}`}>{stopped ? '已停止回复' : '正在回复中 '}</div>
-            <div className="message-tools mt-1 flex items-center gap-0.5">
-              {stopped ? (
-                <MessageToolButton
-                  label="重新发送"
-                  icon="retry"
-                  onClick={() => services.messageActions.retryRoleReply(role).catch(error => showError(error instanceof Error ? error.message : String(error)))}
-                />
-              ) : (
-                <MessageToolButton
-                  label="停止回复"
-                  icon="stop"
-                  activateOnPointerDown
-                  onClick={() => services.messageActions.stopRoleReply(role).catch(error => showError(error instanceof Error ? error.message : String(error)))}
-                />
-              )}
+          {/* 状态行：左文（Spinner + 名称文案）右钮（停止/重发），规格 §4.4 */}
+          <div className="message-bubble min-w-0 max-w-full rounded-lg bg-muted px-3 py-2">
+            <div className="flex min-w-0 items-center justify-between gap-2">
+              <div className="message-body flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                {!stopped && <Spinner className="size-3.5" />}
+                <span>{stopped ? '已停止回复' : `${role.name} 正在回复…`}</span>
+              </div>
+              <div className="flex shrink-0 items-center">
+                {stopped ? (
+                  <MessageToolButton
+                    label="重新发送"
+                    icon="retry"
+                    onClick={() => services.messageActions.retryRoleReply(role).catch(error => showError(error instanceof Error ? error.message : String(error)))}
+                  />
+                ) : (
+                  <MessageToolButton
+                    label="停止回复"
+                    icon="stop"
+                    activateOnPointerDown
+                    onClick={() => services.messageActions.stopRoleReply(role).catch(error => showError(error instanceof Error ? error.message : String(error)))}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>

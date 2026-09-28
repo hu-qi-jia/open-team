@@ -9,6 +9,8 @@ import { getAppState } from '../../lib/appStore'
 import { renderMarkdownMessageHtml } from '../../lib/markdown'
 import { applyHighlightsToBody } from '../../lib/messageHighlightsDom'
 import { isStructuredFailureReason, messageFailureText, shouldRenderMarkdownMessage } from '../../lib/messageSignature'
+import { Avatar, AvatarFallback } from '../ui/avatar'
+import { Spinner } from '../ui/spinner'
 import { ImageGrid } from './ImageGrid'
 
 const COPY_FEEDBACK_MS = 1200
@@ -98,22 +100,26 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
 
   return (
     <article
-      className={`message-row message ${message.type}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex px-6 py-1.5${message.type === 'user' ? ' flex-row-reverse' : ''}`}
+      className={`message-row message ${message.type}${showName ? '' : ' compact'}${showAvatar ? '' : ' no-avatar'} group flex py-1.5${message.type === 'user' ? ' flex-row-reverse' : ''}`}
       data-message-id={message.id}
     >
       <div className="message-inner flex w-full min-w-0 items-start gap-3">
-        <div
-          className={`message-avatar ${message.type === 'user' ? 'role-tone-5' : roleToneClass(message.roleName)}${role ? ' mention-shortcut' : ''} flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-none bg-secondary shadow-none text-xs font-medium text-secondary-foreground select-none`}
+        <Avatar
+          className={`message-avatar size-7 shrink-0 cursor-pointer select-none${role ? ' mention-shortcut' : ''}`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
           onContextMenu={onMentionContextMenu}
-        >{message.type === 'user' ? '你' : roleAvatarLabel(message.roleName)}</div>
+        >
+          <AvatarFallback className={`${message.type === 'user' ? 'role-tone-5' : roleToneClass(message.roleName)} text-xs font-medium text-secondary-foreground`}>
+            {message.type === 'user' ? '你' : roleAvatarLabel(message.roleName)}
+          </AvatarFallback>
+        </Avatar>
 
         <div className={`message-stack flex min-w-0 flex-col gap-1 ${message.type === 'user' ? 'items-end' : 'items-start flex-1'}`}>
           {isAssistant && showName && (
             <div
-              className={`message-name${role ? ' mention-shortcut' : ''} flex items-center gap-1.5 text-[13px] font-medium text-muted-foreground`}
+              className={`message-name${role ? ' mention-shortcut' : ''} flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-medium text-muted-foreground`}
               title={mentionTitle}
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
@@ -124,30 +130,33 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
             </div>
           )}
 
-          <div className={`message-bubble min-w-0 max-w-full ${message.type === 'user' ? 'rounded-2xl bg-primary px-3.5 py-2 text-primary-foreground shadow-none before:hidden' : 'bg-transparent text-foreground shadow-none before:hidden'}`}>
+          <div className={`message-bubble min-w-0 max-w-full ${message.type === 'user' ? 'rounded-lg bg-primary px-3 py-2 text-primary-foreground' : 'rounded-lg bg-muted px-3 py-2 text-sm'}`}>
             <OrchestrationMessageLabel message={message} />
-            {hasVisibleTextBody && (
+            {hasVisibleTextBody && (emptyPendingBody ? (
+              <div className="message-body flex items-center gap-2 text-sm leading-relaxed text-muted-foreground">
+                <Spinner className="size-3.5" />
+                <span>正在回复中…</span>
+              </div>
+            ) : (
               <div
                 ref={bodyRef}
-                className={`message-body text-sm leading-relaxed${isPendingAssistant ? ' thinking-dots' : ''}${bodyHtml !== undefined ? ' markdown-body' : ''}`}
+                className={`message-body text-sm leading-relaxed break-words${bodyHtml !== undefined ? ' markdown-body' : ' whitespace-pre-wrap'}`}
               >
                 {message.type === 'user' && (message.mentionsAll || mentionedRoles.length > 0) && (
-                  <div className="message-mentions mb-0.5">
+                  <div className="message-mentions mb-0.5 mr-1.5 inline-flex flex-wrap gap-1.5">
                     {message.mentionsAll && <span className="message-mention mr-1 inline-block rounded-md bg-primary-foreground/15 px-1.5 py-0.5 text-xs font-medium text-primary-foreground">@所有人</span>}
                     {mentionedRoles.map(mentionRole => (
                       <span key={mentionRole.id} className="message-mention mr-1 inline-block rounded-md bg-primary-foreground/15 px-1.5 py-0.5 text-xs font-medium text-primary-foreground">@{roleMentionLabel(mentionRole, mentionLabelOptions)}</span>
                     ))}
                   </div>
                 )}
-                {emptyPendingBody
-                  ? '正在回复中 '
-                  : structuredFailure
-                    ? messageFailureText(message)
-                    : bodyHtml !== undefined
-                      ? <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
-                      : message.content}
+                {structuredFailure
+                  ? messageFailureText(message)
+                  : bodyHtml !== undefined
+                    ? <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+                    : message.content}
               </div>
-            )}
+            ))}
             <ImageGrid message={message} />
             {reviewResult && <ReviewSummary result={reviewResult} />}
             {message.references?.length ? <ReferenceBox reference={message.references[0]} /> : null}

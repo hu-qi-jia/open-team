@@ -1011,11 +1011,84 @@ describe('team page messages (React)', () => {
       messageActions: { stopRoleReply },
     })
 
-    expect(messagesEl.querySelector('.message.thinking')?.textContent).toContain('正在回复中')
+    expect(messagesEl.querySelector('.message.thinking')?.textContent).toContain('工程师 正在回复…')
     const stop = messagesEl.querySelector<HTMLButtonElement>('[aria-label="停止回复"]')
     expect(stop).not.toBeNull()
     stop?.dispatchEvent(new Event('pointerdown', { bubbles: true, cancelable: true }))
     expect(stopRoleReply).toHaveBeenCalledWith(role)
+  })
+
+  it('member messages use a size-7 avatar and a muted rounded bubble', () => {
+    const chat = makeChat({ roleIds: ['role-1'], messageIds: ['msg-1'], nextMessageSeq: 2 })
+    const role = makeRole()
+    const message = makeAssistantMessage({ content: '回复内容', roleName: role.name })
+    const store = makeStore({ chat, roles: [role], messages: [message] })
+
+    const { messagesEl } = renderMessagesView(store)
+
+    const row = messagesEl.querySelector('[data-message-id="msg-1"]')
+    expect(row).not.toBeNull()
+    const bubble = row!.querySelector('.message-bubble')!
+    expect(bubble.className).toContain('bg-muted')
+    expect(bubble.className).toContain('rounded-lg')
+    expect(bubble.className).toContain('px-3')
+    expect(bubble.className).toContain('py-2')
+    const avatar = row!.querySelector('.message-avatar')!
+    expect(avatar.className).toContain('size-7')
+  })
+
+  it('user messages are right-aligned with a primary bubble', () => {
+    const chat = makeChat({ messageIds: ['msg-user'], nextMessageSeq: 2 })
+    const message: GroupMessage = {
+      id: 'msg-user',
+      chatId: chat.id,
+      seq: 1,
+      type: 'user',
+      content: '请分析这个方案',
+      createdAt: Date.now(),
+      status: 'sent',
+    }
+    const store = makeStore({ chat, messages: [message] })
+
+    const { messagesEl } = renderMessagesView(store)
+
+    const row = messagesEl.querySelector('[data-message-id="msg-user"]')
+    expect(row).not.toBeNull()
+    expect(row!.className).toContain('flex-row-reverse')
+    const bubble = row!.querySelector('.message-bubble')!
+    expect(bubble.className).toContain('bg-primary')
+    expect(bubble.className).toContain('rounded-lg')
+  })
+
+  it('reply status row renders a spinner next to the role name', () => {
+    const chat = makeChat({ roleIds: ['role-1'], status: 'running' })
+    const role = makeRole({ status: 'thinking', lastPromptMessageId: 'msg-user', updatedAt: Date.now() })
+    const store = makeStore({ chat, roles: [role] })
+
+    const { messagesEl } = renderMessagesView(store)
+
+    const row = messagesEl.querySelector('.message.thinking')
+    expect(row).not.toBeNull()
+    // Spinner 原语 = Loader2Icon（svg[role="status"]，无 data-slot）
+    expect(row!.querySelector('svg[role="status"]')).not.toBeNull()
+    expect(row!.textContent).toContain('工程师 正在回复…')
+  })
+
+  it('keeps the hidden attribute hiding the whole avatar on grouped continuation messages', () => {
+    const chat = makeChat({ roleIds: ['role-1'], messageIds: ['msg-1', 'msg-2'], nextMessageSeq: 3 })
+    const role = makeRole()
+    const messages = [
+      makeAssistantMessage({ id: 'msg-1', seq: 1, content: '第一条回复', roleName: role.name, createdAt: Date.now() }),
+      makeAssistantMessage({ id: 'msg-2', seq: 2, content: '第二条回复', roleName: role.name, createdAt: Date.now() + 1 }),
+    ]
+    const store = makeStore({ chat, roles: [role], messages })
+
+    const { messagesEl } = renderMessagesView(store)
+
+    const firstAvatar = messagesEl.querySelector('[data-message-id="msg-1"] .message-avatar')
+    const secondAvatar = messagesEl.querySelector('[data-message-id="msg-2"] .message-avatar')
+    expect(firstAvatar?.hasAttribute('hidden')).toBe(false)
+    expect(secondAvatar?.hasAttribute('hidden')).toBe(true)
   })
 
   it('shows showError when a mark command fails', async () => {
