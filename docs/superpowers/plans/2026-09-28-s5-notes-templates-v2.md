@@ -131,7 +131,8 @@ B 组 `2370–2373`/`2575`/`2581`/`2587`。错的拆分会让 T4 去 B 组找**�
 
 | 类 | 为什么不能删 |
 | --- | --- |
-| `notes-editor`(1048–1075)、`note-toolbar`(1015)、`note-tool-btn`(1027,1041)、`note-toolbar-spacer`(1023)、`all-note-toolbar`(1180) | `NotesPanel.tsx` 仍在用，**且 `NotesPanel.test.tsx:372-391` 是一条 CSS 守卫测试**，硬断言 legacy.css 必须仍含这 5 个串 |
+| `notes-editor`(1048–1075)、`note-toolbar`(1015)、`note-tool-btn`(1027,1041)、`note-toolbar-spacer`(1023) | `NotesPanel.tsx` 仍在用（实测命中 3 / 2 / 3 / 1 处），**且 `NotesPanel.test.tsx:372-391` 是一条 CSS 守卫测试**，硬断言 legacy.css 必须仍含这 5 个串 |
+| `all-note-toolbar`(1180) | ⚠️ **2026-09-29 订正：理由与上面四个不同**——`NotesPanel.tsx` 里 `all-note-*` 命中 **0 处**（T4 复审实测，编排者复核）。它的实际使用者是 **`AllNotesModal.tsx:210`**（`className="note-toolbar all-note-toolbar bg-background"`，用 `bg-background` 接管底色），**外加**守卫测试把 `'.all-note-toolbar'` 当字符串钉住。→ **S7 想清零 legacy.css 时，这一族的唯一牵绊是「一个钩子类 + 一条字符串断言」，别再照抄「NotesPanel 在用」** |
 | `tiny`(196) | 全局 15+ 文件在用，**`AppModal.tsx:159` 自己也在用** |
 
 ### D. 无规则、纯钩子的类（别去「退役」它们）
@@ -477,6 +478,57 @@ T3 在本任务之前已摘掉 `.btn` 的 TSX 消费者，所以这条可以整�
 `screenshot-s3-acceptance.mjs` **仍然 75/0**（只算子串命中，共享族的局部删除不会红），
 `.tiny`/`.reference-box`/`.section-title`/`.mention-shortcut`/`.all-note-*` 都**没有运行时断言**。
 → 本任务要给这些族补**按族计数**的静态断言，T5 的 `s5-9` 落地（本任务只需保证「删完之后计数是预期的那个数」并写进报告）。
+
+---
+
+### T4 执行与复审记录（2026-09-29）
+
+- **实现**：commit **`7fff577`**（父 `d4b873a`），**只改 `legacy.css` 1 个文件**，+44/−391，
+  **2769 → 2422 行**（`wc -l` 实测）。
+- **方法（本任务的核心）**：**用测量证明删除是 no-op，而不是用 grep 证明没有消费者**。
+  删前 / 删后各打一份快照（**40 个 pass × 1176 个元素 × 93 属性 + 6 几何值**），逐路径比对：
+  **共 283 条差异，UNEXPLAINED = 0**。分类：**22 条**=简报已批准的暗色渐变消失；
+  **66 条**=其同源派生（背景层数 2→1 导致 `background-position/size/repeat` 序列化收缩，有效值不变）；
+  **184 条**=逐类证明不渲染（`outlineStyle:none` 下的 `outlineColor`、已有确定 `height` 时的 `max-height→none`、
+  四边宽皆 0 的 `border-*-color` 等）。**几何零差异**（1176 个元素的 `rect` 删前删后完全一致）。
+- ⭐ **过渡防线是「自证」的，不是声称的**：合成对照 `control=100px / killed=400px` 证明防抖路径确实读终值；
+  真 DOM 里摘 `min-h-0` → **删前 `760→820`、删后 `760→760`**——
+  **820→760 的消失本身就是「被删属性曾在运行期起作用」的运行期直接证据**。
+- **像素级**：群模板两张截图**字节级相同**；笔记弹窗全画面仅 **1 个像素差**，且落在弹窗矩形**之外**。
+- **实现者自查出的测量盲区**：种子造不出「已删除群聊」条目，而 A 组删了 `.deleted-chat` 的两条规则 →
+  补 `t4-deleted-chat.mjs`（16 个 pass，115 条差异同样 0 UNEXPLAINED，琥珀边/底/内阴影逐属性同值）。
+- **独立只读复审**：`.superpowers/s5-notes-templates/task-4-review.md`，**APPROVE WITH NITS，必需修复项 = 无**。
+  ⭐ **headline：没有任何「规则删了、消费者还活着且失去视觉来源」的配对。**
+  59 条整条删除的规则 / 112 个选择器，逐选择器在**全部 `src/` + `scripts/`（307 个文件）**核对
+  （含**前缀搜索**以捕捉 `` `group-template-risk-${riskLevel}` `` 这类动态拼名）；
+  8 条分组规则共摘 13 个成员，**零共享成员被误伤**（`.notes-editor` 9→9、`.note-tool-*` 6→6、
+  `.template-card*` 12→12、`orchestration-` 208→208、`#iframe-host` 19→19）；
+  反向残留 A 组 0 / B 组 0（搜到的字面量全在本次新增注释里）、`.btn` 1→0、760px 选择器 0、
+  **花括号平衡、无悬空逗号、新增声明 0 条**（44 条新增行 = 40 注释 + 4 条选择器行改写，**没夹带新样式**）。
+  复审另独立复现 no-op：其构建 vs 报告 before = 280 属性差 / 0 几何差 / 0 UNEXPLAINED；
+  报告 after vs 其 after = **0/0 逐字节一致**。
+- ❌ **复审独立发现、报告未提的（均已处置或记录）**：
+  1. **`.btn` 失效选择器不止一处**：除 `w3-3:160/182` 外还有 **`w1c5:177`**，
+     且 **`w1c5:177` 是本阶段引入的红**（T3 摘 `className="btn"` 后查询为空 → 其第 181 行的
+     「清空搜索恢复列表」断言失败）。**这是 S5 造成的，不许扫进「前置既存」豁免**。→ 已写进 T5 简报。
+  2. **`.btn` 那条的截图证据逻辑上是空的**（T3 先删了类名，两张截图都拍不到它）。
+     复审用「还原类名 + 重注入规则 + 像素比对」补齐：浅色下该规则确实改 `background`→white、
+     `border-color`→`rgba(113,113,122,.2)`，但 `border-width:0`/`border-style:none`（存活规则 `button{border:0}`）
+     且祖先终点是不透明白，**裁剪区逐字节相同**（灵敏度正控：6320/9152 像素会变）→ **惰性成立**，报告缺这条证据链。
+  3. **报告的分类器偏松**（`maxHeight` 分支不校验确定高度、`outlineColor`/`border-*-color` 只查一侧），
+     单靠它漏得掉真回归；复审用严判据**重导了全部「惰性」结论，均成立**。
+  4. **一处事实订正**：报告称 `.all-note-toolbar` 是「NotesPanel 在用的共享族」——
+     `NotesPanel.tsx` 里 `all-note-*` **命中 0**（编排者复核）。已订正基线 C 的对应表行（见上）。
+  5. **两处 T4 之前的漂移**（超出本次 before/after 窗口）：分类片 padding 11px→10px、
+     脚部 padding-top 14→16px 且多了上边框。→ 并入合并前的可见变化清单。
+  6. 过渡防御判定成立**且必要**：复审自己早期一次探针正是在无 kill 时读到插值中间态而误判。
+- ⚠️ **T5 必须带上**（已写进 `task-5-brief.md`）：
+  (a) **`s5-9(a)` 计数前必须先剥注释**——T4 在原位留了说明性注释、里面逐字写着被删类名，
+  直接 grep 必假红；`NotesPanel.test.tsx:374` 已是本仓既定写法。**绝不要反过来删那些注释**。
+  (b) `GroupTemplateModal.tsx:278` 动态拼 `group-template-risk-${riskLevel}`，静态扫描**看不见** `-professional`。
+  (c) **`#theme-light`/`#theme-dark` 已退役，`scripts/` 下 11 个脚本引用它** →
+  那些脚本的**浅色段根本不可达**（前置既存，与 S5 无关，但意味着「全量回归」在浅色一维本来是空的）
+  → **S5 的浅色覆盖必须由新探针自己承担**。
 
 ---
 
