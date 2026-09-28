@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { GroupMessage, GroupRole, MessageHighlight, OpenTeamStore, OrchestrationReviewResult } from '../../../../group/types'
 import { MessageSquare, Users } from 'lucide-react'
 import { Button } from '../ui/button'
@@ -58,10 +58,17 @@ export function Messages() {
   const services = useServices()
   const version = useStoreSelector(getAppStateVersion)
   const selectedChatId = useStoreSelector(state => state.selectedChatId)
-  // 贴底跟随与划词菜单共用的滚动容器 ref：指向 ScrollArea 的 Viewport
-  // （真实滚动元素），ref 在 commit 阶段先于 layout effect 挂好，挂载帧
-  // 的贴底判定因此照常触发。useAutoScroll / useMarkMenu 的签名不变。
+  // 贴底跟随与划词菜单共用的滚动容器：指向 ScrollArea 的 Viewport（真实滚动
+  // 元素）。ref 在 commit 阶段先于 layout effect 挂好，挂载帧的贴底判定照常
+  // 触发；同时以 state 记录元素身份喂给 useMarkMenu——元素被 React 替换
+  // （Viewport 卸载重建）时监听器随 deps 变化重绑，不会滞留旧节点
+  // （S2 终审 I5：旧写法用 RefObject 时 deps 不含元素，划选菜单会静默失效）。
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [scrollContainer, setScrollContainer] = useState<HTMLDivElement | null>(null)
+  const viewportRef = useCallback((node: HTMLDivElement | null) => {
+    scrollRef.current = node
+    setScrollContainer(node)
+  }, [])
   const [thinkingTick, setThinkingTick] = useState(0)
   const thinkingTimeoutsRef = useRef<number[]>([])
   const loggedThinkingTimeoutRoleIdsRef = useRef(new Set<string>())
@@ -146,7 +153,7 @@ export function Messages() {
   })
 
   const markMenuController = useMarkMenu({
-    containerRef: scrollRef,
+    container: scrollContainer,
     resolveMessage: messageId => getAppState().store.messagesById[messageId],
     onHighlight: mark => {
       services.runCommand('GROUP_MESSAGE_HIGHLIGHT_CREATE', {
@@ -178,7 +185,7 @@ export function Messages() {
     <section id="messages" className="messages flex h-full min-h-0 flex-col" aria-live="polite">
       {/* S6 表面，位置保持：状态卡在滚动列之外，不做列容器内的 720px 约束 */}
       {chat && <OrchestrationStatusCard />}
-      <MessagesScrollArea viewportRef={scrollRef}>
+      <MessagesScrollArea viewportRef={viewportRef}>
         {/* 内容列（规格 D7）：720px 居中，水平 padding 由列承担；行内条目按
             Task 3 前的现状渲染（px-6 归 Task 4 移除）。 */}
         <div data-slot="messages-column" className="mx-auto flex w-full flex-1 flex-col px-4 max-w-[720px] pb-4">

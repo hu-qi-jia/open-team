@@ -23,7 +23,14 @@ export interface MarkMenuController {
 }
 
 interface UseMarkMenuOptions {
-  containerRef: React.RefObject<HTMLElement | null>
+  /**
+   * 真实滚动容器元素（ScrollArea viewport），由调用方以「callback ref + state」
+   * 提供而非 RefObject——元素被 React 替换（如 Viewport 卸载重建）时必须触发
+   * 监听器重绑。用 RefObject 时 effect deps 不含元素，元素一换监听器就留在
+   * 旧节点上：container.contains() 恒 false，划选菜单整场静默失效
+   * （S2 终审 I5；T8 的 s2-* 验收抓到的同类 P0）。
+   */
+  container: HTMLElement | null
   /** 由调用方每轮渲染刷新（闭包读取最新 store），监听器内经 ref 取用 */
   resolveMessage(messageId: string): GroupMessage | undefined
   onHighlight(mark: SelectedMark): void
@@ -37,9 +44,11 @@ interface UseMarkMenuOptions {
  * - selectionchange 只在非拖拽态响应（例如键盘选区）；
  * - 菜单外的点击 / Escape 关闭；dragstart 取消。
  * 几何与结算逻辑不变；菜单本体由 <MarkMenu> portal 渲染。
+ * 监听器随 container 元素身份重绑（S2 终审 I5）：容器被 React 替换后
+ * 所有事件立即落到新节点上，不会出现「静默失效整个会话」。
  */
 export function useMarkMenu(options: UseMarkMenuOptions): MarkMenuController {
-  const { containerRef } = options
+  const { container } = options
   const [selectedMark, setSelectedMark] = useState<SelectedMark | undefined>(undefined)
   const [selectedColor, setSelectedColorState] = useState<MessageHighlightColor>(DEFAULT_MESSAGE_HIGHLIGHT_COLOR)
 
@@ -64,7 +73,6 @@ export function useMarkMenu(options: UseMarkMenuOptions): MarkMenuController {
   }
 
   useEffect(() => {
-    const container = containerRef.current
     if (!container) return
 
     const beginSelectionDrag = (event: MouseEvent | PointerEvent): void => {
@@ -187,7 +195,7 @@ export function useMarkMenu(options: UseMarkMenuOptions): MarkMenuController {
       document.removeEventListener('keydown', onKeyDown)
       clearMarkMenuUpdate()
     }
-  }, [containerRef, hide])
+  }, [container, hide])
 
   const setSelectedColor = useCallback((color: MessageHighlightColor) => {
     selectedColorRef.current = color

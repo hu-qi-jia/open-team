@@ -311,7 +311,10 @@ export function Composer() {
               el.focus()
             }}
           ><AtSign className="size-4" /></Button>
-          <div className="min-w-0">
+          {/* 终审 I3：恢复 base 的隐藏行为（原 legacy.css `.composer-actions > div{display:none}`
+              ——两行预览文案自始未可见；计划 §4.5 的底行为「左 ghost 图标钮 + 右发送钮」）。
+              id 与文本保留（测试读 textContent 不受影响），仅包层 hidden。 */}
+          <div className="min-w-0" hidden>
             <div id="target-preview" className="muted tiny truncate text-[11px] text-muted-foreground">{preview.targetText}</div>
             <div id="busy-preview" className="tiny truncate text-[11px] text-muted-foreground">{preview.busyText}</div>
           </div>
