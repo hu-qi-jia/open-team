@@ -318,6 +318,41 @@ T2 以**暗色为正典**、用 token 表达使两主题一致 → **浅色下�
 
 ---
 
+### T2 执行、复审与修补记录（2026-09-29）
+
+- **实现**：commit **`89fd094`**（父 `e075801`），4 个文件。
+- **独立只读复审**：`.superpowers/s5-notes-templates/task-2-review.md`，**APPROVE WITH NITS**，必需修复项 = 无。
+- ⭐ **最有价值的一条：它没有用读代码的方式验本阶段的头号风险（legacy 属性漏译）。**
+  复审者在**真浏览器**里用 CSSOM 把 A 组 legacy 选择器逐个摘掉（**23 条整删 + 3 条裁剪 + 31 段**），
+  摘前摘后比 **52 个 computed 属性 + 几何**：暗色仅 2 处非渲染差异、浅色仅 1 处
+  （都是 `max-height`→none 但元素已有确定高度 / `border-top-color` 而该边宽已是 0）。
+  → 「没有属性漏译」是**实证结论**，不是推断。**T5 的 `s5-9` 复用此手法**（见 `_scratch/t5-reminders-from-reviews.md`）。
+  复审者还把实现者新加的窄档行模板**现场移除**复现出「列表 440px / 编辑器 81px」，证明该偏离是必需的。
+- ❌ **复审抓到一处报告未提的真实回归 → 已修**：未选中的**已删除群聊**条目，悬停时琥珀边被灰边顶掉。
+  legacy 里 `.all-note-target:hover` 与 `.all-note-target.deleted-chat` **特异性同为 (0,2,0)**、后者源码更靠后 → 悬停琥珀胜；
+  而 Tailwind 把 **hover 变体排在基础工具类之后**，`hover:border-muted-foreground/20` 反压基础的琥珀边。
+  **jsdom 算不出 `:hover`**——typecheck / 单测 / build 全绿也看不见它。
+  修法：未选中分支按 `deletedChat` 把 hover/focus-visible 的**边框**分流（底色仍 `hover:bg-accent`，因 legacy 无 `.deleted-chat:hover` 底色规则）。
+- **修补 commit `1bf22d0`**（父 `89fd094`）：2 文件 +45/−1，只有 `notes/AllNotesModal.tsx` + `notes/AllNotesModal.test.tsx`。
+  含 6 条新断言（其中一条明写「**不得**带 `hover:border-muted-foreground/20`」）与复审指出的第二条缺口
+  （新加的 `max-[760px]:grid-rows-[auto_minmax(0,1fr)]` 此前无断言钉住）。
+- **编排者独立复核（未再派第二轮复审，理由见下）**：
+  1. 通读 `git show 1bf22d0 -- <两个文件>` 全量 diff；
+  2. `dist/team.css` 里四条琥珀规则**逐条在场**：`.all-note-target.deleted-chat` / `.border-[rgba(248,184,78,0.22)]` /
+     `.hover\:…:hover` / `.focus-visible\:…:focus-visible`（证明 hover 变体没被 `${` 扫描器吞掉）；
+  3. **自跑** T2 私有布局探针 → **23 PASS / 0 FAIL**，悬停中的已删除群聊条目实测
+     `borderTopColor = rgba(248, 184, 78, 0.22)`（琥珀）+ `backgroundColor = oklch(0.274 0.006 286.033)`（accent），与 legacy 语义一致。
+- **不再追加第二轮复审的判定**：修补仅 11 行源码、位于单个三元分支内，不碰共享代码；实现者给出了红→绿的实际输出；
+  上述 2、3 两条是对**渲染结果**的直接实测（正是该 bug 唯一可见的层面）。**终审（T6 档）需覆盖 `1bf22d0`。**
+- ⚠️ **两条只记录未修的偏离，终审与 T5 必须带着**：
+  1. `max-[760px]:` 编译为 `@media (width < 760px)`，legacy 是 `(max-width: 760px)`（含 760）→ **视口正好 760px 时单栏变两栏**的 1px 差。
+     **已决：接受，不做 `max-[760.01px]:` 此类 hack**；`s5-11` 的响应式断言**不许拿 760 当视口**（用 700）。
+  2. `border-border` 取代 `rgba(113,113,122,.08)` 是**值变化**（暗色下约亮一倍）。首轮报告漏标，复审后已补记。
+- **未验证项**（复审自陈，转 T5 / 终审）：只跑了 Chromium；`Empty` 空态分支不可达故无覆盖；
+  T4 模拟是**按 A 组选择器清单**的近似（非 T4 真实删除清单）；全仓测试未跑（只跑 `src/teamPage/ui`）。
+
+---
+
 ### T3：`GroupTemplateModal` → `AppModal`
 
 **交付物**：`shell/GroupTemplateModal.tsx`、`shell/GroupTemplateModal.test.tsx`。
