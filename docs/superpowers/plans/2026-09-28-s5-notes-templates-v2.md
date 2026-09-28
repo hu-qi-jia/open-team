@@ -1,0 +1,334 @@
+# S5 计划：全部笔记弹窗 + 群模板弹窗 → `AppModal`
+
+> 分支 `feature/react-ui-s5`（自 `main` = `271c81a` 起）。执行方式沿用**子代理驱动**：
+> 每任务一份简报 → **一个**实现者（禁止并行派发多个实现子代理）→ 报告 → **独立只读复审** → 修复轮 → 下一任务；
+> 阶段末全分支终审 → **本地 `--no-ff` 合并回 main**（不 push）。
+> 设计权威：`docs/superpowers/specs/2026-09-28-shadcn-ui-rebuild-design.md`（§206 把 S5 记为「全部笔记 + 外部模型 + 群模板」，
+> **外部模型已由 S4 交付**，故本阶段实际是**两个**弹窗）。
+
+## 阶段目标
+
+把最后两个未迁移的弹窗收进 S4 建立的公共壳 `common/AppModal.tsx`，并**为此给壳补两个 S4 没做的能力**：
+
+1. `notes/AllNotesModal.tsx`（全部笔记）→ `AppModal`
+2. `shell/GroupTemplateModal.tsx`（群模板）→ `AppModal`
+
+完成后，spec 里 10 个弹窗**全部**由 `AppModal` 承载，S6 只剩编排 3 弹窗（它们直接复用本阶段补齐的 `footer` 槽）。
+
+---
+
+## Global Constraints（沿用 S4，全部仍然有效）
+
+- **runtime 不许动**：`iframeHost` / `sendWithReconnect` / 编排 runtime / `notesBridge` / `useFloatingPanelGeometry`。
+- **零新增 npm 依赖**；**禁止** git worktree、**禁止** junction `node_modules`；**禁止** `position: fixed`；**禁止** push。
+- **评审者只读**（除自己的 review 文件）；**禁止**并行派发多个实现子代理。
+- **门禁**：每任务 `npm run typecheck` + 触及的测试文件 + `npm run build` 全绿才算完成；阶段末跑全量。
+  已知既有失败豁免：`packages/openteamcli` ×2、`extensionConfig` ×1、`QuickCreateChat` 4 条 `css-syntax-error` minify 警告。
+- **正文内边距必须显式接管**：`AppModal` 用 `p-0` 收掉原语 `DialogContent` 的 `p-6`，正文内边距**没有别的来源**。
+  本阶段两个弹窗都是**自定义布局**（两栏工作区 / 网格），按各自结构决定内边距落点，但**必须有**，
+  且 jsdom 抓不到——只有 T5 的几何断言能看见。
+- **写进简报/断言的实测值，落笔前自己重测一次**（S4 教训：简报里出现过被实测推翻的旧值）。
+  **不许写「负面存在性」断言**（「X 在 dist 里出现 0 次」这类值会随 Tailwind 合并同值规则而变）。
+  计数必须说明是**行数**还是**出现次数**（`grep -c` vs `grep -o | wc -l`）。
+- **Tailwind 变体先探针后落笔**：本阶段要用到 `max-[760px]:` 断点变体与多值 `grid-rows-[...]`。
+  ✅ **编排者已用 `@tailwindcss/node` 探针实测 13/13 全部存在**（2026-09-29，脚本
+  `.superpowers/s5-notes-templates/_scratch/probe-candidates.mjs`）：`max-[760px]:grid-cols-1`、
+  `max-[760px]:max-h-none`、`max-[760px]:overflow-x-auto`、`max-[760px]:border-r-0`、
+  `grid-rows-[auto_minmax(0,1fr)_auto]`、`grid-rows-[auto_minmax(0,1fr)]`、`grid-cols-[240px_minmax(0,1fr)]`、
+  `grid-cols-[repeat(auto-fit,minmax(520px,1fr))]`、`min-w-[160px]`、`content-start`、
+  `max-h-[min(620px,calc(100vh-150px))]` + 两个控制组。
+  ⚠️ 探针只证「Tailwind 认识这个类」，**不证「扫描器没吞掉它」**——每个任务仍须在 `npm run build` 后
+  回 `dist/team.css` 复核一次（紧贴 `${` 的类名会被静默丢弃）。
+- ⚠️ **探针种子陷阱**：`src/group/store.ts:96` 的 `loadStore()` 一旦发现 `openteam.meta.v2` 就直接返回、
+  根本不读 `openteam.groupStore`。**任何要扫多个种子值、或中途关开弹窗再重种的脚本，必须先
+  `chrome.storage.local.clear()` 再写种子**（否则第二趟起种子被完全遮住，症状是「无论种几个都只有上一次那几个」）。
+- **删 legacy 规则前必须重新 grep 活消费者**（见 [[legacy-rule-retirement-check-live-consumers]]）：
+  「使用者已迁完」不可信，结构属性（grid/gap/padding）最易漏迁，且门禁抓不到。
+  ⚠️ 必须按**裸串**搜（锚定 `^\.类名` 会漏掉分组选择器里的成员），并注意**前缀碰撞**。
+
+---
+
+## 现状实测基线（2026-09-29 编排者实测，供各任务写期望值）
+
+### A. `notes/AllNotesModal.tsx`（178 行）
+
+| 量 | 现状 |
+| --- | --- |
+| 宽度 | `min(980px, calc(100vw - 48px))`——**TSX 与 legacy 两边都写了，数值完全相同**（纯重复，不是打架） |
+| 高度 | `max-height: min(760px, calc(100vh - 48px))` + `overflow: hidden`；**内容驱动、非定高** |
+| 工作区 | `.all-notes-workspace`：`grid-template-columns: 240px minmax(0, 1fr)`，`min-height: min(620px, calc(100vh - 150px))`，`border-top` |
+| 左栏 | `.all-notes-list`：`max-height: min(620px, calc(100vh - 150px))` + `overflow: auto` + `padding: 14px` + `border-right` + 底色 `rgba(4,12,18,.2)` |
+| 右栏 | `.all-notes-editor-shell`：`grid-template-rows: auto auto minmax(0,1fr)`；`.all-notes-editor { min-height: 360px }` |
+| 响应式 | `@media (max-width: 760px)`：工作区变**单栏**，列表变 `display:flex` + 横向滚动 + `max-height:none`，`.all-note-target` 加 `min-width:160px` |
+| 头部 | `DialogHeader` 手写 `flex-row items-start justify-between gap-4 text-left`（**无 border-b**）+ 手写关闭钮（**裸 `×` 文本**） |
+| 关闭语义 | **Escape 关 + 背板点击关**（`AllNotesModal.test.tsx:183` 断言背板点击后弹窗消失） |
+| 首焦 | **无** `onOpenAutoFocus`；靠 `engine.focusWhenReady()` 聚焦编辑器 |
+
+### B. `shell/GroupTemplateModal.tsx`（262 行）
+
+| 量 | 现状 |
+| --- | --- |
+| 宽度 | `min(1500px, calc(100vw - 32px))`——**唯一来源是 TSX**，legacy 无 width 声明 |
+| 高度 | `.group-template-modal`：`min-height: min(820px, calc(100vh - 24px))` + `max-height: calc(100vh - 24px)` + `overflow: hidden`；**四行网格** `grid-template-rows: auto auto minmax(0,1fr) auto`（头 / 工具行 / 列表 / 页脚） |
+| 列表 | `.group-template-list`：`grid-template-columns: repeat(auto-fit, minmax(520px, 1fr))` + `gap:16px` + `max-height: min(720px, calc(100vh - 240px))` + `overflow: auto` |
+| 页脚 | `.group-template-footer`：`display:flex; justify-content:flex-end; padding-top:14px` |
+| 头部 | 与 A 同款手写头部 + **裸 `×`** 关闭钮 |
+| 关闭语义 | **Escape 关 + 背板点击不关**（`GroupTemplateModal.test.tsx:235-237` 断言外点后弹窗仍在）；实现是 `onInteractOutside={e => e.preventDefault()}` |
+| 首焦 | 自有 `onOpenAutoFocus` → `document.getElementById('group-template-search')?.focus()`——**裸 `.focus()`** |
+| 空态 | `Empty` 原语 + `group-template-empty col-span-full min-h-60 p-6 md:p-8` |
+
+### C. 规则归属（`legacy.css` 2769 行；`globals.css` 对这两组类名**零命中**）
+
+**A 组独占、可退役**：`.all-notes-modal`(1077)、`.all-notes-workspace`(1083)、`.all-notes-list`(1090)、
+`.all-notes-empty`(1101)、`.all-note-target` 族(1109–1156)、`.all-notes-editor-shell`(1158)、
+`.all-notes-editor-header`(1165, 1174)、`.all-notes-editor`(1184)，及浅色 2323/2324/2461/2509–2511/2525/2529/2533/2537，
+媒体查询 1188–1203。
+
+**B 组独占、可退役**：`.group-template-*` 全部（1309–1509），及浅色 2350–2351/2370–2373/2411–2413/2428/2571/2575/2581/2587。
+
+**必须保留（共享族 / 全局）**：
+
+| 类 | 为什么不能删 |
+| --- | --- |
+| `notes-editor`(1048–1075)、`note-toolbar`(1015)、`note-tool-btn`(1027,1041)、`note-toolbar-spacer`(1023)、`all-note-toolbar`(1180) | `NotesPanel.tsx` 仍在用，**且 `NotesPanel.test.tsx:372-391` 是一条 CSS 守卫测试**，硬断言 legacy.css 必须仍含这 5 个串 |
+| `tiny`(196) | 全局 15+ 文件在用，**`AppModal.tsx:159` 自己也在用** |
+
+### D. 无规则、纯钩子的类（别去「退役」它们）
+
+`.group-template-empty`、`.group-template-empty-actions`、`has-long-summary`：**legacy.css 里根本没有规则**
+（W3-3 已把视觉改成 TSX 里的 utility）。
+⚠️ `GroupTemplateModal.tsx:160-162` 的注释写「空态网格铺满/最小高原由 legacy 规则承担」——**该注释是过时的**，
+本阶段顺手订正，**不要**据它去 legacy 里找规则。
+`.all-note-target.deleted-chat` / `.active` 是**复合选择器**，`deleted-chat` 无独立规则。
+
+---
+
+## ⚠️ 本阶段特有的三条硬耦合（会直接挂测试，先看这里）
+
+1. **`NotesPanel.test.tsx:372-391` 守卫测试**：它断言 `legacy.css`（去注释后）仍包含
+   `'.notes-editor'`、`'.note-tool-btn'`、`'.note-toolbar {'`、`'.note-toolbar-spacer'`、`'.all-note-toolbar'`
+   五个串。**删这五族任何一条规则都会直接挂测试**。它们是共享族，本阶段**只迁 AllNotesModal 的用法、不删规则**。
+2. **`.btn` 被测试钉住**：`GroupTemplateModal.test.tsx:143,153` 用 `.group-template-empty-actions .btn`
+   选空态两个按钮。`.btn` 在 legacy.css **只有一条浅色规则**(2358)，没有暗色基础规则。
+   → T3 必须**实测**该浅色规则对 shadcn `Button variant="ghost"` 的实际作用，再二选一：
+   （i）保留 `.btn` 钩子（零风险，测试不动，挂 S7 处置）；（ii）退役它并**同步改测试选择器**为
+   `.group-template-empty-actions button`（不得放松判别力）。**不许**只改类名不改测试。
+3. **两个弹窗的关闭语义相反**：AllNotes **背板点击关**（测试 `:183` 断言），GroupTemplate **背板点击不关**
+   （测试 `:235-237` 断言）。这就是 T1 必须给壳加 `closeOn` 的原因——**不是过度设计**。
+
+---
+
+## 需要拍板的可见变化（编排者建议，已写进各任务；如不同意请在开工前说）
+
+| 弹窗 | 变化 | 理由 |
+| --- | --- | --- |
+| 全部笔记 | 宽 **980 → 1160**（`2xl`） | 980 不是 6 档令牌之一。「就近档」算术上 `xl`(820) 更近（差 160 vs 180），但它是**左 240px 列表 + 右编辑器**的两栏工作区，收窄 160px 会直接伤编辑器可用宽度，故取 `2xl`。 |
+| 全部笔记 | 高 **内容驱动（地板 620）→ 恒定 760** | 现状 `min-height: min(620, 100vh-150)` 已经让它**几乎**是定高（≈680），改 `fixed` 只增约 80px；且只有 `fixed` 能让「编辑器吸收剩余高度、左列表内部滚动」成立。用 `auto` 会多出整壳滚动容器，与左列表的内部滚动**叠成双滚动条**。 |
+| 群模板 | 宽 **1500 保持**，沟槽 **32 → 48** | 收敛到统一沟槽；窄屏下每边缩 8px。 |
+| 群模板 | 高 **820–926（近满视口）→ 760** | 统一高度上限。列表可用高度约 710 → 575。**这是本阶段最明显的一处视觉变化**，请确认可接受。 |
+
+---
+
+## 任务分解
+
+### T1：给 `AppModal` 补 `footer` 槽 + `closeOn`（先写契约测试看红）
+
+**交付物**：`common/AppModal.tsx`、`common/AppModal.test.tsx`。
+
+**要加的两个 prop**：
+
+1. `footer?: React.ReactNode`
+   - ⚠️ **必须条件渲染**：`footer ? <div data-slot="modal-footer">…</div> : null`。
+     **绝不许**渲染一个空的 footer 节点——现有**三条**测试用 `modal.lastElementChild` 定位内容行
+     （`PeopleLibraryModal.test.tsx` 约 `:286`、`PersonTemplateModal.test.tsx`、`TemporaryPersonModal.test.tsx`），
+     空节点会让它们**同时误红**。
+   - `height="fixed"` 且有 footer 时，grid 行从 `grid-rows-[auto_minmax(0,1fr)]`
+     扩成 `grid-rows-[auto_minmax(0,1fr)_auto]`；**无 footer 时保持两行**（别无条件写三行）。
+   - `auto` 高度下 footer 就是 flex 列的最后一行（不参与 grid 行）。
+2. `closeOn?: 'default' | 'escape-only'`（默认 `'default'`）
+   - `'escape-only'` → 在 `DialogContent` 上传 `onInteractOutside={event => event.preventDefault()}`
+     （Radix 的 outside 既覆盖背板 pointerdown，也覆盖焦点外移，与 GroupTemplate 现状一致）。
+   - `'default'` → 不传，维持 Radix 默认（背板关）。
+   - 两种模式下 **× 与 Escape 都必须仍能关**。
+
+**顺带加固（销 S4 挂账）**：给正文行与 footer 行加 `data-slot="modal-body"` / `data-slot="modal-footer"`，
+把上述**三条**测试的 `modal.lastElementChild` 改成按 `data-slot` / class 定位。
+（条件渲染已经让它们不会误红，但加固能永久拆掉这颗雷，S6/S7 加 footer 时不再受影响。）
+
+**Step 1（先红）**：在 `AppModal.test.tsx` 写契约用例并**先跑一次看它红**，把红的输出贴进报告：
+- 传 `footer` → 该节点存在且是 content 的最后一个元素；**不传** → content 的**子元素数量与加 footer 之前一致**（这是防空节点的关键断言）。
+- `closeOn='escape-only'` → 背板 pointerdown/click 后 **`onClose` 未被调用**；Escape 后**被调用**；点 `closeId` 后**被调用**。
+- `closeOn` 缺省 → 背板点击后 `onClose` **被调用**。
+- ⚠️ jsdom 验不了「grid 三行」这类布局，别在单测里假装验它——那条归 T5 的真浏览器断言。
+
+**Step 3**：`npm run typecheck`、`npx vitest run src/teamPage/ui/components/common/AppModal.test.tsx`、
+**三条用 `lastElementChild` 的测试**（people 三个文件）、`npm run build`。
+
+**Step 4**：一次 commit。
+
+---
+
+### T2：`AllNotesModal` → `AppModal`
+
+**交付物**：`notes/AllNotesModal.tsx`、`notes/AllNotesModal.test.tsx`。
+
+**目标形态**：
+- `size="2xl"`、`height="fixed"`、**无 footer**、`closeOn` 缺省（背板关，保持现状）。
+- `contentId="all-notes-modal"`、`titleId="all-notes-title"`、`closeId="close-all-notes"`、
+  `closeLabel={t('关闭全部笔记')}`、`description={t('全局、群聊、已删除群聊')}`（**无** `descriptionId`）。
+- **不传 `initialFocusId`**：现状就没有 `onOpenAutoFocus`，聚焦由 `engine.focusWhenReady()` 负责，保持不动。
+- 裸 `×` 文本 → 由壳渲染的 `<X className="size-4" aria-hidden="true"/>`（与 2026-09-28 修复批次③一致）。
+
+**逐字保留的契约**（E2E 钩子，`AllNotesModal.test.tsx` 与既有探针都在用）：
+`#all-notes-modal`、`#close-all-notes`、`#all-notes-title`、`#all-notes-list`、`#all-notes-editor`、
+`#all-notes-active-title`、`#all-notes-active-meta`、`#all-note-bold|italic|strike|bullet-list|ordered-list|undo|redo`、
+`data-note-target-id`、`aria-pressed`、`.all-note-target` + `.deleted-chat` + `.active`。
+
+**布局迁移要点**：
+- 壳的 `fixed` 会给正文行 `overflow-auto`——**必须用 `bodyClassName` 抵成 `overflow-hidden`**
+  （同组后者胜，`cn` = twMerge），否则与左列表的内部滚动**叠成双滚动条**。
+- 正文行内是工作区：`grid grid-cols-[240px_minmax(0,1fr)]` + `min-h-0`（撑满），
+  左列表 `overflow-auto`，右栏 `grid grid-rows-[auto_auto_minmax(0,1fr)] min-h-0`。
+- **`@media (max-width: 760px)` 的单栏行为必须保留**：用 Tailwind 断点变体表达（**先跑探针确认变体存在**），
+  列表转横向滚动 + `max-height:none` + `.all-note-target` 的 `min-width:160px`。
+- `.note-toolbar` / `.note-tool-btn` / `.note-toolbar-spacer` / `notes-editor` **保留类名**（共享族 + 守卫测试），
+  视觉 utilities 参照**已经迁完的 `NotesPanel.tsx`**（这是本任务最好的参照实现）：
+  `note-toolbar flex items-center gap-0.5 px-6 py-2`、`note-tool-btn size-7 rounded-md text-muted-foreground`、
+  `notes-editor min-h-0 …`。⚠️ 参照时注意两者内边距语境不同（NotesPanel 是浮窗、本弹窗有两栏），
+  **别照抄 `px-6` 压到左列表上**。
+
+**Step 1（先红）**：先改/加 `AllNotesModal.test.tsx` 的契约用例并看红。至少覆盖：
+- 壳契约：content 命中 `2xl` 宽度令牌、`#close-all-notes` 是 `svg`（**无 `×` 文本节点**）、`aria-label` 为「关闭全部笔记」；
+- 回归：现有 7 条用例**语义不得改变**（默认目标、切目标先存后切、已删除群聊可编辑、关闭保存、Escape/背板关闭、点弹窗本体不关）。
+  ⚠️ 允许改的是**选择器写法**（如 `.all-notes-modal` 类名若不再存在），**不允许**改断言的语义或放松。
+
+**Step 3**：`npm run typecheck`、`npx vitest run src/teamPage/ui/components/notes/AllNotesModal.test.tsx`、
+**`NotesPanel.test.tsx`**（守卫测试 + 共享族）、`npm run build`、`node scripts/screenshot-bugfix-acceptance.mjs`（须仍 42/0）。
+
+---
+
+### T3：`GroupTemplateModal` → `AppModal`
+
+**交付物**：`shell/GroupTemplateModal.tsx`、`shell/GroupTemplateModal.test.tsx`。
+
+**目标形态**：
+- `size="full"`、`height="fixed"`、**`footer={确认创建钮}`**、`closeOn="escape-only"`、
+  **`initialFocusId="group-template-search"`**。
+- `contentId="group-template-modal"`、`titleId="group-template-title"`、
+  `closeId="close-group-template-modal"`、`closeLabel={ui('关闭群聊模板')}`、
+  `description={ui('选择一个现成小组，创建后会自动加入模板人员。')}`。
+- **删掉本地的 `onOpenAutoFocus`（裸 `.focus()`）与 `onInteractOutside`**——两者都改由壳承担。
+
+> ⚠️ **这条迁移顺手闭合一个潜伏缺陷，要在报告里显式写清**：现状 `document.getElementById('group-template-search')?.focus()`
+> 是**裸 `.focus()`**（与 S4 的 F1 同款写法）。它当前**无害**，只因为群模板弹窗还没有滚动容器；
+> 一旦迁到 `AppModal` 的 `height="auto"`（带 `max-h + overflow-auto`）就会长出 F1（打开即滚到底）。
+> 走 `height="fixed"` + 壳的 `initialFocusId`（自带 `preventScroll: true`）则**从一开始就不会有这个问题**。
+> **不得**把它写成「修好了某个已存在缺陷」——它是**迁移过程中被避开**的，不是被修的。
+
+**逐字保留的契约**：`#group-template-modal`、`#close-group-template-modal`、`#group-template-title`、
+`#group-template-search`、`#group-template-categories`、`#group-template-list`、
+`#confirm-group-template-create`、`data-template-id`、`aria-pressed`、以及 `.group-template-*` 的**类名钩子**
+（测试用 `.group-template-option` / `-option-top` / `-risk` / `-role-count` / `-summary` / `-category-filter` /
+`-empty` / `-empty-actions` / `.has-long-summary` 定位）。
+
+**布局迁移要点**：
+- 现状是**四行网格**（头/工具行/列表/页脚）。迁到 `AppModal` 后：头部由壳承担（第 1 行），
+  footer 由壳的新槽承担（第 3 行），**正文行自身要再做一个两行网格** `grid grid-rows-[auto_minmax(0,1fr)]`
+  容纳「工具行 + 列表」，并把 `overflow-auto` 抵成 `overflow-hidden`（理由同 T2）。
+- 列表 `repeat(auto-fit, minmax(520px, 1fr))` 的卡片网格与内部滚动要在新的确定高度下重新成立
+  （`minmax(0,1fr)` 那一行**依赖确定高度**才可滚——这正是选 `fixed` 的原因）。
+- 空态：`Empty` 原语保持，`col-span-full min-h-60 p-6 md:p-8` 已是 utilities，**别去 legacy 找规则**（见基线 D）。
+- ⚠️ `.btn` 的处理见上文「硬耦合 2」，**先实测再决定**。
+
+**Step 1（先红）**：改/加 `GroupTemplateModal.test.tsx` 契约用例并看红，至少覆盖：
+- 壳契约：`2xl`/`full` 宽度令牌命中、`#close-group-template-modal` 是 `svg`、`aria-label` 为「关闭群聊模板」；
+- **footer 契约**：`#confirm-group-template-create` 位于 footer 槽内（`[data-slot="modal-footer"]`），
+  且**不在**正文滚动区内；
+- 回归：现有 9 条用例语义不变——打开即聚焦搜索框、确认建群 + 收回快速建群表单、分类/搜索过滤、
+  空态两条恢复路径（**选择器按「硬耦合 2」的实测决定同步调整**）、风险徽标位置、长摘要截断、选中随过滤失效、
+  关闭按钮 + Escape 关闭、**外点不关闭**。
+
+**Step 3**：`npm run typecheck`、`npx vitest run src/teamPage/ui/components/shell/GroupTemplateModal.test.tsx`、
+`npm run build`、`node scripts/screenshot-bugfix-acceptance.mjs`。
+
+---
+
+### T4：legacy 退役 + 按族计数断言（销 S3 终审 M-2）
+
+**交付物**：`src/teamPage/ui/styles/legacy.css`（只删本阶段确认独占的族）。
+
+**纪律（每一步都要做，不许跳）**：
+1. **先读规则原文**（别只看类名）→ 2. **重新 grep 活消费者**（裸串、全 `src/`，含分组选择器成员）
+→ 3. 判定独占/共享 → 4. 独占的删 → 5. `npm run build` 后**复拍**。
+
+**应删（本阶段独占族，逐条 grep 复核后）**：基线 C 里 A 组与 B 组列出的全部选择器及其浅色对应，包含
+媒体查询 `@media (max-width: 760px)` 里那三条（若已全部翻成响应式 utilities）。
+
+**不许删**：`notes-editor` / `note-toolbar` / `note-tool-btn` / `note-toolbar-spacer` / `all-note-toolbar`
+（`NotesPanel` 在用 **且被守卫测试钉住**）、`tiny`、`.modal-form`（S6/S7 的账，本阶段不动）。
+
+⚠️ **删错会静默塌样式且门禁看不见**——S4 已经吃过一次（`.modal-form` 有 4 处活消费者、其中一处零 utility 兜底）。
+本次删任何一条前，把「消费者清单」写进报告。
+
+**销 M-2 的账**：S3 终审 M-2 实测指出——把 legacy 里唯一一条 `.notes-editor` 规则整块改名后，
+`screenshot-s3-acceptance.mjs` **仍然 75/0**（只算子串命中，共享族的局部删除不会红），
+`.tiny`/`.reference-box`/`.section-title`/`.mention-shortcut`/`.all-note-*` 都**没有运行时断言**。
+→ 本任务要给这些族补**按族计数**的静态断言，T5 的 `s5-9` 落地（本任务只需保证「删完之后计数是预期的那个数」并写进报告）。
+
+---
+
+### T5：`s5-*` 验收探针 + 全量回归
+
+**交付物**：`scripts/screenshot-s5-acceptance.mjs`（**新**）、阶段验收报告。
+
+结构照抄 `scripts/screenshot-s4-acceptance.mjs`（同款 `check()` / `groupOf()` / PASS-FAIL 计数 / 暗+亮双段）。
+**断言组见下表**。⚠️ 探针纪律：种子前先 `chrome.storage.local.clear()`（见 Global Constraints）。
+
+**Step 2**：既有脚本复跑——`s1`/`s2`/`s3`/`bugfix` 四条必须与基线一致（55/59/75/42 全 0 FAIL）；
+`p3`/`p4*`/`w1*`/`w2*`/`w3*` 的历史红项按 S3 交接 §E.5 归类（**前置既存**，非本阶段引入），若仍红需单独说明。
+
+**Step 3**：`npm run typecheck` + `npm test` + `npm run build`，与基线比对（预期 874 passed / 1 failed）。
+**Step 4**：一次 commit。
+
+| 组 | 断言 |
+| --- | --- |
+| s5-1 | 两个弹窗逐个打开：content 命中 `2xl`（全部笔记）/ `full`（群模板）宽度令牌、左右沟槽合计 = 视口 − 宽度、`max-w` 不为 512、`border-radius` = 10px、`background-color` == `--popover`、水平垂直居中（±1px） |
+| s5-1b | **正文内边距不塌**（jsdom 抓不到）：取正文内已知元素（全部笔记 `#all-notes-list`、群模板 `#group-template-list`），断言其左缘 − content 左缘 ≥ 20（实测约 25，**别写成 `=== 24`**）；纵向用「头部下边界 → 首个正文元素 top」之差，**不要**用「元素 top − 弹窗 top」（会含头部高度而恒真） |
+| s5-2 | **高度策略与「不出现双滚动条」**：两者 `height` = `min(760, 100vh−48)`；**整壳不可滚**（`content.scrollHeight <= content.clientHeight + 1`）；**列表内部可滚**（`#all-notes-list` / `#group-template-list` 的 `scrollHeight > clientHeight`，需种入足量数据） |
+| s5-3 | 关闭钮：两个弹窗各**恰好一个**可见 svg 关闭钮、**无 `×` 文本节点**、`aria-label` 与译文一致、点击后弹窗消失 |
+| s5-4 | **首焦与「打开瞬间不得被滚走」**：群模板打开后 `document.activeElement.id === 'group-template-search'` 且 **`content.scrollTop === 0`** + 头部可见（与 S4 的 s4-4 同口径，`preventScroll` 的防线）；全部笔记打开后同样断言 `content.scrollTop === 0` |
+| s5-5 | **关闭语义对照**（两者相反，必须都测）：全部笔记 → Escape 关、**背板点击关**；群模板 → Escape 关、**背板点击不关**（点后仍存在） |
+| s5-6 | **footer 钉底**：群模板滚动 `#group-template-list` 前后，`[data-slot="modal-footer"]` 与头部的 `getBoundingClientRect()` **不变**，且 `#confirm-group-template-create` 始终在壳内可见 |
+| s5-7 | **两栏/网格结构**：全部笔记工作区左栏实测 240px、右栏 `1fr`；群模板列表为多列网格（`gridTemplateColumns` 解析出 ≥2 列，1500 宽下） |
+| s5-8 | 亮/暗双主题对比度：全部笔记 `.all-note-target-title`/`-meta`、群模板 `.group-template-summary`/`-meta`/`-role-count`/`-category` 均 ≥4.5（次级文本 ≥3） |
+| s5-9 | legacy 审计，**两半分开断言**：**(a) 本阶段独占族零命中**（基线 C 的 A/B 两组全部选择器，**按带点的精确选择器搜**）；**(b) 共享族仍在**（`notes-editor`、`note-toolbar`、`note-tool-btn`、`note-toolbar-spacer`、`all-note-toolbar`、`tiny`、`.modal-form`、`.field`、`.template-card`、`.template-list`、`.template-actions`、`.section-title`、`.reference-box`、`.orchestration-*`、`.note-*`）；**(c) 钩子类仍出现在 TSX**；**(d) dist 里新写的 utilities 存在**（紧贴 `${` 复检）；**(e) ⭐ 按族计数**（销 M-2）：给 `.all-note-*`（删前 16 处）、`.tiny`、`.reference-box`、`.section-title`、`.mention-shortcut` 各钉一个**计数上界/精确值**断言，使「共享族被整体误删」也能红 |
+| s5-10 | uiBus 消费者审计（沿用 S4 s4-10，10 个命令） |
+| s5-11 | **响应式回归**：视口 ≤760px 时，全部笔记工作区为**单栏**（左列表与编辑器 `top` 不同但 `left` 相同 / 列为 1），列表横向可滚；≥1024 时为两栏 240px + 1fr |
+
+⚠️ 写断言的一条纪律：**别写「负面存在性」断言**（如「裸 `x` 类在 dist 出现 0 次」）——S4 有旧值被实测推翻过，
+只因探针恰好没断 `=== 0` 才没假红。要断就断**存在**与**精确计数**（计数要说明是行数还是出现次数）。
+
+---
+
+## 完成定义（DoD）
+
+1. `AllNotesModal` 与 `GroupTemplateModal` 均由 `AppModal` 承载；spec 里 10 个弹窗**全部**收口完毕。
+2. `AppModal` 具备 `footer` 槽（**条件渲染、无 footer 时不产生空节点**）与 `closeOn`（`default` / `escape-only`），均有契约测试。
+3. 上表全部 `id` / `class` / `data-*` / `aria-*` 契约逐字保留；两个 `#close-*` id 仍在，且关闭钮是 svg 而非 `×` 文本。
+4. 全部笔记的响应式（≤760px 单栏）行为保留。
+5. `s5-1..s5-11` 全 PASS（暗 + 亮双段）；`bugfix` 探针仍 42/0；`s1`/`s2`/`s3` 复跑无回归。
+6. legacy.css 中本阶段独占族零残留；共享族原样存活（含守卫测试钉住的 5 个串）。
+7. `npm run typecheck` + `npm test` + `npm run build` 与基线一致（仅既有豁免项失败）。
+8. 每个任务一次 commit；报告写清「读到的 legacy 原值 → 翻成的 utilities → 删掉的行号」与「哪些族因共享而保留、留给哪个阶段」。
+
+## 后续阶段移交（S6/S7）
+
+- **S6 可直接复用本阶段的 `footer` 槽与 `closeOn`**：编排 3 弹窗需要 `footer` 与 `closeOn: 'button-only'`
+  （规格要求**不响应 Escape 与背板**）——注意 `'button-only'` 是**第三种**语义，本阶段只实现 `default` / `escape-only`
+  两档，S6 若需要再扩（**别在本阶段提前实现**，没有消费者就是死代码）。
+- **`=== 11`**：`.orchestration-stage-canvas .x6-*` 族计数**只归 S6**（S3 移交 §B.4 原文即如此；
+  S4 计划的「两阶段都需」已订正）。本阶段**不动**它。
+- **S6 的 `.template-actions`**：它藏在分组选择器 `.chat-row, .role-row, .template-actions {` 里，
+  锚定 `^\.template-actions` **搜不到**，必须按裸串搜。
+- **S7**：`.modal-form` 退役（4 处活消费者，1 处零 utility 兜底）、`AddPersonModal` 一类名紧贴 `${` 的空格、
+  s4-6 的 12 模型分支「换行居中」未被覆盖。**均不在本阶段**。
