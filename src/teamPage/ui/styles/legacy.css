@@ -278,44 +278,16 @@ h3 {
   line-height: 1.35;
 }
 
-.site-segmented {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 8px;
-  padding: 3px;
-  background: rgba(6, 13, 21, 0.72);
-}
-
-.site-segment {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 34px;
-  border-radius: 6px;
-  color: var(--muted-foreground);
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 760;
-}
-
-.site-segment[hidden] {
-  display: none;
-}
-
-.site-segment input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.site-segment:has(input:checked) {
-  background: rgba(161, 161, 170, 0.14);
-  color: #e4e4e7;
-  box-shadow: inset 0 0 0 1px rgba(161, 161, 170, 0.42);
-}
+/*
+ * S4-T3：站点单选族退役——唯一使用者 PersonTemplateModal 已把视觉值翻成
+ * utilities（含 has-checked: 变体 + inset-ring 独立槽位）。退役项：
+ * .site-segmented / .site-segment / .site-segment[hidden] / .site-segment input
+ * / .site-segment:has(input:checked)（浅色组内的两条也一并摘除）。
+ * 注意 .site-segment[hidden] 不是「搬走」而是「不再需要」：原来它只为压掉
+ * .site-segment{display:grid} 对 UA [hidden]{display:none} 的覆盖，Tailwind v4
+ * preflight 的 [hidden]:where(:not([hidden=until-found])){display:none!important}
+ * 带 !important，压得住 utilities 层的 grid。
+ */
 
 .field {
   display: grid;
@@ -326,18 +298,13 @@ h3 {
   display: none;
 }
 
-.ai-persona-panel {
-  display: grid;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid rgba(161, 161, 170, 0.18);
-  border-radius: 8px;
-  background: rgba(161, 161, 170, 0.06);
-}
-
-.template-ai-actions {
-  margin-top: 0;
-}
+/*
+ * S4-T3：AI 人设面板族退役——唯一使用者 PersonTemplateModal 已把视觉值翻成
+ * utilities（grid gap-2.5 rounded-lg border border-border bg-muted/40 p-3）。
+ * 退役项：.ai-persona-panel / .template-ai-actions（后者只有 margin-top:0，
+ * 实测该元素无默认外边距，不需要替代类名）。外层的 .template-actions 行由
+ * 共享规则继续提供（OrchestrationModal 仍在用 → S6）。
+ */
 
 #template-persona-generation-status {
   min-height: 16px;
@@ -2429,14 +2396,12 @@ select:focus {
   background: #ffffff;
 }
 
-:root[data-theme="light"] .theme-switch,
-:root[data-theme="light"] .site-segmented {
+:root[data-theme="light"] .theme-switch {
   border-color: rgba(113, 113, 122, 0.18);
   background: #ffffff;
 }
 
 :root[data-theme="light"] .theme-option[aria-pressed="true"],
-:root[data-theme="light"] .site-segment:has(input:checked),
 :root[data-theme="light"] .mode-option:has(input:checked),
 :root[data-theme="light"] .group-template-option.active,
 :root[data-theme="light"] .group-template-category-filter.active {
