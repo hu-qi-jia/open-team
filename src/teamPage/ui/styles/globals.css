@@ -2,24 +2,32 @@
  * React UI 全局样式入口（Tailwind v4 + shadcn/ui zinc 主题）。
  *
  * 分层顺序（先声明后导入，首条 @layer 决定最终顺序）：
- *   theme → base → legacy → components → utilities
- * - legacy：public/team.css 的全部遗留规则（随各阶段迁移逐步删除），
- *   压在 base 之上、utilities 之下——新写的 Tailwind 工具类可以覆盖旧样式，
- *   而旧样式继续压过 token base，保证迁移期未迁移区域视觉不变。
+ *   theme → base → components → utilities
+ * - S7/T6：legacy 槽位已随 src/teamPage/ui/styles/legacy.css 一并删除——
+ *   该文件 2026-09-28 起承接 public/team.css 的全部遗留规则，压在 base 之上、
+ *   utilities 之下保证迁移期视觉不变；S7 逐族迁移完毕（T2–T5）后文件下线。
+ *   现存层序里：components 直接压过 base，utilities 最后。
  * - dark 变体沿用 themeController 的 <html data-theme> 机制（不用 .dark 类）。
  */
-@layer theme, base, legacy, components, utilities;
+@layer theme, base, components, utilities;
 
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@import "./legacy.css" layer(legacy);
-
 /* X6 画布规则（S6/T5 迁入）刻意 unlayered：库内部 DOM 无法加 className，
- * 不能被 utilities 覆盖，也不能随 legacy 退役——详见 orchestration-canvas.css 头注。 */
+ * 不能被 utilities 覆盖——详见 orchestration-canvas.css 头注。 */
 @import "./orchestration-canvas.css";
 
+/* iframe 工作台规则（S7/T5 迁入）同样 unlayered：iframeHost.ts 直写
+ * className 的 DOM 无法加 Tailwind 类——详见 iframe-host.css 头注。 */
+@import "./iframe-host.css";
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+/* S7/T5：新增 light 变体——themeController 只在 `<html data-theme>` 上写值，
+ * 默认（无属性）即暗色，故「浅色专属」必须靠本变体表达（dark: 的反面）。
+ * 首例消费：QuickCreateChat 的 .mode-option 选中态内阴影（原 legacy 浅色块
+ * 成员，暗色侧本就没有对应声明）。 */
+@custom-variant light (&:where([data-theme=light], [data-theme=light] *));
 
 :root {
   --radius: 0.625rem;
@@ -140,6 +148,109 @@
      的 `.app-shell.minimized + .notes-panel` 相邻兄弟约束。 */
   #root {
     display: contents;
+  }
+
+  /*
+   * S7/T5：legacy.css 的 base 元素规则与 color-scheme 迁回 base 层。
+   * 层序说明：这些规则原先在 legacy 层（恒压 base），迁回 base 后靠「写在
+   * 本块末尾」继续压过同层的 preflight 与 `*` 规则——层内后写者胜，结果与
+   * 迁移前逐条等价。
+   * 已核对 preflight 并判死、不再搬入的声明：
+   *   * 的 box-sizing/margin/padding/border、body 的 margin:0、button 的
+   *   border:0、h1-h3+p 的 margin:0、表单元素的 font:inherit、textarea 的
+   *   resize:vertical、input/textarea/select 的 color（preflight 已是
+   *   color:inherit）。
+   * body 的渐变底也不搬：components 层的 `body{background:var(--background)}`
+   * 恒压 base（层序优先于特异性），渐变与浅色 #fff 补丁早已是死声明，现状
+   * 底色就是扁平 --background。
+   */
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  body {
+    min-height: 100vh;
+    overflow: hidden;
+    /* CJK 字体栈（含 PingFang SC）必须留：Tailwind 默认 --font-sans 无中文
+       族名，删掉会让中文回退到系统默认字形。 */
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Segoe UI', sans-serif;
+  }
+
+  /* h1/h3 目前无 TSX 直接消费，随 h2 整块搬（h2 由 Radix Dialog/Sheet 的
+     标题原语渲染；SheetTitle 只给了 font-semibold 未给字号，17px 仍生效）。
+     标题原语自带 text-lg 的那几个由 utilities 压过，不受影响。 */
+  h1 {
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 760;
+  }
+
+  h2 {
+    font-size: 17px;
+    font-weight: 760;
+  }
+
+  h3 {
+    font-size: 13px;
+    font-weight: 760;
+  }
+
+  label {
+    color: var(--muted-foreground);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    border: 1px solid rgba(113, 113, 122, 0.18);
+    border-radius: 8px;
+    background: rgba(3, 9, 15, 0.5);
+    /* ⚠️ 必须显式写 --foreground：preflight 给表单元素是 color:inherit，
+       删掉会让输入框取到父级前景（如 label 的 --muted-foreground），暗色下
+       由白字变灰字。原 legacy 写的是 var(--text)，即 V5 remap 的 --foreground。 */
+    color: var(--foreground);
+    outline: none;
+  }
+
+  input,
+  select {
+    height: 36px;
+    padding: 0 11px;
+  }
+
+  textarea {
+    min-height: 74px;
+    padding: 10px 11px;
+    line-height: 1.5;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(161, 161, 170, 0.62);
+    box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.1);
+  }
+
+  :root[data-theme='light'] input,
+  :root[data-theme='light'] textarea,
+  :root[data-theme='light'] select {
+    border-color: rgba(113, 113, 122, 0.22);
+    background: #ffffff;
+  }
+
+  :root[data-theme='light'] input:focus,
+  :root[data-theme='light'] textarea:focus,
+  :root[data-theme='light'] select:focus {
+    border-color: rgba(113, 113, 122, 0.52);
+    box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.12);
   }
 }
 
@@ -708,13 +819,75 @@
     background: #f6f7f8;
     color: #52525b;
   }
+
+  /* S7/T3：.notes-editor 容器已 utilities 化（NotesPanel/AllNotesModal），
+   * 但 tiptap ProseMirror 的内容是编辑器动态生成的节点，无法逐个挂
+   * className——这 4 条后代规则（原 legacy.css）整块迁入，声明原样保留。 */
+  .notes-editor .ProseMirror {
+    min-height: 100%;
+    outline: none;
+  }
+
+  .notes-editor .ProseMirror > :first-child {
+    margin-top: 0;
+  }
+
+  .notes-editor .ProseMirror p,
+  .notes-editor .ProseMirror ul,
+  .notes-editor .ProseMirror ol {
+    margin: 0 0 12px;
+  }
+
+  .notes-editor .ProseMirror ul,
+  .notes-editor .ProseMirror ol {
+    padding-left: 22px;
+  }
+
+  /* S7/T3：.message-tool-btn 的 aria-label tooltip——::after 伪元素声明集
+   * 过大且亮暗覆盖成对，整块迁入 components 层（原 legacy.css）；容器本体
+   * 由 MessageToolButton 的行内 utilities 承担，.message-tool-btn 类名保留
+   * 作选择器钩子。暗色为正典，浅色 :root 前缀覆盖（与 .site-pill 组同款）。 */
+  .message-tool-btn::after {
+    content: attr(aria-label);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 7px);
+    z-index: 3;
+    transform: translate(-50%, 4px);
+    border: 1px solid rgba(113, 113, 122, 0.22);
+    border-radius: 6px;
+    padding: 4px 7px;
+    background: rgba(9, 15, 24, 0.96);
+    color: var(--text);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+  }
+
+  .message-tool-btn:hover::after,
+  .message-tool-btn:focus-visible::after {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  :root[data-theme="light"] .message-tool-btn::after {
+    border-color: rgba(113, 113, 122, 0.2);
+    background: #ffffff;
+    color: var(--text);
+    box-shadow: 0 8px 18px rgba(63, 63, 70, 0.14);
+  }
 }
 
 /*
  * 壳内 sidebar 原语矫正（utilities 层）。为什么不在 components 层写：
- * utilities 层恒胜 components 层（层序 theme/base/legacy/components/
- * utilities，构建产物 team.css 已核实 .fixed/.h-svh/.min-h-svh 全部晚于
- * components 块输出），sidebar 原语（ui/sidebar.tsx）自带的
+ * utilities 层恒胜 components 层（层序 theme/base/components/utilities——
+ * S7/T6 起 legacy 槽位已删除；构建产物 team.css 已核实
+ * .fixed/.h-svh/.min-h-svh 全部晚于 components 块输出），sidebar 原语
+ * （ui/sidebar.tsx）自带的
  * min-h-svh / fixed / h-svh 在 components 层覆盖不掉。这里与官方 utility
  * 同层，特异性（0-2-0 > 0-1-0）与源序双重取胜：
  * - wrapper：min-height 归零——官方 min-h-svh 是视口高，壳内必须随 #app
@@ -760,8 +933,13 @@
   /*
    * 最小化时 #iframe-host 的编排窗口组标题悬空残影（S1 T9 发现）：floatingWindow
    * 只把 #app 收进托盘，#iframe-host 是 body 直子级、不在 #app 裁剪范围内，
-   * 里面的 .chat-frame-group-title 仍悬在原位。runtime 不动，纯 CSS 规避；
-   * 放 utilities 层恒压 legacy 层的同选择器规则（层序恒胜，不靠特异性）。
+   * 里面的 .chat-frame-group-title 仍悬在原位。runtime 不动，纯 CSS 规避。
+   * ⚠️ S7/T6 层序变更：原先靠 utilities 层压 legacy 层；legacy 下线后该族的
+   * 规则搬进了 **unlayered** 的 styles/iframe-host.css，unlayered 恒压一切
+   * layered 规则——本条不再靠层序取胜，而是靠「属性不冲突」：
+   * iframe-host.css 的 .chat-frame-group-title 未声明 display，故本条的
+   * display:none 仍生效（特异性也更高：(1,2,1) > (1,1,0)）。
+   * 若日后给该族补 display 声明，必须同步把本条搬进 iframe-host.css。
    * 注意 :has() 参数不能带引号（简报里的 :has('#app.minimized') 是非法选择器，
    * 浏览器会整条丢弃）——须写裸选择器 :has(#app.minimized)。
    */

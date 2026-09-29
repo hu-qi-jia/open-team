@@ -105,7 +105,7 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
     >
       <div className="message-inner flex w-full min-w-0 items-start gap-3">
         <Avatar
-          className={`message-avatar size-7 shrink-0 cursor-pointer select-none ${role ? ' mention-shortcut' : ''}`}
+          className={`message-avatar size-7 shrink-0 cursor-pointer select-none ${role ? ' mention-shortcut hover:brightness-[1.08]' : ''}`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
@@ -119,12 +119,15 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
         <div className={`message-stack flex min-w-0 flex-col gap-1 ${message.type === 'user' ? 'items-end' : 'items-start flex-1'}`}>
           {isAssistant && showName && (
             <div
-              className={`message-name${role ? ' mention-shortcut' : ''} flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-medium text-muted-foreground`}
+              className={`message-name${role ? ' mention-shortcut cursor-pointer hover:brightness-[1.08]' : ''} flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-medium text-muted-foreground`}
               title={mentionTitle}
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
             >
-              <span className="message-name-text">{messageTitle(message)}</span>
+              {/* S7/T5：原 .message-name-text 的 min-width:0 / overflow /
+                  text-overflow 三件套由 min-w-0 + truncate 承担（父级已有
+                  whitespace-nowrap）。类名保留作钩子。 */}
+              <span className="message-name-text min-w-0 truncate">{messageTitle(message)}</span>
               {role && <SiteBadge role={role} mentionLabelOptions={mentionLabelOptions} />}
               {role && <SiteJumpButton chatId={message.chatId} role={role} />}
             </div>
@@ -161,8 +164,11 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
             {reviewResult && <ReviewSummary result={reviewResult} />}
             {message.references?.length ? <ReferenceBox reference={message.references[0]} /> : null}
 
+            {/* S7/T5：原 .message-tools 未被 utilities 覆盖的活声明只有
+                justify-content:flex-start 与 padding 0 8px 7px（display/gap/
+                margin-top 已被下面那行的 flex/gap-0.5/mt-1 压死）。 */}
             {isAssistant && (
-              <div className="message-tools mt-1 flex items-center gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+              <div className="message-tools mt-1 flex items-center justify-start gap-0.5 px-2 pb-[7px] opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
                 {message.roleId && message.status === 'pending' && role ? (
                   <MessageToolButton
                     label="停止回复"
@@ -262,7 +268,7 @@ export function SiteJumpButton({ chatId, role }: { chatId: string; role: GroupRo
     <MessageToolButton
       label="跳转到原始窗口"
       icon="jump"
-      className="message-site-jump-btn"
+      className="message-site-jump-btn opacity-[0.72]!"
       onClick={() => services.messageActions.focusRoleFrame(chatId, role.id)}
     />
   )
@@ -285,7 +291,17 @@ function orchestrationKindLabel(kind: NonNullable<GroupMessage['orchestrationKin
 
 function ReviewSummary({ result }: { result: OrchestrationReviewResult }) {
   return (
-    <div className="orchestration-review-summary">
+    /*
+     * S7/T5：原 .orchestration-review-summary 全量 utilities 化（浅色默认 +
+     * dark: 覆盖）。逐属性对照：
+     *   display grid / gap 4px / margin 0 10px 10px / radius 6px /
+     *   padding 7px 8px / font-size 12px / line-height 1.45；
+     *   暗色描边 rgba(161,161,170,.18) 与底 rgba(255,255,255,.06)，
+     *   浅色覆盖为 rgba(113,113,122,.16) 与纯白；
+     *   暗色 color:currentColor 是 no-op（等于继承），对译为 dark:text-inherit，
+     *   浅色 color:var(--muted-foreground) 作默认值。
+     */
+    <div className="orchestration-review-summary mx-2.5 mb-2.5 grid gap-1 rounded-md border border-zinc-500/16 bg-white px-2 py-[7px] text-[12px] leading-[1.45] text-muted-foreground dark:border-zinc-400/[0.18] dark:bg-white/[0.06] dark:text-inherit">
       <ReviewLine label="决策" value={result.decision === 'pass' ? '通过' : '不通过'} />
       {result.reason && <ReviewLine label="原因" value={result.reason} />}
       {result.failedCriteria.length > 0 && <ReviewLine label="未通过" value={result.failedCriteria.join('、')} />}
@@ -297,15 +313,25 @@ function ReviewSummary({ result }: { result: OrchestrationReviewResult }) {
 function ReviewLine({ label, value }: { label: string; value: string }) {
   return (
     <div className="orchestration-review-line">
-      <span>{label}：</span>
+      {/* S7/T5：原 `.orchestration-review-line span:first-child` 的字重 760
+          与双主题标签色（暗 rgba(243,245,246,.62) / 浅 rgba(63,63,70,.68)）。 */}
+      <span className="font-[760] text-zinc-700/[0.68] dark:text-[rgba(243,245,246,0.62)]">{label}：</span>
       <span>{value}</span>
     </div>
   )
 }
 
 function ReferenceBox({ reference }: { reference: MessageReference }) {
+  /*
+   * S7/T5：原 .reference-box 只剩四件活声明——display:-webkit-box /
+   * overflow:hidden / -webkit-line-clamp:2 / -webkit-box-orient:vertical
+   * （合起来就是 Tailwind 的 line-clamp-2）与 opacity:.68；
+   * margin 0 10px 10px 里 margin-top 被 mt-2 压死，另两侧由 mx/mb 承担。
+   * border:0 / radius 6px / padding / background / color / font-size /
+   * line-height 全被本行 utilities 与 text-xs 压死，不迁。
+   */
   return (
-    <div className="reference-box mt-2 rounded-md border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground">
+    <div className="reference-box mt-2 mx-2.5 mb-2.5 line-clamp-2 rounded-md border border-border bg-muted/50 px-2.5 py-1.5 text-xs text-muted-foreground opacity-[0.68]">
       {`引用 ${reference.roleName || '人员'}：${truncate(reference.contentSnapshot, 160)}`}
     </div>
   )
@@ -343,7 +369,7 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
   return (
     <button
       type="button"
-      className={`message-tool-btn flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 ${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2' : ''}`}
+      className={`message-tool-btn relative flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground hover:opacity-[0.96] focus-visible:opacity-[0.96] disabled:opacity-50 ${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2 opacity-100' : ' opacity-[0.58]'}`}
       disabled={disabled}
       aria-label={label}
       onPointerDown={event => {
@@ -363,7 +389,10 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
         onClick()
       }}
     >
-      <Icon className="size-3.5" aria-hidden="true" />
+      {/* S7/T3：fill-current 承接原 legacy .message-tool-btn svg 的
+        * fill:currentColor（lucide 的 fill="none" attribute 被 CSS 覆盖的现状）； */
+      }
+      <Icon className="size-3.5 fill-current" aria-hidden="true" />
     </button>
   )
 }

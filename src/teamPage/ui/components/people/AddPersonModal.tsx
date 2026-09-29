@@ -198,7 +198,7 @@ export function AddPersonModal() {
         {/* 原 .modal-form.modal-card.modal-grid-wide：.modal-form 的
             display/gap/margin 仍由共享 legacy 规则承担（T5 退役），这里补
             .modal-card 的三件套——边框/圆角/底色，翻成语义 token */}
-        <form id="add-library-people-form" className="modal-form rounded-lg border border-border bg-card p-3" onSubmit={submit}>
+        <form id="add-library-people-form" className="modal-form mt-3 grid gap-3 rounded-lg border border-border bg-card p-3" onSubmit={submit}>
           <h3>{ui('选择人员')}</h3>
           {/* 原 .add-person-toolbar：display:grid; gap:10px */}
           <div className="add-person-toolbar grid gap-2.5">
@@ -355,7 +355,7 @@ function AddPersonRow({ item, store, language, ui, checked, onToggle, onToggleSi
           .role-site-control，本行显式给 flex 兜底，类名保留作钩子）。站点
           pill 的 label.site-pill > input[type=checkbox] 结构与
           stopPropagation / disabled / .active / .disabled 语义逐条不变 */}
-      <div className="role-site-control add-person-site-control flex flex-wrap justify-end gap-1.5">
+      <div className="role-site-control add-person-site-control relative flex flex-wrap justify-end gap-1.5">
         {selectableModels(store).map(model => (
           <label
             key={model.key}

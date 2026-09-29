@@ -11,8 +11,9 @@
  *   s4-6  添加人员行几何回归（与 bugfix 探针同口径）
  *   s4-7  人员库卡片对齐回归（同口径）
  *   s4-8  亮/暗双主题对比度（含新增表面）
- *   s4-9  legacy 审计：(a) 规则零命中 / (b) 共享族存活 / (c) 钩子类仍在 TSX
+ *   s4-9  退役审计：(a) 规则零命中 / (b) 共享族归零 / (c) 钩子类仍在 TSX
  *         / (d) dist 里新写 utilities 存在（含 ${ 复检与变体形式）
+ *         ⚠️ S7/T6：审计对象由 legacy.css（已删除）改为**退役后的样式表面**。
  *   s4-10 uiBus 消费者审计（emit 必有对应 on）
  *
  * 判据纪律：与 bugfix 探针一致——断言失败 exitCode 3，控制台/页面报错 exitCode 2。
@@ -25,7 +26,7 @@
  */
 import puppeteer from 'puppeteer'
 import { mkdtemp, mkdir } from 'node:fs/promises'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -145,8 +146,23 @@ function walkFiles(dir, out = []) {
   return out
 }
 
-// ---- s4-9 (a)(b)：legacy.css 规则审计 --------------------------------------
-const legacyCss = stripCssComments(readFileSync(path.join(root, 'src/teamPage/ui/styles/legacy.css'), 'utf8'))
+// ---- s4-9 (a)(b)：退役族规则审计 --------------------------------------------
+// ⚠️ S7/T6 改判：legacy.css 已整文件删除，审计对象改为**退役后的样式表面**
+// （styles/ 下现存 CSS 的剥注释拼接）。若直接把 legacyCss 换成空串，下面上百条
+// 零残留断言会全部变成永真空转；改成表面后语义升级为「任何现存样式表里都不许
+// 复现」，既守住 S7 退役成果，也挡住死规则被重新塞回 globals 或专题文件。
+const styleDir = path.join(root, 'src/teamPage/ui/styles')
+const styleFiles = readdirSync(styleDir).filter(name => name.endsWith('.css')).sort()
+const legacyPath = path.join(styleDir, 'legacy.css')
+const legacyCss = styleFiles
+  .map(name => stripCssComments(readFileSync(path.join(styleDir, name), 'utf8')))
+  .join('\n')
+
+check('s4-9 (a) legacy.css is retired (file deleted after the S7 purge)',
+  existsSync(legacyPath) === false, existsSync(legacyPath) ? 'file still present' : 'file absent')
+check('s4-9 (a) the stylesheet surface is globals + iframe-host + orchestration-canvas',
+  styleFiles.join(',') === 'globals.css,iframe-host.css,orchestration-canvas.css',
+  `files=${styleFiles.join(',')}`)
 
 // (a) 本阶段迁移的弹窗族：规则必须零命中。
 //     注意用「带点的精确选择器」：`template-category-` 裸串会命中 9 处
@@ -163,23 +179,46 @@ const RETIRED_SELECTORS = [
 ]
 for (const name of RETIRED_SELECTORS) {
   const hits = countOccurrences(legacyCss, `.${name}`)
-  check(`s4-9 (a) legacy.css has no .${name} rule`, hits === 0, `hits=${hits}`)
+  check(`s4-9 (a) stylesheet surface has no .${name} rule`, hits === 0, `hits=${hits}`)
 }
 // 简报 (a) 清单里的同一族（裸串形态，注释里出现过、规则里必须没有）
 {
   const hits = countOccurrences(legacyCss, '#d4d4d8-role-form')
-  check('s4-9 (a) legacy.css has no #d4d4d8-role-form rule', hits === 0, `hits=${hits}`)
+  check('s4-9 (a) stylesheet surface has no #d4d4d8-role-form rule', hits === 0, `hits=${hits}`)
 }
 
-// (b) 共享族（S5/S6 还要用）：规则必须仍在。
-const SHARED_SELECTORS = ['field', 'template-card', 'template-list', 'template-actions', 'tiny', 'section-title', 'reference-box', 'modal-form']
-for (const name of SHARED_SELECTORS) {
+// (b) 共享族：S7/T5 起全部 utilities 化，断言从「仍在」翻转为「归零」
+//     （原「T5 还要用」的前提已失效——本轮就是最后一批共享族）。
+//     S7/T4 已把 .template-card / .template-list 移出本清单（归零断言在
+//     s5-9 (b) 的 RETIRED_S7_T4）。
+const RETIRED_S7_T5_SHARED = ['field', 'template-actions', 'tiny', 'section-title', 'reference-box', 'modal-form', 'muted', 'two-col', 'role-name', 'role-row', 'role-site-control', 'message-name-text', 'message-tools', 'orchestration-review-summary', 'orchestration-review-line']
+for (const name of RETIRED_S7_T5_SHARED) {
   const present = hasSelectorToken(legacyCss, name)
-  check(`s4-9 (b) legacy.css still owns .${name}`, present, `selector-token=${present}`)
+  check(`s4-9 (b) stylesheet surface no longer owns .${name} after S7/T5`, !present, `selector-token=${present}`)
 }
-for (const prefix of ['orchestration-', 'note-']) {
+// S7/T3 补账：.note-* 九族退役后全前缀归零（原「S5/S6 还要用」前提失效，
+// T3 漏同步本探针，T4 一并修正）。
+{
+  const note = countOccurrences(legacyCss, '.note-')
+  check('s4-9 (b) stylesheet surface has zero .note-* occurrences after S7/T3 (comments stripped)', note === 0, `hits=${note}`)
+}
+for (const prefix of ['orchestration-review-']) {
+  // S7/T5：.orchestration-review-summary / -review-line 最后两条随 MessageItem
+  // utilities 化退役（类名保留作钩子）。
+  // ⚠️ S7/T6：前缀由 `.orchestration-` 收窄为 `.orchestration-review-`——前者
+  // 在现存样式表里有两位**合法承接方**：`.orchestration-person-site`（globals
+  // components 层）与 `.orchestration-stage-canvas`（unlayered 画布专题文件，
+  // 11 条）。本断言要钉的是 T5 退役的那两条，不是整族。
   const hits = countOccurrences(legacyCss, `.${prefix}`)
-  check(`s4-9 (b) legacy.css still owns .${prefix}*`, hits > 0, `hits=${hits}`)
+  check(`s4-9 (b) stylesheet surface has zero .${prefix}* rules after S7/T5`, hits === 0, `hits=${hits}`)
+}
+{
+  // 反向补一条：整族的两位承接方仍各自在位（防「连承接方一起误删」）。
+  const globalsCss = stripCssComments(readFileSync(path.join(styleDir, 'globals.css'), 'utf8'))
+  const canvasCss = stripCssComments(readFileSync(path.join(styleDir, 'orchestration-canvas.css'), 'utf8'))
+  check('s4-9 (b) .orchestration-person-site / .orchestration-stage-canvas carriers are intact',
+    globalsCss.includes('.orchestration-person-site') && canvasCss.includes('.orchestration-stage-canvas'),
+    `person-site=${globalsCss.includes('.orchestration-person-site')} canvas=${canvasCss.includes('.orchestration-stage-canvas')}`)
 }
 
 // (c) 保留类名的钩子仍出现在 TSX 里（剥注释后按 className 值精确搜）。
@@ -203,7 +242,7 @@ for (const name of HOOK_CLASSES) {
   const hits = classNameConsumers(name)
   check(`s4-9 (c) className consumer still present for .${name}`, hits.length > 0, `files=${hits.join(' | ') || 'none'}`)
 }
-// F3 口径：.template-editor-modal 只断「legacy.css 零命中 + 无 className= 消费者」，
+// F3 口径：.template-editor-modal 只断「样式表面零命中 + 无 className= 消费者」，
 // 不断「src 里搜不到裸串」——契约用例必须写出该名字，裸串必然有命中。
 const editorModalConsumers = classNameConsumers('template-editor-modal')
 check('s4-9 (c) no className= consumer for .template-editor-modal', editorModalConsumers.length === 0,

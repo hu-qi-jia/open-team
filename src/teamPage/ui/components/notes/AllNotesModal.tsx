@@ -202,18 +202,19 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
           <div className="all-notes-editor-header flex items-center justify-between gap-3 border-b border-border px-[18px] pt-4 pb-3">
             <div>
               <h3 id="all-notes-active-title" className="m-0 text-base text-foreground">{activeTarget ? t(activeTarget.title) : ''}</h3>
-              <p id="all-notes-active-meta" className="tiny">{activeTarget ? t(activeTarget.meta) : ''}</p>
+              <p id="all-notes-active-meta" className="tiny text-[12px] text-muted-foreground/72">{activeTarget ? t(activeTarget.meta) : ''}</p>
             </div>
           </div>
-          {/* .note-toolbar 的 flex/gap/padding/border 由共享族规则承担（守卫
-              测试钉住、永久保留）；这里只接管 A 组的 .all-note-toolbar 底色 */}
-          <div className="note-toolbar all-note-toolbar bg-background">
+          {/* S7/T3：legacy .note-toolbar/.all-note-toolbar 已退役——几何
+              （gap 5px、padding 8/16/10）与底边在此 utilities 化接管（与
+              NotesPanel 同底边值）；bg-background 沿用（原本就压住 legacy 底色） */}
+          <div className="note-toolbar all-note-toolbar flex items-center gap-[5px] border-b border-zinc-500/15 bg-background px-4 pt-2 pb-2.5 dark:border-zinc-500/10">
             {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
-              <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-xs text-muted-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
+              <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 cursor-pointer rounded-md border border-zinc-500/15 bg-white/5 text-xs font-[820] text-muted-foreground hover:border-zinc-500/30 focus-visible:border-zinc-500/30 dark:border-zinc-500/15 dark:bg-white/5 dark:hover:border-zinc-400/35 dark:focus-visible:border-zinc-400/35" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
             ))}
             <span className="note-toolbar-spacer flex-1"></span>
-            <Button id="all-note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
-            <Button id="all-note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
+            <Button id="all-note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 cursor-pointer rounded-md border border-zinc-500/15 bg-white/5 font-[820] text-muted-foreground hover:border-zinc-500/30 focus-visible:border-zinc-500/30 dark:border-zinc-500/15 dark:bg-white/5 dark:hover:border-zinc-400/35 dark:focus-visible:border-zinc-400/35" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
+            <Button id="all-note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 cursor-pointer rounded-md border border-zinc-500/15 bg-white/5 font-[820] text-muted-foreground hover:border-zinc-500/30 focus-visible:border-zinc-500/30 dark:border-zinc-500/15 dark:bg-white/5 dark:hover:border-zinc-400/35 dark:focus-visible:border-zinc-400/35" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
           </div>
           <div
             ref={node => {
@@ -222,9 +223,9 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
             }}
             id="all-notes-editor"
             // min-h-0：抵消 .all-notes-editor 的 min-height:360px（该规则 T4
-            // 退役，编辑器行改由 minmax(0,1fr) 吸收剩余高度）；padding/字体/
-            // overflow 由共享族 .notes-editor 规则（永久保留）承担
-            className="notes-editor all-notes-editor min-h-0"
+            // 退役，编辑器行改由 minmax(0,1fr) 吸收剩余高度）；S7/T3 起容器
+            // 几何/前景全由本行 utilities 承担（原共享族 .notes-editor 退役）
+            className="notes-editor all-notes-editor min-h-0 overflow-auto px-5 pt-[18px] pb-7 text-sm leading-[1.65] text-zinc-950 dark:text-[#ecf6f8]"
             aria-label={t('当前笔记富文本编辑器')}
           ></div>
         </section>

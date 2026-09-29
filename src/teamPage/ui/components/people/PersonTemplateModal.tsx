@@ -195,12 +195,12 @@ export function PersonTemplateModal() {
       // 不再加 overflow-auto——那是壳给 content 元素的职责。
       bodyClassName="p-6"
     >
-      <form id="people-library-form" className="modal-form" onSubmit={event => { void submit(event) }}>
+      <form id="people-library-form" className="modal-form mt-3 grid gap-3" onSubmit={event => { void submit(event) }}>
         {/* AI 人设面板（原 .ai-persona-panel）：底色取半透明 muted——本设计系统
             暗色下 card/popover/muted 三者同值，实心 bg-muted 在弹窗里等于没有，
             浅色下又会过重；边框在这条面板上承载主要视觉，不能漏 border-border */}
         <div className="grid gap-2.5 rounded-lg border border-border bg-muted/40 p-3">
-          <div className="field">
+          <div className="field grid gap-[7px]">
             <label htmlFor="template-ai-description">{ui('描述想要的人设')}</label>
             <Textarea
               id="template-ai-description"
@@ -209,8 +209,8 @@ export function PersonTemplateModal() {
               onChange={event => setAiDescription(event.target.value)}
             />
           </div>
-          <div className="template-actions">
-            <p id="template-persona-generation-status" className="tiny" aria-live="polite">{generationStatus}</p>
+          <div className="template-actions flex items-center justify-between gap-2.5">
+            <p id="template-persona-generation-status" className="tiny m-0 min-h-4 text-[12px] text-muted-foreground" aria-live="polite">{generationStatus}</p>
             <Button
               id="generate-template-persona"
               variant="ghost"
@@ -223,19 +223,19 @@ export function PersonTemplateModal() {
             >{generating ? ui('生成中') : ui('AI 生成')}</Button>
           </div>
         </div>
-        <div className="field">
+        <div className="field grid gap-[7px]">
           <label htmlFor="template-name">{ui('人员名称')}</label>
           <Input id="template-name" type="text" maxLength={50} autoComplete="off" value={name} onChange={event => setName(event.target.value)} />
         </div>
-        <div className="field">
+        <div className="field grid gap-[7px]">
           <label htmlFor="template-description">{ui('描述')}</label>
           <Textarea id="template-description" value={description} onChange={event => setDescription(event.target.value)} />
         </div>
-        <div className="field">
+        <div className="field grid gap-[7px]">
           <label htmlFor="template-prompt">{ui('人设')}</label>
           <Textarea id="template-prompt" value={prompt} onChange={event => setPrompt(event.target.value)} />
         </div>
-        <div className="field">
+        <div className="field grid gap-[7px]">
           <label>{ui('默认站点')}</label>
           {/* 站点单选（原 .site-segmented / .site-segment / .site-segment input /
               .site-segment:has(input:checked)）：凹槽底色是 bg-background 不是
@@ -267,7 +267,7 @@ export function PersonTemplateModal() {
           </div>
         </div>
         {site === 'chatgpt' && (
-          <div id="template-chatgpt-gpts-field" className="field">
+          <div id="template-chatgpt-gpts-field" className="field grid gap-[7px]">
             <label htmlFor="template-chatgpt-gpts-url">{ui('GPTs 链接前缀')}</label>
             <Input
               id="template-chatgpt-gpts-url"
@@ -277,11 +277,11 @@ export function PersonTemplateModal() {
               value={gptsUrl}
               onChange={event => setGptsUrl(event.target.value)}
             />
-            <p className="tiny">{ui('选填。保存后，该人员使用 ChatGPT 时会优先打开这个 GPTs。')}</p>
+            <p className="tiny text-[12px] text-muted-foreground/72">{ui('选填。保存后，该人员使用 ChatGPT 时会优先打开这个 GPTs。')}</p>
           </div>
         )}
         {site === 'grok' && (
-          <div id="template-grok-project-field" className="field">
+          <div id="template-grok-project-field" className="field grid gap-[7px]">
             <label htmlFor="template-grok-project-url">{ui('Grok 项目链接')}</label>
             <Input
               id="template-grok-project-url"
@@ -291,11 +291,11 @@ export function PersonTemplateModal() {
               value={grokUrl}
               onChange={event => setGrokUrl(event.target.value)}
             />
-            <p className="tiny">{ui('选填。保存后，该人员使用 Grok 时会优先打开这个项目。')}</p>
+            <p className="tiny text-[12px] text-muted-foreground/72">{ui('选填。保存后，该人员使用 Grok 时会优先打开这个项目。')}</p>
           </div>
         )}
         {site === 'external' && (
-          <div id="template-external-model-field" className="field">
+          <div id="template-external-model-field" className="field grid gap-[7px]">
             <label htmlFor="template-external-model-select">{ui('外部模型')}</label>
             {/* 原生 <select> 保持原生（换 Radix Select 会改键盘与取值行为，
                 S3 的 RolePanel 已定同例）；框体视觉不用原语，改用与
@@ -314,7 +314,7 @@ export function PersonTemplateModal() {
             </select>
           </div>
         )}
-        <div className="template-actions">
+        <div className="template-actions flex items-center justify-between gap-2.5">
           <Button size="sm" type="submit">{ui('保存人员')}</Button>
         </div>
       </form>

@@ -636,7 +636,7 @@ export function OrchestrationModal() {
         bodyClassName="flex flex-col gap-3.5 overflow-hidden"
         footer={
           <div className="orchestration-footer grid grid-cols-[190px_minmax(0,1fr)_auto] items-center gap-3.5">
-            <label className="field orchestration-rounds-field m-0 grid grid-cols-[auto_76px] items-center" htmlFor="orchestration-max-rounds">
+            <label className="field orchestration-rounds-field m-0 grid gap-[7px] grid-cols-[auto_76px] items-center" htmlFor="orchestration-max-rounds">
               <span>{ui('最大节点执行数')}</span>
               <input
                 id="orchestration-max-rounds"
@@ -648,7 +648,7 @@ export function OrchestrationModal() {
                 onChange={event => setMaxRounds(event.target.value)}
               />
             </label>
-            <p className="tiny m-0">{ui('默认 50 个，最多 200 个；用于防止循环流程无限执行，执行节点和审核节点都会计数。')}</p>
+            <p className="tiny m-0 text-[12px] text-muted-foreground/72">{ui('默认 50 个，最多 200 个；用于防止循环流程无限执行，执行节点和审核节点都会计数。')}</p>
             {/* .template-actions 的 flex 行布局来自共享分组规则（S7 清），
                 这里写全 utilities 让本弹窗不再依赖它。 */}
             <div className="template-actions orchestration-actions m-0 flex items-center justify-between gap-2.5">
@@ -660,7 +660,7 @@ export function OrchestrationModal() {
       >
         <div className="orchestration-task-strip grid grid-cols-[88px_minmax(0,1fr)] items-stretch gap-3 rounded-2xl border border-zinc-400/20 p-3 bg-white shadow-none dark:bg-[linear-gradient(135deg,rgba(161,161,170,0.1),rgba(10,20,31,0.72))]">
           {/* 浅色白底/暗色渐变：legacy 浅色覆盖的 dark: 对译（S6/T4）。 */}
-          <label className="field self-center m-0 text-[13px] font-extrabold text-foreground" htmlFor="orchestration-task">{ui('任务')}</label>
+          <label className="field grid gap-[7px] self-center m-0 text-[13px] font-extrabold text-foreground" htmlFor="orchestration-task">{ui('任务')}</label>
           <div className="orchestration-task-input-row grid grid-cols-[minmax(0,1fr)_auto_auto] items-stretch gap-2.5 min-w-0">
             <textarea
               id="orchestration-task"
@@ -669,17 +669,20 @@ export function OrchestrationModal() {
               placeholder={ui('描述要让编排流程完成的任务；不需要 @ 人员。')}
               onChange={event => setTask(event.target.value)}
             />
-            <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger self-stretch min-w-[72px] px-3" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
-            <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto self-stretch min-w-[104px] px-4" type="button" disabled={busy} onClick={openAutoPanel}>
+            {/* S7/T5：≤720px 的 min-height:40px 由本行 utilities 承担（原
+                legacy 媒体查询；Button size="sm" 只钉 height，min-height 是
+                另一个属性、压不住，故必须显式写）。两个按钮同款。 */}
+            <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger self-stretch min-w-[72px] px-3 max-[720px]:min-h-10" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
+            <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto self-stretch min-w-[104px] px-4 max-[720px]:min-h-10" type="button" disabled={busy} onClick={openAutoPanel}>
               {autoGenerating ? ui('生成中...') : ui('自动编排')}
             </Button>
           </div>
         </div>
         <div className={`orchestration-layout grid min-h-0 flex-1 gap-3.5 overflow-hidden ${selectedStage ? 'grid-cols-[220px_minmax(450px,1fr)_300px]' : 'grid-cols-[220px_minmax(450px,1fr)]'}`}>
           <aside className="orchestration-sidebar flex min-h-0 flex-col gap-3 rounded-2xl border border-border bg-card/70 p-3.5">
-            <div className="section-title items-end">
+            <div className="section-title mt-1.5 mb-3 flex items-center justify-between gap-2.5 items-end">
               <h3>{ui('人员')}</h3>
-              <span className="tiny">{ui('拖到画布创建节点')}</span>
+              <span className="tiny text-[12px] text-muted-foreground/72">{ui('拖到画布创建节点')}</span>
             </div>
             <div id="orchestration-people-list" className="orchestration-people-list grid min-h-0 content-start gap-[9px] overflow-auto flex-1 pr-0.5">
               {roles.length === 0 ? (
@@ -705,7 +708,7 @@ export function OrchestrationModal() {
                         <strong className="min-w-0 truncate">{role.name}</strong>
                         <span className={`site-pill orchestration-person-site truncate ${model.className}`}>{model.label}</span>
                       </div>
-                      <span className="tiny truncate">{role.description || ui('拖到画布创建节点')}</span>
+                      <span className="tiny truncate text-[12px] text-muted-foreground/72">{role.description || ui('拖到画布创建节点')}</span>
                     </div>
                   </div>
                 )
@@ -733,7 +736,7 @@ export function OrchestrationModal() {
           <aside className={`orchestration-settings flex min-h-0 flex-col gap-3 overflow-auto rounded-2xl border border-border bg-card/70 p-3.5 ${selectedStage ? '' : 'hidden'}`} hidden={!selectedStage}>
             <div className="orchestration-settings-heading">
               <h3 className="m-0 text-[15px]">{ui('节点设置')}</h3>
-              <span className="tiny">{ui('选择画布节点后编辑')}</span>
+              <span className="tiny text-[12px] text-muted-foreground/72">{ui('选择画布节点后编辑')}</span>
             </div>
             {selectedStage && (
               <div id="orchestration-stage-settings" className="orchestration-stage-settings grid gap-3" key={selectedStage.id}>
@@ -741,7 +744,7 @@ export function OrchestrationModal() {
                   <h3 className="m-0 text-[15px]">{selectedStage.kind === 'review' ? ui('审核节点') : ui('执行节点')}</h3>
                   <Button className="text-lg" size="icon-sm" type="button" variant="ghost" aria-label={ui('关闭节点设置')} onClick={clearSelectedStage}>×</Button>
                 </div>
-                <label className="field gap-2">
+                <label className="field grid gap-2">
                   {ui('节点类型')}
                   <select
                     data-stage-kind="true"
@@ -752,7 +755,7 @@ export function OrchestrationModal() {
                     <option value="review">{ui('审核')}</option>
                   </select>
                 </label>
-                <label className="field gap-2">
+                <label className="field grid gap-2">
                   {ui('节点名称')}
                   <input
                     defaultValue={selectedStage.name}
@@ -762,7 +765,7 @@ export function OrchestrationModal() {
                     }}
                   />
                 </label>
-                <label className="field gap-2">
+                <label className="field grid gap-2">
                   {ui('任务描述')}
                   <textarea
                     defaultValue={selectedStage.description ?? ''}
@@ -773,7 +776,7 @@ export function OrchestrationModal() {
                     }}
                   />
                 </label>
-                <div className="field gap-2">
+                <div className="field grid gap-2">
                   {selectedStage.kind === 'review' ? ui('审核人员') : ui('执行人员')}
                   <div className="stage-role-chips flex flex-wrap gap-2">
                     {selectedRoleIds(selectedStage).map(roleId => (
@@ -782,7 +785,7 @@ export function OrchestrationModal() {
                   </div>
                 </div>
                 {editableAutoRoles.length > 0 && (
-                  <div className="field orchestration-auto-role-sites gap-2">
+                  <div className="field grid orchestration-auto-role-sites gap-2">
                     <span>{ui('自动人员设置')}</span>
                     {editableAutoRoles.map(role => (
                       <Fragment key={role.id}>
@@ -822,8 +825,8 @@ export function OrchestrationModal() {
             )}
             {selectedStage?.kind === 'review' && (
               <div id="orchestration-review-settings" className="orchestration-review-settings grid gap-3">
-                <p className="tiny orchestration-note m-0 leading-[1.55]">{ui('审核节点由一个群聊人员根据标准判断通过或不通过。')}</p>
-                <label className="field gap-2">
+                <p className="tiny orchestration-note m-0 text-[12px] leading-[1.55] text-muted-foreground/72">{ui('审核节点由一个群聊人员根据标准判断通过或不通过。')}</p>
+                <label className="field grid gap-2">
                   {ui('审核标准')}
                   <textarea
                     value={selectedStage.review?.instructions ?? ''}
@@ -834,7 +837,7 @@ export function OrchestrationModal() {
                     }}
                   />
                 </label>
-                <label className="field gap-2">
+                <label className="field grid gap-2">
                   {ui('最大审核次数')}
                   <input
                     type="number"
@@ -847,7 +850,7 @@ export function OrchestrationModal() {
                     }}
                   />
                 </label>
-                <label className="field gap-2">
+                <label className="field grid gap-2">
                   {ui('达到上限后')}
                   <select
                     value={selectedStage.review?.onMaxAttempts ?? 'stop'}
@@ -861,7 +864,7 @@ export function OrchestrationModal() {
                   </select>
                 </label>
                 <div className="orchestration-json-preview grid gap-2 rounded-xl border border-zinc-400/20 bg-popover/80 p-2.5">
-                  <span className="tiny">{ui('审核返回 JSON 预览')}</span>
+                  <span className="tiny text-[12px] text-muted-foreground/72">{ui('审核返回 JSON 预览')}</span>
                   <pre className="max-h-[130px] m-0 overflow-auto text-[11px] leading-[1.55] text-emerald-800 dark:text-zinc-400 whitespace-pre-wrap">{JSON_PREVIEW_TEXT}</pre>
                 </div>
               </div>

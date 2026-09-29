@@ -14,6 +14,7 @@ import { AppShellFrame } from '../shell/AppShellFrame'
 import { resetSidebarPrefsForTests } from '../../hooks/useSidebarPrefs'
 import { SidebarProvider } from '../ui/sidebar'
 import { renderWithServices, type RenderWithServicesOptions } from '../../test/TestProviders'
+import { legacyStylesheetExists, readStylesheetSurface } from '../../test/stylesheetSurface'
 
 afterEach(() => {
   cleanup()
@@ -308,10 +309,13 @@ describe('ChatList icon-strip form (medium tier)', () => {
   })
 })
 
-describe('ChatList legacy.css retirement', () => {
-  it('retires the .chat-list/.chat-item families from legacy.css', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+describe('ChatList stylesheet retirement', () => {
+  it('retires the .chat-list/.chat-item families from the stylesheet surface', () => {
+    // S7/T6：legacy.css 整文件下线（585 行退役注释随文件删除）。这批「零残留」
+    // 断言改判**退役后的样式表面**——退役族不许在**任何**现存样式表里复现，
+    // 比原先只查 legacy.css 更强（详见 ui/test/stylesheetSurface.ts 头注）。
+    expect(legacyStylesheetExists()).toBe(false)
+    const cssWithoutComments = readStylesheetSurface()
 
     for (const retired of [
       '.chat-list',
@@ -327,12 +331,21 @@ describe('ChatList legacy.css retirement', () => {
       expect(cssWithoutComments, `expected ${retired} to be retired`).not.toContain(retired)
     }
 
-    // 共享规则保留：role-list / 模板弹窗（.role-row/.role-name/.template-actions）
-    expect(cssWithoutComments).toContain('.role-row')
-    expect(cssWithoutComments).toContain('.role-name')
+    // S7/T5：共享规则本身也随通用族退役——.role-row/.role-name/.template-actions
+    // 的 flex 行与截断四件套由各消费点的 utilities 承担（类名留在 TSX 上作钩子）。
+    expect(cssWithoutComments).not.toContain('.role-row')
+    expect(cssWithoutComments).not.toContain('.role-name')
+    expect(cssWithoutComments).not.toContain('.template-actions')
+    // 承接方：RolePanel 的 .role-row/.role-name 行与 PersonTemplateModal 的
+    // .template-actions 都已写成行内 utilities。
+    const rolePanel = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/panel/RolePanel.tsx'), 'utf8')
+    expect(rolePanel).toContain('role-row flex min-w-0 items-center justify-between gap-2')
+    expect(rolePanel).toContain('role-name mention-shortcut min-w-0 flex-1 cursor-pointer truncate')
+    const personTemplate = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/people/PersonTemplateModal.tsx'), 'utf8')
+    expect(personTemplate).toContain('template-actions flex items-center justify-between gap-2.5')
 
-    // S3 Task 4：浅色 role-tone 平涂随动态色板一并归位到 globals components 层
-    expect(cssWithoutComments).not.toContain('.chat-avatar.role-tone-0')
+    // S3 Task 4：浅色 role-tone 平涂随动态色板一并「搬往」globals components 层
+    // ——属承接方而非退役族，故本用例只断「承接方持有」，不再断表面零命中。
     const globals = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/globals.css'), 'utf8')
     expect(globals).toContain('.chat-avatar.role-tone-0')
   })

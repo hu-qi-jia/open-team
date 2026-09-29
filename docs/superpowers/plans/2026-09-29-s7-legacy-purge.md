@@ -8,7 +8,11 @@
 `src/teamPage/ui/styles/legacy.css`（现 1724 行 / 192 个顶层块）**整文件删除**：
 所有规则迁入 utilities / 专题 css / globals 各层，或确认 dead 后直接退役；
 globals.css 摘掉 `@import "./legacy.css" layer(legacy)` 与 `@layer` 声明里的
-legacy 槽位；全部探针的 legacy 计数断言改为「文件不存在」语义。
+legacy 槽位；全部探针的 legacy 计数断言改为「样式表面零残留」语义。
+
+> **状态：✅ 收官（2026-09-30）。** `styles/` 现仅存 globals.css（944 行）、
+> iframe-host.css（147 行）、orchestration-canvas.css（56 行）；层序降为
+> `theme, base, components, utilities`。T2–T6 全部完成并合并 main。
 
 ## 现状构成（S6 收官后侦查，剥注释 1519 行）
 
@@ -46,11 +50,109 @@ legacy 槽位；全部探针的 legacy 计数断言改为「文件不存在」�
 - **T5 iframe-host 专题 + 通用/base/:root/media 收尾**：`styles/iframe-host.css`
   （unlayered，同 canvas 先例）；base 元素进 globals base 层；media query 改
   utilities 变体；隐藏钩子考证后删或留。
-- **T6 文件删除 + 探针大改数 + 全量回归**：
-  - 删 legacy.css 与 globals.css 的 @import / @layer 槽位；
-  - 探针改数：s3-12（shared families → 专题文件断言）、s5-9（legacy 行数 → 0/文件不存在）、
-    s6-8（status-floating absolute 断言改读 dist）、s1/s2/s4 各 legacy 审计组；
-  - `npm run verify` + 全部探针复跑 + 明暗双主题全量复拍。
+- **T6 文件删除 + 探针大改数 + 全量回归**：✅ 已完成（2026-09-30）
+  - 删 legacy.css（`b7a1c21`）与 globals.css 的 @import / @layer 槽位；
+  - 探针改数：s3-12（shared families → 样式表面 + 承接方双向断言）、
+    s5-9（legacy 行数 → 文件不存在 + 表面非空）、s6-8（画布族改「只在专题
+    文件」+ dist 层清单无 legacy）、s4-9 各审计组（`41071d5`）；
+  - 5 个守卫测试改判（`b7a1c21`）；新增 `ui/test/stylesheetSurface.ts`；
+  - `npm run verify` ✓ + 8 个探针全绿（bugfix/s1/s2/s3/s4/s5/s6/s7-t4）
+    + 明暗双主题全量复拍（35 张差异经像素定量确认全是种子时间戳噪声，
+    差异像素 ≤432 且包围盒落在时间文本区）。
+
+### T6 关键决策：断言对象从文件升级为「样式表面」
+legacy.css 删除后，9 个文件（5 测试 + 4 探针）里的「零残留」断言失去读取对象。
+**直接换成空串会让上百条断言变成永真空转**（s5-9 一组就有 114 条）。故统一
+改判为**退役后的样式表面**：`styles/` 下现存 CSS 剥注释后的拼接（实测
+24553 字符 / 3 文件）。语义从「旧文件里没有」升级为「任何现存样式表里都没有」。
+
+配套两条自证断言（每处各一份）：`legacy.css is retired`（文件不存在）与
+`the stylesheet surface is globals + iframe-host + orchestration-canvas`
+（表面清单固定——防止样式目录被清空而断言静默通过）。
+
+⚠️ 11 个「合法承接方」必须从零命中清单里排除，否则一片假红：
+`.orchestration-stage-canvas`（画布族，迁往 unlayered 专题文件）；
+`.role-tone-` / `.site-pill`（色板）；`.notes-editor` / `.message-tool-btn`
+（ProseMirror 后代 + ::after tooltip）；`.sidebar`（裸子串会命中存活的
+`.sidebar-resize-handle`，须用 selector-token 口径）；`.orchestration-person-site`；
+`.role-site-badge` / `.role-frame-site`。它们的正确断言形态是**双向**：
+「只在承接层 + 不在别处」。
+
+### ⚠️ T6 层序副作用（已登记在 globals.css 注释）
+`body:has(#app.minimized) .chat-frame-group-title{display:none}` 原先靠
+utilities 层压 legacy 层；该族搬进 **unlayered** 的 iframe-host.css 后，
+unlayered 恒压一切 layered 规则——本条不再靠层序取胜，而靠「属性不冲突」
+（iframe-host.css 未声明 display，且本条特异性 (1,2,1) > (1,1,0)）。
+**若日后给该族补 display 声明，必须同步把本条搬进 iframe-host.css。**
+
+## 退役总账（legacy.css 585 行注释的浓缩存档）
+
+legacy.css 删文件后，其 585 行「为什么删/迁到哪」的 rationale 从源码里消失。
+这里留一份按族归类的总账，供后续回归时对照（逐条细节仍在 git 历史里）。
+
+### 判死直删的三类（不迁、无视觉变化）
+1. **零消费死族**：主题分段控件（`.theme-switch`/`.theme-option`）、设置菜单
+   （`.settings-menu`）、旧壳挂名族（`.sidebar` 全家 / `.brand-mark` /
+   `.logo-dot` / `.workspace` / `.chat-header` / `.chat-title*` /
+   `.chat-subtitle` / `#chat-status`）、`.manual-mention-toggle`、
+   `.template-card.active`、`.icon-btn` / `.floating-toolbar` / `.window-dot`
+   （窗控三钮 React 化后废弃）、`#d4d4d8-role-form`。
+2. **被 utilities 恒压的死覆盖**：`.mode-options` / `.mode-name` /
+   `.chat-create-template-btn` / `.two-col` / `.role-name` / `.all-note-toolbar`
+   底色 / `.reference-box` 的 border-bg-color 等——调用点已有同值或更强的
+   utilities，规则从不生效。
+3. **`[hidden]` 归 preflight**：`#settings-button[hidden]` /
+   `#open-orchestration[hidden]` / `.launcher[hidden]` / `.field[hidden]` /
+   `.site-segment[hidden]`——Tailwind v4 preflight 的
+   `[hidden]:where(:not([hidden=until-found])){display:none!important}` 带
+   `!important`，压得住 utilities 层的 display。
+
+### 搬往 globals.css components 层（选择器穿透 / 动态 DOM 例外）
+- `.role-tone-*` / `.site-pill*` 动态色板（S3 Task 4）+ 四位「靠源序压过基类」
+  的冲突伴侣：`.add-person-site-option` / `.role-site-badge` /
+  `#iframe-host .role-frame-site` / `.orchestration-person-site`。
+- `.notes-editor .ProseMirror` 后代 ×4（ProseMirror 动态 DOM）、
+  `.message-tool-btn::after` tooltip ×2（伪元素声明集过大）。
+- `.markdown-body` 排版规则（S2 Task 4 原文搬迁）。
+- `.app-shell` 几何 / `.sidebar-resize-handle`（S1 Task 7）。
+
+### 搬往 unlayered 专题文件（库/非 React DOM 无法加 className）
+- `styles/orchestration-canvas.css`：X6 画布 11 条（S6/T5）。
+- `styles/iframe-host.css`：`#iframe-host` 全族（S7/T5-a）。unlayered 理由同
+  画布；搬迁时逐属性对照 globals V5 iframe 规则，被覆盖的死声明就地丢弃。
+
+### 搬往 globals.css base 层（S7/T5-c）
+- body 的 min-height/overflow/CJK 字体栈、h1/h2/h3、label、
+  input·textarea·select 本体 + `:focus` + 浅色覆盖、`:root` 的
+  `color-scheme` 两条。
+- ⚠️ `input` 系的 `color` 必须显式迁：preflight 给表单元素是
+  `color:inherit`，删了会取到 label 的 muted-foreground。
+- 判死未迁（preflight 同值）：`*` 的 box-sizing、body 的 `margin:0`、
+  button 的 `border:0`、h1-h3+p 的 `margin:0`、表单 `font:inherit`、
+  textarea 的 `resize:vertical`。
+
+### 翻成行内 utilities（亮色默认 + `dark:` 覆盖单份表达）
+- T2 状态卡族、T3 笔记/提及/消息工具九族、T4 壳层/列表/主题/模式/模板卡族、
+  T5 通用族（`.muted`/`.tiny`/`.field`/`.modal-form`/`.section-title`/
+  `.reference-box`/`.role-*`/`.message-*`/.orchestration-review-*）。
+- **语义类名一律保留在 TSX 上**作测试与探针钩子——「删规则」不等于「删类名」。
+- 浅色专属声明（暗色侧本就没有对应规则）用新增的 `light:` 变体承载
+  （globals.css 的 `@custom-variant light`，`dark:` 的反面）。
+
+### ⚠️ 前序纠正：死变量误判（T5-b 补账）
+T2–T5-a 曾按「变量零定义」判死 `--text/--subtle/--shadow/--glow`。
+**这是误判**：四者由 globals.css components 层的 V5 remap 块真定义
+（167/177/184-185 暗色，206-207/214-215 浅色）。已补回两处可见回归：
+launcher 的 `box-shadow: var(--shadow), var(--glow)` 与浅色
+`.chat-frame-group-title` 的 `color: var(--text)`。第三处 `.mode-name` 的
+`color: var(--text)` 经查无回归（继承链同值 + `.mode-help` 自带
+`text-muted-foreground`），不补。**教训：判「变量零定义」前必须全库 grep
+定义点，不能只看 legacy.css。**
+
+### Tailwind v4 陷阱（T4）
+`background` 简写里「渐变 + 纯色」合成一条 `bg-[...]` 会被整体推断为
+`background-image`，纯色层非法 → **整条声明被静默丢弃**（launcher 暗色变白
+圆）。修复：拆 `bg-[rgba(...)]` + `bg-[radial-gradient(...)]` 两条。
 
 ## 纪律（沿用）
 

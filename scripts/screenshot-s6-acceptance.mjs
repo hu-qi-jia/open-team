@@ -16,8 +16,10 @@
  *   s6-7  状态卡锚点（S2 铁律 §B.5）：position === 'absolute'、offsetParent === #app
  *         （最近 positioned 祖先就是它——「fixed 被劫持」与「absolute 锚 #app」
  *         重合的机器判据）、right:70/bottom:128 相对 #app ±3px
- *   s6-8  静态审计：legacy.css 剥注释后画布族 0 处；orchestration-canvas.css 11 处；
- *         dist team.css 画布 11 处且 status-floating absolute；globals.css 有 @import
+ *   s6-8  静态审计：样式表面剥注释后画布族/状态卡族 0 处（画布族改断「只在
+ *         orchestration-canvas.css」，因它已 S6/T5 迁往该 unlayered 专题文件）；
+ *         orchestration-canvas.css 11 处；dist team.css 画布 11 处；
+ *         StatusCard TSX 携 absolute utilities；globals @import
  *   s6-9  亮暗双主题截图
  *
  * 口径纪律：与 s3/s4/s5 一致——CSS 计数都是**剥掉注释后的出现次数**；断言失败
@@ -26,6 +28,7 @@
  */
 import puppeteer from 'puppeteer'
 import { mkdtemp, mkdir, readFile } from 'node:fs/promises'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -47,6 +50,14 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(outDir, `s6-${name}.png`) })
   console.log(`saved screenshots/s6-${name}.png`)
 }
+
+// S7/T2：元素级截图（状态卡特写，明暗双主题视觉存档）——puppeteer API
+async function shotEl(page, selector, name) {
+  const el = await page.$(selector)
+  if (!el) throw new Error(`shotEl: ${selector} not found`)
+  await el.screenshot({ path: path.join(outDir, `s6-${name}.png`) })
+  console.log(`saved screenshots/s6-${name}.png`)
+}
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const round = value => Math.round(value * 100) / 100
 const near = (a, b, tolerance = 3) => Math.abs(a - b) <= tolerance
@@ -56,31 +67,48 @@ const near = (a, b, tolerance = 3) => Math.abs(a - b) <= tolerance
 // ---------------------------------------------------------------------------
 const stripCssComments = text => text.replace(/\/\*[\s\S]*?\*\//g, '')
 const countOccurrences = (haystack, needle) => haystack.split(needle).length - 1
-const legacyRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+// ⚠️ S7/T6 改判：legacy.css 已整文件删除（585 行退役注释随文件下线），审计对象
+// 改为**退役后的样式表面**——styles/ 下现存 CSS 的剥注释拼接。直接换成空串会让
+// 整组断言变成永真空转；改成表面后语义升级为「任何现存样式表里都不许复现」。
+const styleDir = path.join(root, 'src/teamPage/ui/styles')
+const styleFiles = readdirSync(styleDir).filter(name => name.endsWith('.css')).sort()
+const legacyPath = path.join(styleDir, 'legacy.css')
+const styleRawByName = new Map(styleFiles.map(name => [name, readFileSync(path.join(styleDir, name), 'utf8')]))
 const canvasRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/orchestration-canvas.css'), 'utf8')
 const globalsRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/globals.css'), 'utf8')
 const distCss = await readFile(path.join(dist, 'team.css'), 'utf8')
-const legacyCss = stripCssComments(legacyRaw)
+const styleCss = name => stripCssComments(styleRawByName.get(name))
+const legacyCss = styleFiles.map(styleCss).join('\n')
 const canvasCss = stripCssComments(canvasRaw)
 
+check('s6-8 legacy.css is retired (file deleted after the S7 purge)',
+  existsSync(legacyPath) === false, existsSync(legacyPath) ? 'file still present' : 'file absent')
+check('s6-8 the stylesheet surface is globals + iframe-host + orchestration-canvas',
+  styleFiles.join(',') === 'globals.css,iframe-host.css,orchestration-canvas.css',
+  `files=${styleFiles.join(',')}`)
+
 {
-  const legacyCanvas = countOccurrences(legacyCss, '.orchestration-stage-canvas')
-  check('s6-8 legacy.css has zero canvas-family occurrences after S6 relocation (comments stripped)',
-    legacyCanvas === 0, `occurrences ${legacyCanvas}`)
+  // 画布族是**承接方**（S6/T5 原文迁往 unlayered 专题文件），故不再断「表面
+  // 零命中」，改断双向：① 该族只出现在 orchestration-canvas.css；② 那里接住
+  // 同样 11 条（防只删不搬的静默视觉回退）。
+  const canvasOutside = countOccurrences(styleCss('globals.css'), '.orchestration-stage-canvas')
+    + countOccurrences(styleCss('iframe-host.css'), '.orchestration-stage-canvas')
+  check('s6-8 the canvas family lives only in orchestration-canvas.css after S6 relocation (comments stripped)',
+    canvasOutside === 0, `globals+iframe-host occurrences ${canvasOutside}`)
   const canvasRules = countOccurrences(canvasCss, '.orchestration-stage-canvas .x6-')
   check('s6-8 orchestration-canvas.css carries the relocated 11 .x6-* descendant rules',
     canvasRules === 11, `occurrences ${canvasRules}`)
   const distCanvas = countOccurrences(distCss, '.orchestration-stage-canvas .x6-')
   check('s6-8 dist team.css carries the 11 relocated .x6-* rules (unlayered, via globals @import)',
     distCanvas === 11, `occurrences ${distCanvas}`)
-  const floatingBlock = legacyCss.match(/\.orchestration-status-floating\s*\{[^}]*\}/)
-  check('s6-8 .orchestration-status-floating is position:absolute in legacy.css (S2 rule B.5)',
-    floatingBlock !== null && /\bposition:\s*absolute\b/.test(floatingBlock[0]),
-    floatingBlock ? (/position:\s*([a-z]+)/.exec(floatingBlock[0])?.[1] ?? 'position not found') : 'block not found')
-  const distFloating = distCss.match(/\.orchestration-status-floating\s*\{[^}]*\}/)
-  check('s6-8 dist team.css ships position:absolute for .orchestration-status-floating',
-    distFloating !== null && /\bposition:\s*absolute\b/.test(distFloating[0]),
-    distFloating ? (/position:\s*([a-z]+)/.exec(distFloating[0])?.[1] ?? 'position not found') : 'block not found')
+  // S7/T2：状态卡族随组件 utilities 化退役——样式表面不再有该族规则；
+  // absolute 定位结论改由 TSX utilities 承担（s6-7 运行时锚点断言继续覆盖）。
+  const legacyStatusFamily = countOccurrences(legacyCss, '.orchestration-status')
+  check('s6-8 stylesheet surface has zero status-card family occurrences after S7/T2 relocation (comments stripped)',
+    legacyStatusFamily === 0, `occurrences ${legacyStatusFamily}`)
+  const statusTsx = await readFile(path.join(root, 'src/teamPage/ui/components/orchestration/OrchestrationStatusCard.tsx'), 'utf8')
+  check('s6-8 OrchestrationStatusCard.tsx carries position:absolute via floating utilities (S2 rule B.5)',
+    /'absolute right-\[70px\] bottom-\[128px\] z-\[8\]'/.test(statusTsx), 'floating utilities present')
   check('s6-8 globals.css imports orchestration-canvas.css',
     globalsRaw.includes('@import "./orchestration-canvas.css";'), 'import statement present')
 }
@@ -504,6 +532,8 @@ try {
       near(rightDelta ?? -1, 70), `right delta=${rightDelta}`)
     check('s6-7 status card sits bottom:128px from the #app bottom edge',
       near(bottomDelta ?? -1, 128), `bottom delta=${bottomDelta}`)
+    // S7/T2：状态卡特写（暗色，utilities 迁移后视觉存档）
+    await shotEl(page, '.orchestration-status-floating', 'status-card-dark')
   }
 
   /* ---------------- s6-9 亮色主题复拍 ---------------- */
@@ -521,6 +551,10 @@ try {
       canvas === 'move', `cursor=${canvas}`)
     await shot(page, 'main-light-canvas')
     await closeById('close-orchestration', 'orchestration-modal')
+    // S7/T2：状态卡特写（亮色；同种子 running run 下应渲染，缺席则跳过）
+    if (await page.$('.orchestration-status-floating')) {
+      await shotEl(page, '.orchestration-status-floating', 'status-card-light')
+    }
   }
 } catch (error) {
   consoleErrors.push(`probe failure: ${error.message}`)

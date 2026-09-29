@@ -160,7 +160,8 @@ export function ExternalModelsModal() {
         // 不再加 overflow-auto——滚动归壳的 max-h 封顶，正文行只做收缩
         bodyClassName="p-6"
       >
-        <div id="external-models-list" className="template-list">
+        {/* S7/T4：.template-list 规则退役，grid/gap/content-start 由 utilities 承担 */}
+        <div id="external-models-list" className="template-list grid content-start gap-2">
           {models.length === 0 ? (
             <Empty className="my-4 p-4">
               <EmptyHeader>
@@ -215,9 +216,9 @@ export function ExternalModelsModal() {
         </div>
         {/* .modal-form 是共享族（另外三个使用者是 T3/T4 已过审的弹窗，规则留到
             S6）——类名与 legacy 规则都原样保留、只消费 */}
-        <form id="external-model-form" className="modal-form" onSubmit={event => { void submit(event) }}>
+        <form id="external-model-form" className="modal-form mt-3 grid gap-3" onSubmit={event => { void submit(event) }}>
           <input id="external-model-id" type="hidden" value={draft.modelId} readOnly />
-          <div className="field">
+          <div className="field grid gap-[7px]">
             <label htmlFor="external-model-name">{ui('显示名称')}</label>
             <Input
               id="external-model-name"
@@ -228,7 +229,7 @@ export function ExternalModelsModal() {
               onChange={event => setDraft(current => ({ ...current, name: event.target.value }))}
             />
           </div>
-          <div className="field">
+          <div className="field grid gap-[7px]">
             <label htmlFor="external-model-format">{ui('接口格式')}</label>
             {/* 原生 <select> 保持原生（换 Radix Select 会改键盘与取值行为，S3 的
                 RolePanel 与 T3 的人员编辑已定同例）；框体视觉用与 ui/input 同一套
@@ -243,7 +244,7 @@ export function ExternalModelsModal() {
               <option value="anthropic">{ui('Anthropic 格式')}</option>
             </select>
           </div>
-          <div className="field">
+          <div className="field grid gap-[7px]">
             <label htmlFor="external-model-base-url">{ui('模型地址')}</label>
             <Input
               id="external-model-base-url"
@@ -254,7 +255,7 @@ export function ExternalModelsModal() {
               onChange={event => setDraft(current => ({ ...current, baseUrl: event.target.value }))}
             />
           </div>
-          <div className="field">
+          <div className="field grid gap-[7px]">
             <label htmlFor="external-model-api-key">{ui('模型 Key')}</label>
             <Input
               id="external-model-api-key"
@@ -264,7 +265,7 @@ export function ExternalModelsModal() {
               onChange={event => setDraft(current => ({ ...current, apiKey: event.target.value }))}
             />
           </div>
-          <div className="field">
+          <div className="field grid gap-[7px]">
             <label htmlFor="external-model-model-name">{ui('模型名称')}</label>
             <Input
               id="external-model-model-name"
@@ -275,7 +276,7 @@ export function ExternalModelsModal() {
               onChange={event => setDraft(current => ({ ...current, modelName: event.target.value }))}
             />
           </div>
-          <div className="template-actions">
+          <div className="template-actions flex items-center justify-between gap-2.5">
             <Button id="reset-external-model-form" variant="outline" size="sm" type="button" onClick={() => setDraft(EMPTY_DRAFT)}>{ui('新建')}</Button>
             <Button type="submit" size="sm">{ui('保存外部模型')}</Button>
           </div>

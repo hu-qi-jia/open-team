@@ -9,6 +9,7 @@ import { roleMentionLabelOptionsFromSettings } from '../../../../group/mentionPa
 import type { GroupRole } from '../../../../group/types'
 import { roleAvatarLabel, roleToneClass } from '../../../viewHelpers'
 import { MentionPicker, createMentionOptions } from './MentionPicker'
+import { legacyStylesheetExists, readStylesheetSurface } from '../../test/stylesheetSurface'
 
 /*
  * @ 提及面板的视觉契约（S2 Task 6 换 popover 视觉时建立）。行为契约
@@ -18,7 +19,8 @@ import { MentionPicker, createMentionOptions } from './MentionPicker'
  *   rounded 裁切与内部滚动分离（overflow-hidden + 内层 max-h-52）；
  * - `.mention-option` / `.mention-option.active` 是键盘高亮钩子，
  *   被宿主用例与 E2E 依赖，必须保留；
- * - legacy.css 的 .mention-panel 族已退役（剥注释后不得复现）。
+ * - .mention-panel 族已退役（剥注释后不得复现）。S7/T6 起 legacy.css 整文件
+ *   下线，改判「退役后的整个样式表面」（ui/test/stylesheetSurface.ts）。
  */
 
 function makeRole(id: string, name: string): GroupRole {
@@ -85,7 +87,9 @@ describe('team page mention picker visual', () => {
     const { container } = renderPanel()
 
     const avatar = container.querySelector('.mention-avatar')!
-    expect(avatar.className).toContain('flex size-6 items-center justify-center rounded-full bg-muted text-xs')
+    // S7/T3：border/overflow/字重/行高/white/shrink 承接退役的 legacy
+    // .mention-avatar 独占声明（utilities 化），断言同步
+    expect(avatar.className).toContain('flex size-6 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-full border border-white/20 bg-muted text-xs font-[780] leading-none text-white')
     expect(avatar.className).toContain('mention-avatar-all')
 
     const roleAvatar = [...container.querySelectorAll('.mention-avatar')][1]!
@@ -101,13 +105,14 @@ describe('team page mention picker visual', () => {
     expect(roleBadge.className).toMatch(/site-pill-(external|gemini|chatgpt|claude|deepseek|grok)/)
   })
 
-  it('keeps the no-cmdk rationale and retires the mention panel family from legacy.css', () => {
+  it('keeps the no-cmdk rationale and retires the mention panel family from the stylesheet surface', () => {
     const source = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/composer/MentionPicker.tsx'), 'utf8')
     // 焦点必须留在宿主 textarea——该约束由组件头注释钉住
     expect(source).toContain('cmdk')
 
-    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    // S7/T6：legacy.css 已删除，改判**退役后的整个样式表面**。
+    expect(legacyStylesheetExists()).toBe(false)
+    const cssWithoutComments = readStylesheetSurface()
     expect(cssWithoutComments).not.toContain('.mention-panel')
     expect(cssWithoutComments).not.toContain('.mention-option')
     expect(cssWithoutComments).not.toContain('.mention-name')
