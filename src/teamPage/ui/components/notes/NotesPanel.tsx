@@ -273,15 +273,20 @@ export function NotesPanel({ createEditor }: { createEditor?: NoteEditorFactory 
           onClick={() => selectScope('global')}
         >{t('全局笔记')}</button>
       </div>
-      <div className="note-toolbar flex items-center gap-0.5 px-6 py-2" aria-label={t('富文本工具栏')}>
+      {/* S7/T3：border-b 承接原 legacy .note-toolbar 的底边（暗 0.08/亮 0.13）；
+          flex/gap/padding 此前已由 utilities 承担（legacy 几何死规则随族退役）。 */}
+      <div className="note-toolbar flex items-center gap-0.5 border-b border-zinc-500/15 px-6 py-2 dark:border-zinc-500/10" aria-label={t('富文本工具栏')}>
         {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
-          <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-xs text-muted-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
+          <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 cursor-pointer rounded-md border border-zinc-500/15 bg-white/5 text-xs font-[820] text-muted-foreground hover:border-zinc-500/30 focus-visible:border-zinc-500/30 dark:border-zinc-500/15 dark:bg-white/5 dark:hover:border-zinc-400/35 dark:focus-visible:border-zinc-400/35" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
         ))}
         <span className="note-toolbar-spacer flex-1"></span>
-        <Button id="note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
-        <Button id="note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
+        <Button id="note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 cursor-pointer rounded-md border border-zinc-500/15 bg-white/5 font-[820] text-muted-foreground hover:border-zinc-500/30 focus-visible:border-zinc-500/30 dark:border-zinc-500/15 dark:bg-white/5 dark:hover:border-zinc-400/35 dark:focus-visible:border-zinc-400/35" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
+        <Button id="note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 cursor-pointer rounded-md border border-zinc-500/15 bg-white/5 font-[820] text-muted-foreground hover:border-zinc-500/30 focus-visible:border-zinc-500/30 dark:border-zinc-500/15 dark:bg-white/5 dark:hover:border-zinc-400/35 dark:focus-visible:border-zinc-400/35" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
       </div>
-      <div ref={editorElementRef} id="notes-editor" className="notes-editor min-h-0 bg-transparent px-6 pb-2.5 text-sm" aria-label={t('富文本笔记编辑器')}></div>
+      {/* S7/T3：overflow/pt/leading/前景色承接原 legacy .notes-editor（亮
+          var(--text) → text-zinc-950；暗 #ecf6f8 → dark:text-[#ecf6f8]）；
+          ProseMirror 后代规则迁 globals.css components 层（动态 DOM 例外）。 */}
+      <div ref={editorElementRef} id="notes-editor" className="notes-editor min-h-0 overflow-auto bg-transparent px-6 pb-2.5 pt-[18px] text-sm leading-[1.65] text-zinc-950 dark:text-[#ecf6f8]" aria-label={t('富文本笔记编辑器')}></div>
       <button
         ref={resizeHandleRef}
         id="notes-resize-handle"

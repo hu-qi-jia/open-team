@@ -219,31 +219,34 @@ for (const name of ['group-template', 'group-template-modal', 'group-template-op
     media === 0, `hits=${media} (${COUNT_NOTE})`)
 }
 
-// ---- s5-9 (b)：共享族仍在（守卫测试钉住的 5 个串走精确计数）----
-// 口径：全为「剥注释后的子串出现次数」。`.note-toolbar` 的 3 = 931 行的规则
-// `{` 选择器 + 939 行的 `.note-toolbar-spacer`（前缀命中）+ 1864 行的
-// `:root[data-theme="light"] .note-toolbar` 覆盖，故另单钉一条 `.note-toolbar {`。
-const GUARDED_SHARED = [
-  ['notes-editor', 9], ['note-tool-btn', 6], ['note-toolbar', 3],
-  ['note-toolbar-spacer', 1], ['all-note-toolbar', 2],
+// ---- s5-9 (b)：守卫族口径（S7/T3 起：notes/mention/message-tool 九族随
+// 组件 utilities 化退役，断言从「still owns exactly N×」翻转为「gone」；
+// 承担方断言由 s3-12 ⑤（globals 例外块）与 NotesPanel 守卫测试（TSX 钩子）覆盖）----
+// 口径：全为「剥注释后的子串出现次数」。
+const RETIRED_S7_T3 = [
+  'notes-editor', 'note-tool-btn', 'note-toolbar',
+  'note-toolbar-spacer', 'all-note-toolbar',
 ]
-for (const [needle, expected] of GUARDED_SHARED) {
+for (const needle of RETIRED_S7_T3) {
   const hits = countOccurrences(legacyCss, `.${needle}`)
-  check(`s5-9 (b) legacy.css still owns .${needle} exactly ${expected}×`, hits === expected, `hits=${hits} expected=${expected} (${COUNT_NOTE})`)
+  check(`s5-9 (b) legacy.css has zero .${needle} occurrences after S7/T3 (comments stripped)`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
 }
 {
-  // 守卫测试钉住的是「规则本体」这条串（`.note-toolbar {`，带空格+花括号）
+  // 原「规则本体」钉串（`.note-toolbar {`，带空格+花括号）随族归零
   const hits = countOccurrences(legacyCss, '.note-toolbar {')
-  check('s5-9 (b) legacy.css still owns the .note-toolbar rule body exactly 1×', hits === 1, `hits=${hits} expected=1 (${COUNT_NOTE})`)
+  check('s5-9 (b) legacy.css has zero .note-toolbar rule bodies after S7/T3', hits === 0, `hits=${hits} (${COUNT_NOTE})`)
 }
 const SHARED_PRESENT = ['tiny', 'modal-form', 'field', 'template-card', 'template-list', 'template-actions', 'section-title', 'reference-box']
 for (const name of SHARED_PRESENT) {
   const present = hasSelectorToken(legacyCss, name)
   check(`s5-9 (b) legacy.css still owns .${name}`, present, `selector-token=${present}`)
 }
-for (const prefix of ['orchestration-', 'note-']) {
-  const hits = countOccurrences(legacyCss, `.${prefix}`)
-  check(`s5-9 (b) legacy.css still owns .${prefix}*`, hits > 0, `hits=${hits}`)
+{
+  // S7/T3：.note-* 前缀全族退役归零；.orchestration-*（review 系等）留给 T5
+  const note = countOccurrences(legacyCss, '.note-')
+  check('s5-9 (b) legacy.css has zero .note-* occurrences after S7/T3 (comments stripped)', note === 0, `hits=${note}`)
+  const orch = countOccurrences(legacyCss, '.orchestration-')
+  check('s5-9 (b) legacy.css still owns .orchestration-*', orch > 0, `hits=${orch}`)
 }
 
 // ---- s5-9 (c)：钩子类仍出现在 TSX（剥注释后按 className 系列 prop 精确搜）----
@@ -318,26 +321,26 @@ for (const needle of DIST_UTILITIES) {
 // S6 更新（09-29）：编排三弹窗迁 AppModal 后 T4/T5 删掉了主弹窗专属的
 // .tiny / .section-title 命中（empty-hint / stage-settings 等编排族），
 // 快照 3→1、2→1；共享族剩余命中由 s3-12 ⑤ 的「>0」断言兜底。
+// S7/T3 更新：.all-note- / .mention-shortcut 随九族退役归零（2→0）。
 const FAMILY_COUNTS = [
-  ['.all-note-', 2], ['.tiny', 1], ['.reference-box', 2], ['.section-title', 1], ['.mention-shortcut', 2],
+  ['.all-note-', 0], ['.tiny', 1], ['.reference-box', 2], ['.section-title', 1], ['.mention-shortcut', 0],
 ]
 for (const [needle, expected] of FAMILY_COUNTS) {
   const hits = countOccurrences(legacyCss, needle)
   check(`s5-9 (e) family count ${needle}* is exactly ${expected}`, hits === expected, `hits=${hits} expected=${expected} (${COUNT_NOTE})`)
 }
 {
-  // `.all-note-` 剩下的 2 处必须**都是**共享族 .all-note-toolbar
+  // S7/T3：.all-note- 前缀全族退役归零（原「2 处均为共享族 toolbar」检查随之失效）
   const total = countOccurrences(legacyCss, '.all-note-')
-  const toolbar = countOccurrences(legacyCss, '.all-note-toolbar')
-  check('s5-9 (e) both surviving .all-note-* hits are .all-note-toolbar (shared family)',
-    total === 2 && toolbar === 2, `total=${total} toolbar=${toolbar}`)
+  check('s5-9 (e) .all-note-* is fully gone from legacy.css after S7/T3',
+    total === 0, `total=${total}`)
 }
 {
   // legacy.css 总行数（口径：换行符个数 = `wc -l`；T4 把 2769 行删到 2422 行，
-  // S6/T4+T5 编排族退役后为 1724 行，S7/T2 状态卡族退役后为 1361 行——
-  // 随迁移递减，改数须附原因）
+  // S6/T4+T5 编排族退役后为 1724 行，S7/T2 状态卡族退役后为 1361 行，
+  // S7/T3 笔记/提及/消息工具九族退役后为 1155 行——随迁移递减，改数须附原因）
   const newlines = countOccurrences(legacyRaw, '\n')
-  check('s5-9 (e) legacy.css is 1361 lines (wc -l count)', newlines === 1361, `newlines=${newlines}`)
+  check('s5-9 (e) legacy.css is 1155 lines (wc -l count)', newlines === 1155, `newlines=${newlines}`)
 }
 
 // ---- s5-10 uiBus 消费者审计（沿用 s4-10）-----------------------------------

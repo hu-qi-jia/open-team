@@ -380,15 +380,28 @@ describe('NotesPanel legacy.css retirement', () => {
       '.note-scope-',
       '.panel-header',
       '.orchestration-stage-canvas {',
+      // S7/T3：共享工具栏/编辑器族随组件 utilities 化整族退役
+      '.note-toolbar {',
+      '.note-toolbar-spacer {',
+      '.note-tool-btn {',
+      '.notes-editor {',
+      '.all-note-toolbar {',
     ]) {
       expect(cssWithoutComments, `expected ${retired} to be retired`).not.toContain(retired)
     }
 
-    // 共享族必留：AllNotesModal 与 NotesPanel 共用（tools/editor 族），
-    // 浅色 .all-note-toolbar 同理（其选择器组里曾与 .notes-resize-handle 并排）。
-    for (const shared of ['.notes-editor', '.note-tool-btn', '.note-toolbar {', '.note-toolbar-spacer', '.all-note-toolbar']) {
-      expect(cssWithoutComments, `expected ${shared} to survive`).toContain(shared)
+    // S7/T3：类名钩子在 TSX 保留（既有脚本与用例按它取元素）；ProseMirror
+    // 后代规则（动态 DOM 例外）与 ::after tooltip 迁 globals components 层。
+    // .all-note-toolbar 只在全部笔记弹窗（NotesPanel 工具栏无该类）。
+    const panel = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/notes/NotesPanel.tsx'), 'utf8')
+    const allNotes = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/notes/AllNotesModal.tsx'), 'utf8')
+    for (const hook of ['note-toolbar', 'note-tool-btn', 'notes-editor']) {
+      expect(panel, `expected ${hook} hook to survive in NotesPanel.tsx`).toContain(hook)
+      expect(allNotes, `expected ${hook} hook to survive in AllNotesModal.tsx`).toContain(hook)
     }
+    expect(allNotes).toContain('all-note-toolbar')
+    const globals = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/globals.css'), 'utf8')
+    expect(globals).toContain('.notes-editor .ProseMirror')
   })
 })
 

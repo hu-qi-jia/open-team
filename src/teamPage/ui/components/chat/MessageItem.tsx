@@ -105,7 +105,7 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
     >
       <div className="message-inner flex w-full min-w-0 items-start gap-3">
         <Avatar
-          className={`message-avatar size-7 shrink-0 cursor-pointer select-none ${role ? ' mention-shortcut' : ''}`}
+          className={`message-avatar size-7 shrink-0 cursor-pointer select-none ${role ? ' mention-shortcut hover:brightness-[1.08]' : ''}`}
           hidden={!showAvatar}
           title={mentionTitle}
           onClick={onMentionShortcut}
@@ -119,7 +119,7 @@ export const MessageItem = memo(function MessageItem(props: MessageItemProps) {
         <div className={`message-stack flex min-w-0 flex-col gap-1 ${message.type === 'user' ? 'items-end' : 'items-start flex-1'}`}>
           {isAssistant && showName && (
             <div
-              className={`message-name${role ? ' mention-shortcut' : ''} flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-medium text-muted-foreground`}
+              className={`message-name${role ? ' mention-shortcut cursor-pointer hover:brightness-[1.08]' : ''} flex min-w-0 items-center gap-1.5 overflow-hidden whitespace-nowrap text-xs font-medium text-muted-foreground`}
               title={mentionTitle}
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
@@ -262,7 +262,7 @@ export function SiteJumpButton({ chatId, role }: { chatId: string; role: GroupRo
     <MessageToolButton
       label="跳转到原始窗口"
       icon="jump"
-      className="message-site-jump-btn"
+      className="message-site-jump-btn opacity-[0.72]!"
       onClick={() => services.messageActions.focusRoleFrame(chatId, role.id)}
     />
   )
@@ -343,7 +343,7 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
   return (
     <button
       type="button"
-      className={`message-tool-btn flex size-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50 ${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2' : ''}`}
+      className={`message-tool-btn relative flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground hover:opacity-[0.96] focus-visible:opacity-[0.96] disabled:opacity-50 ${className !== undefined ? ` ${className}` : ''}${className === 'copied' ? ' text-chart-2 opacity-100' : ' opacity-[0.58]'}`}
       disabled={disabled}
       aria-label={label}
       onPointerDown={event => {
@@ -363,7 +363,10 @@ export function MessageToolButton({ label, icon, onClick, activateOnPointerDown 
         onClick()
       }}
     >
-      <Icon className="size-3.5" aria-hidden="true" />
+      {/* S7/T3：fill-current 承接原 legacy .message-tool-btn svg 的
+        * fill:currentColor（lucide 的 fill="none" attribute 被 CSS 覆盖的现状）； */
+      }
+      <Icon className="size-3.5 fill-current" aria-hidden="true" />
     </button>
   )
 }

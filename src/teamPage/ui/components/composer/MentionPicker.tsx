@@ -46,7 +46,7 @@ export function MentionPicker({ options, activeIndex, labelOptions, roleToneClas
           if (option.type === 'all') {
             return (
               <button key="all" type="button" className={className} onPointerDown={event => event.preventDefault()} onClick={() => onSelectOption(option)}>
-                <span className="mention-avatar mention-avatar-all flex size-6 items-center justify-center rounded-full bg-muted text-xs">全</span>
+                <span className="mention-avatar mention-avatar-all flex size-6 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-full border border-white/20 bg-muted text-xs font-[780] leading-none text-white">全</span>
                 <span className="mention-name flex-1 truncate text-left">所有人</span>
                 <span className="mention-site-badge rounded-sm bg-none bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground">全员</span>
               </button>
@@ -55,7 +55,7 @@ export function MentionPicker({ options, activeIndex, labelOptions, roleToneClas
           const role = option.role
           return (
             <button key={role.id} type="button" className={className} onPointerDown={event => event.preventDefault()} onClick={() => onSelectOption(option)}>
-              <span className={`mention-avatar ${roleToneClass(role.name)} flex size-6 items-center justify-center rounded-full bg-muted text-xs`}>{roleAvatarLabel(role.name)}</span>
+              <span className={`mention-avatar ${roleToneClass(role.name)} flex size-6 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-full border border-white/20 bg-muted text-xs font-[780] leading-none text-white`}>{roleAvatarLabel(role.name)}</span>
               <span className="mention-name flex-1 truncate text-left">{role.name}</span>
               <span className={`mention-site-badge rounded-sm bg-none bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground ${role.modelSource === 'external' ? 'site-pill-external' : `site-pill-${role.chatSite ?? 'gemini'}`}`}>
                 {roleModelLabel(role, labelOptions)}

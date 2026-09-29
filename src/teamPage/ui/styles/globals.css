@@ -708,6 +708,67 @@
     background: #f6f7f8;
     color: #52525b;
   }
+
+  /* S7/T3：.notes-editor 容器已 utilities 化（NotesPanel/AllNotesModal），
+   * 但 tiptap ProseMirror 的内容是编辑器动态生成的节点，无法逐个挂
+   * className——这 4 条后代规则（原 legacy.css）整块迁入，声明原样保留。 */
+  .notes-editor .ProseMirror {
+    min-height: 100%;
+    outline: none;
+  }
+
+  .notes-editor .ProseMirror > :first-child {
+    margin-top: 0;
+  }
+
+  .notes-editor .ProseMirror p,
+  .notes-editor .ProseMirror ul,
+  .notes-editor .ProseMirror ol {
+    margin: 0 0 12px;
+  }
+
+  .notes-editor .ProseMirror ul,
+  .notes-editor .ProseMirror ol {
+    padding-left: 22px;
+  }
+
+  /* S7/T3：.message-tool-btn 的 aria-label tooltip——::after 伪元素声明集
+   * 过大且亮暗覆盖成对，整块迁入 components 层（原 legacy.css）；容器本体
+   * 由 MessageToolButton 的行内 utilities 承担，.message-tool-btn 类名保留
+   * 作选择器钩子。暗色为正典，浅色 :root 前缀覆盖（与 .site-pill 组同款）。 */
+  .message-tool-btn::after {
+    content: attr(aria-label);
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 7px);
+    z-index: 3;
+    transform: translate(-50%, 4px);
+    border: 1px solid rgba(113, 113, 122, 0.22);
+    border-radius: 6px;
+    padding: 4px 7px;
+    background: rgba(9, 15, 24, 0.96);
+    color: var(--text);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.14s ease, transform 0.14s ease;
+  }
+
+  .message-tool-btn:hover::after,
+  .message-tool-btn:focus-visible::after {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+
+  :root[data-theme="light"] .message-tool-btn::after {
+    border-color: rgba(113, 113, 122, 0.2);
+    background: #ffffff;
+    color: var(--text);
+    box-shadow: 0 8px 18px rgba(63, 63, 70, 0.14);
+  }
 }
 
 /*

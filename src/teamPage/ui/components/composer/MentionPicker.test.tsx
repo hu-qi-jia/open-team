@@ -85,7 +85,9 @@ describe('team page mention picker visual', () => {
     const { container } = renderPanel()
 
     const avatar = container.querySelector('.mention-avatar')!
-    expect(avatar.className).toContain('flex size-6 items-center justify-center rounded-full bg-muted text-xs')
+    // S7/T3：border/overflow/字重/行高/white/shrink 承接退役的 legacy
+    // .mention-avatar 独占声明（utilities 化），断言同步
+    expect(avatar.className).toContain('flex size-6 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap rounded-full border border-white/20 bg-muted text-xs font-[780] leading-none text-white')
     expect(avatar.className).toContain('mention-avatar-all')
 
     const roleAvatar = [...container.querySelectorAll('.mention-avatar')][1]!

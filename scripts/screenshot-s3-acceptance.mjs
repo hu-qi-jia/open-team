@@ -981,17 +981,31 @@ try {
     movedCompanions.every(token => countOccurrences(globalsComponents, token) > 0),
     companionHits.join(' '))
 
-  // ⑤ 共享族原样存活（T3 的「不得删」清单 + role 族里刻意保留的 4 个 token：
-  //    .role-row/.role-name 与模板卡共用、.role-site-control 被 AddPersonModal 使用
-  //    （T2 偏差 4）、.mention-avatar 被 MentionPicker 使用）
+  // ⑤ 共享族存活（S7/T3 起口径收窄：notes 工具栏/编辑器、mention shortcut/
+  //    avatar、message-tool 六族已随组件 utilities 化退役，改口见下方
+  //    relocated 检查；此处保留 T4/T5 未到的族 + role 族刻意保留的 3 token：
+  //    .role-row/.role-name 与模板卡共用、.role-site-control 被 AddPersonModal
+  //    使用（T2 偏差 4））
   const sharedFamilies = [
-    '.notes-editor', '.note-tool-btn', '.note-toolbar', '.all-note-', '.tiny', '.reference-box', '.mention-shortcut', '.section-title',
-    '.role-row', '.role-name', '.role-site-control', '.mention-avatar',
+    '.tiny', '.reference-box', '.section-title',
+    '.role-row', '.role-name', '.role-site-control',
   ]
   const sharedHits = sharedFamilies.map(token => `${token}×${countOccurrences(legacyCss, token)}`)
   check('s3-12 shared families survive in legacy.css',
     sharedFamilies.every(token => countOccurrences(legacyCss, token) > 0),
     sharedHits.join(' '))
+  // S7/T3：relocated 族改口——legacy 归零（剥注释）+ globals 例外块承担
+  // （ProseMirror 动态 DOM 后代 ×4、message-tool-btn ::after tooltip）；
+  // TSX 类名钩子由 NotesPanel 守卫测试覆盖，此处不重复。
+  const relocatedT3 = ['.note-toolbar', '.note-tool-btn', '.notes-editor', '.all-note-toolbar', '.mention-avatar', '.mention-shortcut', '.message-tool-btn', '.message-site-jump-btn', '.manual-mention-toggle']
+  const relocatedHits = relocatedT3.map(token => `${token}×${countOccurrences(legacyCss, token)}`)
+  check('s3-12 T3 relocated families are gone from legacy.css (comments stripped)',
+    relocatedT3.every(token => countOccurrences(legacyCss, token) === 0),
+    relocatedHits.join(' '))
+  check('s3-12 T3 relocated carriers live in globals.css (ProseMirror descendants + tooltip pseudo)',
+    countOccurrences(globalsComponents, '.notes-editor .ProseMirror') >= 4
+      && countOccurrences(globalsComponents, '.message-tool-btn::after') >= 2,
+    `ProseMirror=${countOccurrences(globalsComponents, '.notes-editor .ProseMirror')} tooltip=${countOccurrences(globalsComponents, '.message-tool-btn::after')}`)
 
   // ⑥ 构建产物：按 @layer 切块复核（退役族全层零命中；色板落在 components 层）。
   //    只断 retiredFamilies（真退役、任何层都不该再有规则）；T4 归位的 3 簇

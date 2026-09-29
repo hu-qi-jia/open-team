@@ -407,51 +407,13 @@ select:focus {
   display: none;
 }
 
-.manual-mention-toggle {
-  position: relative;
-  justify-content: flex-start;
-  min-width: 72px;
-  padding-left: 42px;
-}
+/* S7/T3：.manual-mention-toggle 全族（含 ::before/::after 开关与
+ * [aria-pressed] 态 + 浅色补丁）退役——全库零消费（TSX/public/vanilla 均
+ * 无该类名），纯死代码删除，无视觉影响。 */
 
-.manual-mention-toggle::before {
-  content: "";
-  position: absolute;
-  left: 12px;
-  width: 22px;
-  height: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.42);
-  border-radius: 999px;
-  background: rgba(148, 163, 184, 0.14);
-  transition: background 0.16s ease, border-color 0.16s ease;
-}
-
-.manual-mention-toggle::after {
-  content: "";
-  position: absolute;
-  left: 15px;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: rgba(226, 232, 240, 0.84);
-  transition: transform 0.16s ease, background 0.16s ease;
-}
-
-.manual-mention-toggle[aria-pressed="true"] {
-  border-color: rgba(90, 198, 150, 0.45);
-  background: rgba(90, 198, 150, 0.16);
-  color: #c7f7df;
-}
-
-.manual-mention-toggle[aria-pressed="true"]::before {
-  border-color: rgba(90, 198, 150, 0.58);
-  background: rgba(90, 198, 150, 0.28);
-}
-
-.manual-mention-toggle[aria-pressed="true"]::after {
-  background: #c7f7df;
-  transform: translateX(10px);
-}
+/* S7/T3：.mention-shortcut 退役——cursor-pointer / hover:brightness-[1.08]
+ * 由 MessageItem/ReplyControlBubble/RolePanel 的行内 utilities 承担；
+ * 类名保留作选择器钩子。 */
 
 .theme-switch {
   position: relative;
@@ -527,25 +489,12 @@ select:focus {
   text-overflow: ellipsis;
 }
 
-.message-site-jump-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 5px;
-  opacity: 0.72;
-}
+/* S7/T3：.message-site-jump-btn 退役——尺寸/圆角是死规则（MessageToolButton
+ * 基础类 size-6/rounded-md utilities 恒压），opacity 0.72 由调用点的
+ * opacity-[0.72]! 承担；svg 13px 也是死规则（Icon 的 size-3.5 已接管，
+ * fill 由 fill-current 承担）。类名保留作钩子。 */
 
-.message-site-jump-btn svg {
-  width: 13px;
-  height: 13px;
-}
-
-.mention-shortcut {
-  cursor: pointer;
-}
-
-.mention-shortcut:hover {
-  filter: brightness(1.08);
-}
+/* S7/T3：.mention-shortcut（cursor/hover:brightness）退役——见上。 */
 
 /* S7/T2：状态卡全族退役（.orchestration-status* + .orchestration-mini-*，
  * 本段暗色基线与下方浅色补丁一并删除）——视觉全部迁入
@@ -622,65 +571,12 @@ select:focus {
  * 定位规则退役——ReplyControlBubble 状态行重排为「左文右钮」单行
  * （justify-between），按钮不再绝对定位于气泡右缘。 */
 
-.message-tool-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: currentColor;
-  opacity: 0.58;
-  cursor: pointer;
-  transition: opacity 0.14s ease, background 0.14s ease;
-}
-
-.message-tool-btn::after {
-  content: attr(aria-label);
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 7px);
-  z-index: 3;
-  transform: translate(-50%, 4px);
-  border: 1px solid rgba(113, 113, 122, 0.22);
-  border-radius: 6px;
-  padding: 4px 7px;
-  background: rgba(9, 15, 24, 0.96);
-  color: var(--text);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
-  font-size: 12px;
-  line-height: 1.2;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.14s ease, transform 0.14s ease;
-}
-
-.message-tool-btn:hover,
-.message-tool-btn:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
-  opacity: 0.96;
-}
-
-.message-tool-btn.copied {
-  color: var(--success);
-  opacity: 1;
-}
-
-.message-tool-btn:hover::after,
-.message-tool-btn:focus-visible::after {
-  transform: translate(-50%, 0);
-  opacity: 1;
-}
-
-.message-tool-btn svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
-}
+/* S7/T3：.message-tool-btn 全族退役——容器本体（relative/cursor/opacity
+ * 0.58→0.96 hover/copied）由 MessageToolButton 行内 utilities 承担（copied
+ * 的 text-chart-2 原已就位）；::after tooltip（含 hover 显形 + 浅色补丁）
+ * 整块迁 globals.css components 层（伪元素声明集过大）；svg 的 18px 是死
+ * 规则（Icon size-3.5 已接管）、fill:currentColor 由 fill-current 承担。
+ * 类名保留作钩子。 */
 
 /* S2 Task 5：.composer / .reference-draft 族退役——输入区改为 Card 视觉
  * （rounded-lg border bg-card p-2 + focus-within ring），引用条改入文档流，
@@ -715,80 +611,27 @@ select:focus {
   align-content: start;
 }
 
-.note-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 8px 16px 10px;
-  border-bottom: 1px solid rgba(113, 113, 122, 0.08);
-}
-
-.note-toolbar-spacer {
-  flex: 1 1 auto;
-}
-
-.note-tool-btn {
-  display: inline-grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border: 1px solid rgba(113, 113, 122, 0.14);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #d4d4d8;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 820;
-}
-
-.note-tool-btn:hover,
-.note-tool-btn:focus-visible {
-  border-color: rgba(161, 161, 170, 0.34);
-  background: rgba(161, 161, 170, 0.1);
-  color: #ffffff;
-}
-
-.notes-editor {
-  min-height: 0;
-  overflow: auto;
-  padding: 18px 20px 28px;
-  color: #ecf6f8;
-  font-size: 14px;
-  line-height: 1.65;
-}
-
-.notes-editor .ProseMirror {
-  min-height: 100%;
-  outline: none;
-}
-
-.notes-editor .ProseMirror > :first-child {
-  margin-top: 0;
-}
-
-.notes-editor .ProseMirror p,
-.notes-editor .ProseMirror ul,
-.notes-editor .ProseMirror ol {
-  margin: 0 0 12px;
-}
-
-.notes-editor .ProseMirror ul,
-.notes-editor .ProseMirror ol {
-  padding-left: 22px;
-}
+/* S7/T3：notes 工具栏 + 编辑器族退役——
+ * - .note-toolbar：几何（flex/gap/padding）在 S5 已被 NotesPanel utilities
+ *   压死，底边（暗 0.08/亮 0.13）由两个消费组件的 border-b 承担（AllNotes
+ *   同时接管此前由本规则提供的 gap/padding）；
+ * - .note-toolbar-spacer 的 flex:1 已被 flex-1 覆盖（死规则）；
+ * - .note-tool-btn：尺寸/圆角/前景 S5 已接管，border/bg/字重/hover 态由
+ *   两处消费组件的 utilities 承担（亮 bg 纯白 = 原浅色补丁值）；
+ * - .notes-editor：容器 overflow/padding 上缘/行高/前景由两处消费组件承担，
+ *   .ProseMirror 4 条后代规则（动态 DOM 例外）迁 globals.css components 层；
+ * - .all-note-toolbar 底色两条（暗 + 浅）是死规则（bg-background utilities
+ *   恒压）。类名全部保留作钩子；守卫测试断言同步改读 TSX/globals。 */
 
 /* S5-T4：A 组（全部笔记独占族）整族退役——.all-notes-modal / -workspace /
  * -list / -empty、.all-note-target 族（含 :hover/:focus-visible/.active/
  * .deleted-chat 与 -title/-meta）。视觉逐属性翻成 AllNotesModal.tsx 的
  * utilities；类名一律保留作钩子（既有脚本与用例按它取元素）。
- * ⚠️ .all-note-toolbar（下一条）不在其中：它是与 NotesPanel 共用的共享族，
- * 被 NotesPanel.test.tsx 的 CSS 守卫测试钉住，永久保留。 */
+ * S7/T3：.all-note-toolbar 底色（暗 0.34 + 浅白）随共享族一并退役——
+ * bg-background utilities 本就恒压这两条（死规则），AllNotesModal 工具栏
+ * 同时接管原 .note-toolbar 的几何；守卫测试断言已同步改口。 */
 
 /* S5-T4：续 A 组退役——.all-notes-editor-shell / -editor-header(+ h3)。 */
-
-.all-note-toolbar {
-  background: rgba(6, 14, 22, 0.34);
-}
 
 /* S5-T4：A 组收尾——.all-notes-editor（min-height:360px）；≤760px 媒体查询
  * 整块（.all-notes-workspace 单栏 / .all-notes-list 横向条带 + max-height:none
@@ -819,31 +662,11 @@ select:focus {
   box-shadow: var(--glow);
 }
 
-.mention-avatar {
-  display: inline-grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 50%;
-  flex: 0 0 auto;
-  overflow: hidden;
-  color: white;
-  font-size: 14px;
-  font-weight: 780;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.mention-avatar {
-  width: 22px;
-  height: 22px;
-  font-size: 11px;
-}
-
-.mention-avatar-all {
-  background: linear-gradient(135deg, #d4d4d8, #a1a1aa);
-}
+/* S7/T3：.mention-avatar 退役——双块中的 38px 首块是死规则（第二块 22px
+ * 覆盖），而 22px 也被 MentionPicker 的 size-6 utilities 压过；实际生效的
+ * border/overflow/nowrap/字重/行高/white/shrink 由 MentionPicker 的
+ * utilities 承担。.mention-avatar-all 的渐变是死规则（bg-muted 恒压）。
+ * 类名保留作钩子。 */
 
 /* 动态色板 .role-tone-* / .site-pill* 已于 S3 Task 4 归位到 globals.css
  * components 层（含浅色变体，及 .add-person-site-option / .role-site-badge /
@@ -1098,10 +921,11 @@ select:focus {
 }
 
 /* S5-T4：本组摘除 .all-notes-workspace / .all-notes-editor-header（A 组退役，
- * 浅色边框由 border-border 承担）；.chat-header / .note-toolbar（共享族）/
- * 两个 #iframe-host 成员原样保留。 */
+ * 浅色边框由 border-border 承担）；.chat-header / 两个 #iframe-host 成员
+ * 原样保留。
+ * S7/T3：再摘 .note-toolbar（共享族退役，浅色底边由消费组件
+ * border-zinc-500/15 承担）。 */
 :root[data-theme="light"] .chat-header,
-:root[data-theme="light"] .note-toolbar,
 :root[data-theme="light"] #iframe-host .chat-frame-group-title,
 :root[data-theme="light"] #iframe-host .role-frame-label {
   border-color: rgba(113, 113, 122, 0.13);
@@ -1136,11 +960,8 @@ select:focus {
   box-shadow: inset 0 0 0 1px rgba(113, 113, 122, 0.14);
 }
 
-:root[data-theme="light"] .manual-mention-toggle[aria-pressed="true"] {
-  border-color: rgba(113, 113, 122, 0.3);
-  background: rgba(113, 113, 122, 0.1);
-  color: #27272a;
-}
+/* S7/T3：.manual-mention-toggle[aria-pressed] 浅色补丁随死族一并退役
+ * （全库零消费，见暗色块注释）。 */
 
 :root[data-theme="light"] .field {
   color: var(--text);
@@ -1199,17 +1020,12 @@ select:focus {
   box-shadow: var(--glow);
 }
 
+/* S7/T3：本组摘除 .message-tool-btn:hover/:focus-visible（浅色 hover 底本
+ * 就被 ghost 的 hover:bg-accent utilities 压住 = 死规则）与 .note-tool-btn
+ * （共享族退役，浅色 border/bg/前景由消费组件 utilities 承担）；
+ * .orchestration-review-summary / .reference-box 留给 T5。 */
 :root[data-theme="light"] .orchestration-review-summary,
-:root[data-theme="light"] .reference-box,
-:root[data-theme="light"] .message-tool-btn:hover,
-:root[data-theme="light"] .message-tool-btn:focus-visible,
-/* S4-T4：本组摘除 .add-person-site-option——S3 交接 A.2 记录的那条例外（搬前
- * 即被更晚的同特异性浅色 .site-pill* 压住 = 长期 dead），站点 pill 的浅色视觉
- * 现已全部由 globals.css 的 .site-pill* 承载（含 .active 的 645 行覆盖规则）。 */
-/* S5-T4：本组摘除 .group-template-category-filter（B 组退役，浅色视觉由
- * bg-popover / border-border / text-muted-foreground 承担）；.note-tool-btn
- * 是共享族（守卫测试钉住），保留。 */
-:root[data-theme="light"] .note-tool-btn {
+:root[data-theme="light"] .reference-box {
   border-color: rgba(113, 113, 122, 0.16);
   background: #ffffff;
   color: var(--muted-foreground);
@@ -1220,36 +1036,14 @@ select:focus {
 }
 
 /* S2 Task 4：浅色 .markdown-body 覆盖规则随暗色族一并搬迁至 globals.css
- * components 层（.message-tool-btn::after 的共享声明留在此处）。 */
+ * components 层。
+ * S7/T3：.message-tool-btn::after 浅色两条随伪元素块迁 globals components
+ * 层（与暗色正典合并为 :root 前缀覆盖）。 */
 
-:root[data-theme="light"] .message-tool-btn::after {
-  border-color: rgba(113, 113, 122, 0.2);
-}
-
-:root[data-theme="light"] .message-tool-btn::after {
-  background: #ffffff;
-  color: var(--text);
-  box-shadow: 0 8px 18px rgba(63, 63, 70, 0.14);
-}
-
-:root[data-theme="light"] .all-note-toolbar {
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .note-tool-btn:hover,
-:root[data-theme="light"] .note-tool-btn:focus-visible {
-  border-color: rgba(113, 113, 122, 0.28);
-  background: #ffffff;
-  color: #27272a;
-}
-
-/* S5-T4：本组摘除 .all-note-target / .all-note-target-title（A 组退役，
- * 浅色前景由 text-foreground 承担）；.notes-editor 是共享族（守卫测试钉住）。
- * S7/T2：再摘 .orchestration-status / -title / -current-main（状态卡族退役，
- * 浅色前景由 TSX 的 text-zinc-950 承担）。 */
-:root[data-theme="light"] .notes-editor {
-  color: var(--text);
-}
+/* S7/T3：.all-note-toolbar 浅白底是死规则（bg-background 恒压）随族退役；
+ * .note-tool-btn:hover/:focus-visible 浅色由消费组件的
+ * hover:border-zinc-500/30 等承担；.notes-editor 浅色前景由
+ * text-zinc-950 承担。 */
 
 /* S6/T2：摘除 .orchestration-template-heading h3 / .orchestration-template-card
  * strong——模板选择弹窗已迁 AppModal，浅色前景由 TSX 的 text-foreground 承担。

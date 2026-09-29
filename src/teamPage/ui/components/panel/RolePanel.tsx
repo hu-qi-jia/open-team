@@ -426,7 +426,7 @@ function RoleCard(props: RoleCardProps) {
             utilities 层，恒压 legacy 的 role-tone 渐变——与 ChatList 头像同为平涂 */}
         <AvatarFallback
           className={cn(
-            'mention-shortcut select-none rounded-md bg-none bg-secondary text-sm font-medium text-secondary-foreground',
+            'mention-shortcut select-none cursor-pointer rounded-md bg-none bg-secondary text-sm font-medium text-secondary-foreground hover:brightness-[1.08]',
             roleToneClass(role.name),
           )}
           {...mentionShortcutHandlers}
@@ -438,7 +438,7 @@ function RoleCard(props: RoleCardProps) {
         <div className="role-row flex min-w-0 items-center justify-between gap-2">
           {/* min-w-0 + flex-1 承接退役的 `.role-card .role-name`（flex:1 1 auto; min-width:0），
               长名才能在状态 Badge 前正确截断 */}
-          <div className="role-name mention-shortcut min-w-0 flex-1 truncate text-[13px] font-medium" {...mentionShortcutHandlers}>{role.name}</div>
+          <div className="role-name mention-shortcut min-w-0 flex-1 cursor-pointer truncate text-[13px] font-medium hover:brightness-[1.08]" {...mentionShortcutHandlers}>{role.name}</div>
           <Badge
             variant="outline"
             data-status={role.status}
