@@ -19,8 +19,11 @@
  *   .role-frame-shell.jump-highlight  border-color       → 被 .role-frame-shell 的 border 简写覆盖
  *                             （发光 box-shadow 与 transform 仍在本文件，未受影响）
  *   浅色 #iframe-host / .chat-frame-group / .role-frame-shell 三块的
- *   border-color & background 同理被覆盖；.chat-frame-group-title 的
- *   color: var(--text) 因变量零定义本就无效（继承），不迁。
+ *   border-color & background 同理被覆盖。
+ * ⚠️ S7/T5-b 补账：浅色 .chat-frame-group-title 的 color: var(--text) 当初按
+ *   「变量零定义」判死不迁是误判——--text 由 globals.css components 层的 V5
+ *   remap 块真定义为 var(--foreground)。暗色块给的是 #e4e4e7（浅字），浅色
+ *   必须翻成深字，T5-a 漏掉它导致浅色标题「白底白字」不可读；已补回。
  * 亮暗两态用字面色表达（工作台底色/描边走 globals 的语义 token，这里只管
  * 几何与未被 token 化的部分）。
  */
@@ -124,6 +127,7 @@
 
 :root[data-theme="light"] #iframe-host .chat-frame-group-title {
   background: #ffffff;
+  color: var(--text);
 }
 
 :root[data-theme="light"] #iframe-host .role-frame-label {
