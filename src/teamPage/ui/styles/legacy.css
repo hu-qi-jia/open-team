@@ -547,315 +547,13 @@ select:focus {
   filter: brightness(1.08);
 }
 
-.orchestration-status {
-  color: #e4e4e7;
-}
-
-/* S6/T5：fixed → absolute（S2 挂账 §B.5「#app 内禁 fixed」）。
- * 视觉零变化：.app-shell 自带 transform（globals.css），fixed 的包含块本就被
- * 劫持为 #app padding box；absolute 的包含块 = 最近 positioned 祖先 = #app 自身
- * （#messages/#workspace/SidebarProvider wrapper 均无 positioned）——二者重合。
- * right:70/bottom:128 沿用；拖拽几何同步迁 #app 坐标系（见 useFloatingPanelGeometry）。 */
-.orchestration-status-floating {
-  position: absolute;
-  right: 70px;
-  bottom: 128px;
-  z-index: 8;
-  display: flex;
-  box-sizing: border-box;
-  min-width: 300px;
-  min-height: 220px;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid rgba(161, 161, 170, 0.42);
-  border-radius: 16px;
-  background: rgba(9, 9, 11, 0.96);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(161, 161, 170, 0.08) inset;
-  backdrop-filter: blur(18px);
-}
-
-.orchestration-status-collapsed {
-  right: 22px;
-  bottom: 206px;
-  display: inline-flex;
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
-  min-height: 46px;
-  max-width: 46px;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  padding: 0;
-  border-radius: 999px;
-  background: rgba(9, 9, 11, 0.94);
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.42), 0 0 18px rgba(212, 212, 216, 0.24);
-  color: #e4e4e7;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 820;
-}
-
-.orchestration-status-header,
-.orchestration-status-actions,
-.orchestration-status-window-actions,
-.orchestration-status-review-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.orchestration-status-header {
-  min-height: 46px;
-  align-items: flex-start;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(212, 212, 216, 0.16);
-  padding: 8px 10px 8px 14px;
-  background: rgba(212, 212, 216, 0.08);
-  cursor: move;
-  user-select: none;
-}
-
-.orchestration-status-title {
-  display: inline-flex;
-  min-width: 0;
-  min-height: 30px;
-  flex: 1 1 140px;
-  align-items: center;
-  gap: 8px;
-  color: #e4e4e7;
-  font-size: 13px;
-  font-weight: 860;
-}
-
-.orchestration-status-drag-grip {
-  /* 同 #template-persona-generation-status：本体无浅色覆盖，改随主题翻转 */
-  color: var(--muted-foreground);
-  font-size: 14px;
-  letter-spacing: 1px;
-}
-
-.orchestration-status-window-actions {
-  flex: 0 0 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  max-width: min(420px, 64%);
-}
-
-.orchestration-status-window-actions .orchestration-status-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.orchestration-status-collapse {
-  width: 26px;
-  padding: 0;
-  background: rgba(11, 22, 34, 0.92);
-  color: #a1a1aa;
-}
-
-.orchestration-status-body {
-  display: grid;
-  min-height: 0;
-  flex: 1 1 auto;
-  grid-template-rows: auto auto auto minmax(110px, 1fr);
-  gap: 10px;
-  overflow: auto;
-  padding: 13px 14px 14px;
-}
-
-.orchestration-status-progress {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.orchestration-status-count {
-  display: grid;
-  gap: 3px;
-}
-
-.orchestration-status-count strong {
-  color: #ffffff;
-  font-size: 22px;
-  font-weight: 900;
-  line-height: 1.05;
-}
-
-.orchestration-status-count span,
-.orchestration-status-node-index,
-.orchestration-status-current-label,
-.orchestration-status-current-sub {
-  color: #a1a1aa;
-  font-size: 12px;
-  font-weight: 760;
-  line-height: 1.4;
-}
-
-.orchestration-status-current {
-  display: grid;
-  gap: 5px;
-  border: 1px solid rgba(212, 212, 216, 0.2);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: rgba(212, 212, 216, 0.08);
-}
-
-.orchestration-status-current-main {
-  overflow: hidden;
-  color: #f4f4f5;
-  font-size: 15px;
-  font-weight: 860;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orchestration-status-review-meta {
-  flex-wrap: wrap;
-  margin-top: 4px;
-  color: #a1a1aa;
-  font-size: 12px;
-}
-
-.orchestration-status-review-meta span:first-child {
-  border: 1px solid rgba(212, 212, 216, 0.26);
-  border-radius: 999px;
-  padding: 4px 8px;
-  background: rgba(212, 212, 216, 0.12);
-  color: #e4e4e7;
-  font-weight: 840;
-}
-
-.orchestration-status-waiting {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-  color: #a1a1aa;
-  font-size: 12px;
-  line-height: 1.35;
-}
-
-.orchestration-status-waiting span {
-  flex: 0 0 auto;
-  color: #71717a;
-  font-weight: 760;
-}
-
-.orchestration-status-waiting strong {
-  min-width: 0;
-  overflow: hidden;
-  color: #a1a1aa;
-  font-weight: 780;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orchestration-status-actions {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-}
-
-.orchestration-status-error {
-  border-color: rgba(255, 138, 165, 0.38);
-  background: rgba(44, 12, 22, 0.88);
-}
-
-.orchestration-status-stopped {
-  border-color: rgba(248, 184, 78, 0.34);
-}
-
-.orchestration-status-completed {
-  border-color: rgba(83, 230, 166, 0.34);
-}
-
-.orchestration-status-resize {
-  position: absolute;
-  right: 7px;
-  bottom: 7px;
-  width: 14px;
-  height: 14px;
-  border: 0;
-  background:
-    linear-gradient(135deg, transparent 0 45%, rgba(212, 212, 216, 0.5) 46% 54%, transparent 55%),
-    linear-gradient(135deg, transparent 0 66%, rgba(212, 212, 216, 0.35) 67% 75%, transparent 76%);
-  cursor: nwse-resize;
-}
-
-.orchestration-mini-flow {
-  width: 100%;
-  height: 100%;
-  min-height: 118px;
-  overflow: visible;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 14px;
-  background: #09090b;
-}
-
-.orchestration-mini-flow marker path {
-  fill: #d4d4d8;
-}
-
-.orchestration-mini-edge {
-  fill: none;
-  stroke: #d4d4d8;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.orchestration-mini-edge.branch-pass {
-  opacity: 0.82;
-}
-
-.orchestration-mini-node.error {
-  stroke: #ff8aa5;
-}
-
-.orchestration-mini-edge.branch-fail {
-  opacity: 0.92;
-}
-
-.orchestration-mini-node {
-  fill: #1c1c1f;
-  stroke: #71717a;
-  stroke-width: 2;
-}
-
-.orchestration-mini-node.completed {
-  stroke: rgba(212, 212, 216, 0.74);
-}
-
-.orchestration-mini-node.current {
-  stroke: #d4d4d8;
-  stroke-width: 3;
-  filter: drop-shadow(0 0 10px rgba(212, 212, 216, 0.42));
-}
-
-.orchestration-mini-label {
-  pointer-events: none;
-}
-
-.orchestration-mini-label text {
-  fill: #e4e4e7;
-  font-size: 12px;
-  font-weight: 820;
-  dominant-baseline: middle;
-}
-
-.orchestration-mini-edge-label rect {
-  fill: #18181b;
-  stroke: rgba(212, 212, 216, 0.5);
-}
-
-.orchestration-mini-edge-label text {
-  fill: #d4d4d8;
-  font-size: 11px;
-  font-weight: 820;
-  dominant-baseline: middle;
-}
+/* S7/T2：状态卡全族退役（.orchestration-status* + .orchestration-mini-*，
+ * 本段暗色基线与下方浅色补丁一并删除）——视觉全部迁入
+ * OrchestrationStatusCard.tsx 的 utilities（亮色默认 + dark: 覆盖，run.status
+ * 挂 data-status 变体）。S6/T5 的 absolute 定位结论随族迁入组件注释，
+ * s6-7 运行时锚点断言继续覆盖、s6-8 静态审计同步改口；语义类名
+ * （orchestration-status* / mini-* / branch-* / current/completed/error）
+ * 全部保留为测试与探针钩子。 */
 
 /* S2 Task 4：.orchestration-message-label 规则退役——标签视觉由
  * OrchestrationMessageLabel 的行内 utilities（mb-1/rounded-sm/bg-muted/
@@ -1356,7 +1054,7 @@ select:focus {
 /* S6/T4：编排主弹窗已迁 AppModal（size=2xl + fixed 高度，footer 进壳槽），
  * 主弹窗独占暗色族整块退役（modal/task-strip/layout/sidebar/settings/
  * people/person(+tone)/workspace/arrange/empty-hint/stage|review-settings/
- * node-editor-header/note/stage-role-chips/auto-role-*/json-preview/footer/
+ * node-editor-header/note/stage-role-chips/auto-role-* /json-preview/footer/
  * rounds-field/actions）。视觉由 TSX utilities 承担；面板底 bg-card/70、
  * 卡面 token 化。.orchestration-status*（状态卡）、.orchestration-mini-*
  * （状态卡迷你图）是别的表面的族，不在本块。 */
@@ -1366,7 +1064,7 @@ select:focus {
 
 /* S6/T4：主弹窗画布之后的独占暗色族（empty-hint/stage|review-settings/
  * node-editor-header/note/stage-role-chips(含死规则 chip button——TSX 里
- * chip 无 button 子元素)/auto-role-*/json-preview/footer/rounds-field/
+ * chip 无 button 子元素)/auto-role-* /json-preview/footer/rounds-field/
  * actions）同批退役，视觉由 TSX utilities 承担。 */
 :root[data-theme="light"] body {
   background: #ffffff;
@@ -1475,21 +1173,10 @@ select:focus {
 }
 
 /* S5-T4：本组摘除 .group-template-summary / -meta / -role-count（B 组退役，
- * 浅色语义色由 text-muted-foreground 承担）；其余成员全留。 */
-:root[data-theme="light"] .chat-time,
-:root[data-theme="light"] .summary-line,
-:root[data-theme="light"] .orchestration-status-count span,
-:root[data-theme="light"] .orchestration-status-node-index,
-:root[data-theme="light"] .orchestration-status-current-label,
-:root[data-theme="light"] .orchestration-status-current-sub,
-:root[data-theme="light"] .orchestration-status-review-meta,
-/* S6/T2：摘除 .orchestration-template-summary——模板选择弹窗已迁 AppModal，
- * 浅色次级前景由 TSX 的 text-muted-foreground 承担。
- * S6/T4：再摘 .orchestration-auto-role-site-row span / -prompt-row span——
- * 主弹窗节点设置面板已迁，浅色由 TSX 的 text-muted-foreground 承担。 */
-:root[data-theme="light"] .orchestration-status-waiting {
-  color: var(--muted-foreground);
-}
+ * 浅色语义色由 text-muted-foreground 承担）。
+ * S7/T2：再摘 .orchestration-status-* 六成员（状态卡族随组件 utilities 化
+ * 退役）与 .chat-time / .summary-line 尾成员——二者 TSX 已有
+ * text-muted-foreground(/80) 承担，浅色组覆盖本就是死规则，整组清零。 */
 
 /* S4-T4：本组摘除 .modal-card / .select-row（两族已退役、视觉换 bg-card /
  * border-border 语义 token）——本组剩下的是编排（S6）表面。
@@ -1557,12 +1244,10 @@ select:focus {
 }
 
 /* S5-T4：本组摘除 .all-note-target / .all-note-target-title（A 组退役，
- * 浅色前景由 text-foreground 承担）；.notes-editor 是共享族（守卫测试钉住）
- * 与 10 个 .orchestration-* 一律保留。 */
-:root[data-theme="light"] .notes-editor,
-:root[data-theme="light"] .orchestration-status,
-:root[data-theme="light"] .orchestration-status-title,
-:root[data-theme="light"] .orchestration-status-current-main {
+ * 浅色前景由 text-foreground 承担）；.notes-editor 是共享族（守卫测试钉住）。
+ * S7/T2：再摘 .orchestration-status / -title / -current-main（状态卡族退役，
+ * 浅色前景由 TSX 的 text-zinc-950 承担）。 */
+:root[data-theme="light"] .notes-editor {
   color: var(--text);
 }
 
@@ -1606,57 +1291,9 @@ select:focus {
   color: #52525b;
 }
 
-:root[data-theme="light"] .orchestration-status-floating,
-:root[data-theme="light"] .orchestration-status-collapsed {
-  border-color: rgba(113, 113, 122, 0.28);
-  background: #ffffff;
-  box-shadow: 0 24px 58px rgba(63, 63, 70, 0.16), 0 0 0 1px rgba(113, 113, 122, 0.08) inset;
-  color: var(--text);
-}
-
-:root[data-theme="light"] .orchestration-status-header {
-  border-bottom-color: rgba(113, 113, 122, 0.14);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .orchestration-status-collapse {
-  background: #ffffff;
-  color: #52525b;
-}
-
-:root[data-theme="light"] .orchestration-status-current,
-:root[data-theme="light"] .orchestration-status-review-meta span:first-child {
-  border-color: rgba(113, 113, 122, 0.2);
-  background: #ffffff;
-  color: #27272a;
-}
-
-:root[data-theme="light"] .orchestration-status-error {
-  border-color: rgba(198, 56, 85, 0.28);
-  background: #fff1f3;
-}
-
-:root[data-theme="light"] .orchestration-mini-flow {
-  border-color: rgba(113, 113, 122, 0.16);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .orchestration-mini-node {
-  fill: #ffffff;
-  stroke: #71717a;
-}
-
-:root[data-theme="light"] .orchestration-mini-label text {
-  fill: #27272a;
-}
-
-:root[data-theme="light"] .orchestration-mini-edge-label rect {
-  fill: #ffffff;
-}
-
-:root[data-theme="light"] .orchestration-mini-edge-label text {
-  fill: #0e6f54;
-}
+/* S7/T2：状态卡浅色补丁（floating/collapsed 白底、header 白底、collapse、
+ * current/review-meta 徽标、error 粉底、mini-flow/mini-node/mini-label/
+ * mini-edge-label 白芯深字）随族退役——由 TSX utilities 的亮色默认承担。 */
 
 /* S6/T2+T4：摘除 .orchestration-template-structure / .orchestration-json-preview
  * pre——已迁 AppModal；pre 浅色代码绿由 TSX 的 text-emerald-800 承担。 */

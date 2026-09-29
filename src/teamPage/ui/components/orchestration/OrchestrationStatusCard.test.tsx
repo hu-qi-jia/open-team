@@ -397,12 +397,13 @@ describe('orchestration status card', () => {
   })
 
   it('keeps the collapsed launcher aligned above the composer right edge', async () => {
+    // S7/T2：collapsed 定位随状态卡族迁入组件 utilities，断言改读 TSX 源。
     const { readFileSync } = await import('node:fs')
     const { resolve } = await import('node:path')
-    const source = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+    const source = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/orchestration/OrchestrationStatusCard.tsx'), 'utf8')
 
-    expect(source).toMatch(/\.orchestration-status-collapsed\s*{[^}]*right:\s*22px;/s)
-    expect(source).toMatch(/\.orchestration-status-collapsed\s*{[^}]*bottom:\s*206px;/s)
+    expect(source).toMatch(/orchestration-status-collapsed[\s\S]*?right-\[22px\]/)
+    expect(source).toMatch(/orchestration-status-collapsed[\s\S]*?bottom-\[206px\]/)
   })
 
   it('clamps saved expanded floating positions back into the viewport', () => {

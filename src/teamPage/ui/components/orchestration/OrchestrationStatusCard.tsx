@@ -88,7 +88,26 @@ function statusLabelText(run: OrchestrationRun): string {
  *   继续运行 / 重新运行 / 重发经 runCommandWithReconnect 预连后下发。
  * 无可见 run（或 flow 缺失）时渲染空 slot（原 renderOrchestrationStatus
  * 返回 undefined 对译）。
+ *
+ * S7/T2：视觉全量 utilities 化（legacy.css 状态卡族退役）——暗色基线 + 浅色
+ * 补丁按「亮色默认 + dark: 覆盖」单份表达；run.status 挂 data-status，状态
+ * 色用 data-[status=*]: 变体（暗色差异用 data-[status=*]:dark: 嵌套变体，
+ * 嵌套在 utilities 层内排序靠后，稳定压过单变体与基础类）。orchestration-
+ * status* / orchestration-mini-* 类名全部保留为测试与探针钩子（含 SVG 节点
+ * 的 current/completed/error、边的 branch-pass/fail）。mini-node 态 stroke
+ * 亮色不生效是原 CSS 特异性现状（浅色 :root 前缀组压过态规则），以「态色
+ * 只挂 dark:」保真重现；current 与 error 并存时 current 胜（复刻 CSS 源序）。
  */
+
+/* run.status 状态色调（原 legacy .orchestration-status-error/stopped/completed
+ * 暗 + 浅双份）。挂 data-status 变体；error 的暗色差异用嵌套变体表达。 */
+const STATUS_TINT_CLASSES: Record<string, string> = {
+  error:
+    'data-[status=error]:border-[rgba(198,56,85,0.28)] data-[status=error]:bg-[#fff1f3]' +
+    ' data-[status=error]:dark:border-[rgba(255,138,165,0.38)] data-[status=error]:dark:bg-[rgba(44,12,22,0.88)]',
+  stopped: 'data-[status=stopped]:border-[rgba(248,184,78,0.34)]',
+  completed: 'data-[status=completed]:border-[rgba(83,230,166,0.34)]',
+}
 export function OrchestrationStatusCard() {
   const services = useServices()
   const language = useStoreSelector(state => normalizeLanguage(state.store.settings.language))
@@ -256,7 +275,21 @@ export function OrchestrationStatusCard() {
       {collapsed ? (
         <button
           type="button"
-          className={`orchestration-status orchestration-status-floating orchestration-status-collapsed orchestration-status-${run.status}`}
+          data-status={run.status}
+          className={[
+            'orchestration-status orchestration-status-floating orchestration-status-collapsed',
+            `orchestration-status-${run.status}`,
+            // 原 legacy .orchestration-status-floating/-collapsed（暗基线 + 浅补丁）：
+            // 亮色白底圆钮为默认，dark: 恢复暗色基线（shadow 两态不同，单独写）。
+            'absolute right-[22px] bottom-[206px] z-[8]',
+            'inline-flex h-[46px] min-h-[46px] w-[46px] min-w-[46px] max-w-[46px] items-center justify-center overflow-hidden p-0',
+            'rounded-full border border-zinc-500/30 bg-white text-zinc-950',
+            'shadow-[0_24px_58px_rgba(63,63,70,0.16),0_0_0_1px_rgba(113,113,122,0.08)_inset]',
+            'cursor-pointer text-[15px] font-[820]',
+            'dark:border-zinc-400/40 dark:bg-zinc-950/95 dark:text-zinc-200',
+            'dark:shadow-[0_12px_34px_rgba(0,0,0,0.42),0_0_18px_rgba(212,212,216,0.24)]',
+            STATUS_TINT_CLASSES[run.status] ?? '',
+          ].join(' ')}
           title={`${ui(statusLabelText(run))} · ${ui(currentNodeText(run, flow))} · ${run.stageRuns.length} / ${maxExecutions(run)}`}
           aria-label={`${ui(statusLabelText(run))} · ${ui(currentNodeText(run, flow))} · ${run.stageRuns.length} / ${maxExecutions(run)}，点击展开`}
           onClick={() => updatePrefs({ collapsed: false })}
@@ -264,60 +297,77 @@ export function OrchestrationStatusCard() {
       ) : (
         <section
           ref={panelRef}
-          className={`orchestration-status orchestration-status-floating orchestration-status-${run.status}`}
+          data-status={run.status}
+          className={[
+            'orchestration-status orchestration-status-floating',
+            `orchestration-status-${run.status}`,
+            // 原 legacy .orchestration-status-floating（暗基线 559-575 + 浅补丁
+            // 1609-1615）：S6/T5 的 absolute 定位随族迁入，s6-7 锚点断言继续覆盖。
+            'absolute right-[70px] bottom-[128px] z-[8]',
+            'flex flex-col box-border min-h-[220px] min-w-[300px]',
+            'overflow-hidden rounded-2xl border border-zinc-500/30 bg-white text-zinc-950',
+            'shadow-[0_24px_58px_rgba(63,63,70,0.16),0_0_0_1px_rgba(113,113,122,0.08)_inset]',
+            'backdrop-blur-[18px]',
+            'dark:border-zinc-400/40 dark:bg-zinc-950/95 dark:text-zinc-200',
+            'dark:shadow-[0_24px_70px_rgba(0,0,0,0.42),0_0_0_1px_rgba(161,161,170,0.08)_inset]',
+            STATUS_TINT_CLASSES[run.status] ?? '',
+          ].join(' ')}
           data-run-id={run.id}
           aria-label={ui('编排运行状态')}
         >
-          <div className="orchestration-status-header" onPointerDown={geometry.onDragPointerDown}>
-            <div className="orchestration-status-title">
-              <span ref={dragHandleRef} className="orchestration-status-drag-grip">⋮⋮</span>
+          <div
+            className="orchestration-status-header flex min-h-[46px] cursor-move select-none items-start justify-between gap-2 border-b border-zinc-500/15 bg-white py-2 pl-3.5 pr-2.5 dark:border-zinc-300/15 dark:bg-zinc-300/10"
+            onPointerDown={geometry.onDragPointerDown}
+          >
+            <div className="orchestration-status-title inline-flex min-h-[30px] min-w-0 flex-[1_1_140px] items-center gap-2 text-[13px] font-[860] text-zinc-950 dark:text-zinc-200">
+              <span ref={dragHandleRef} className="orchestration-status-drag-grip text-[14px] tracking-[1px] text-muted-foreground">⋮⋮</span>
               <span>{ui(statusLabelText(run))}</span>
             </div>
-            <div className="orchestration-status-window-actions">
-              {statusActions.length > 0 && <div className="orchestration-status-actions">{statusActions}</div>}
-              <Button type="button" variant="ghost" size="icon-xs" className="orchestration-status-collapse" aria-label={ui('收起编排状态')} onClick={() => updatePrefs({ collapsed: true })}>－</Button>
+            <div className="orchestration-status-window-actions flex flex-none flex-wrap items-center justify-end gap-2 max-w-[min(420px,64%)]">
+              {statusActions.length > 0 && <div className="orchestration-status-actions flex flex-wrap items-center justify-end gap-2">{statusActions}</div>}
+              <Button type="button" variant="ghost" size="icon-xs" className="orchestration-status-collapse w-[26px] bg-white p-0 text-zinc-600 dark:bg-[rgba(11,22,34,0.92)] dark:text-zinc-400" aria-label={ui('收起编排状态')} onClick={() => updatePrefs({ collapsed: true })}>－</Button>
               {(run.status === 'running' || run.status === 'pending') && (
                 <Button type="button" variant="destructive" size="xs" onClick={() => runAction('GROUP_ORCHESTRATION_STOP', { chatId: chat.id })}>{ui('停止')}</Button>
               )}
             </div>
           </div>
-          <div className="orchestration-status-body">
-            <div className="orchestration-status-progress">
-              <div className="orchestration-status-count">
-                <strong>{run.stageRuns.length} / {maxExecutions(run)}</strong>
-                <span>{ui('已执行节点数')}</span>
+          <div className="orchestration-status-body grid min-h-0 flex-[1_1_auto] grid-rows-[auto_auto_auto_minmax(110px,1fr)] gap-2.5 overflow-auto px-3.5 pb-3.5 pt-[13px]">
+            <div className="orchestration-status-progress flex items-end justify-between gap-3">
+              <div className="orchestration-status-count grid gap-[3px]">
+                <strong className="text-[22px] font-black leading-[1.05] text-white">{run.stageRuns.length} / {maxExecutions(run)}</strong>
+                <span className="text-xs font-[760] leading-[1.4] text-muted-foreground">{ui('已执行节点数')}</span>
               </div>
-              <div className="orchestration-status-node-index">
+              <div className="orchestration-status-node-index text-xs font-[760] leading-[1.4] text-muted-foreground">
                 {ui(`节点 ${current ? current.stageIndex + 1 : Math.min(run.stageRuns.length + 1, flow.stages.length)} / ${Math.max(1, flow.stages.length)}`)}
               </div>
             </div>
             {current && currentStage && (
-              <div className="orchestration-status-current">
-                <div className="orchestration-status-current-label">{current.status === 'error' ? ui('失败节点') : ui('当前节点')}</div>
-                <div className="orchestration-status-current-main">
+              <div className="orchestration-status-current grid gap-[5px] rounded-xl border border-zinc-500/20 bg-white px-3 py-2.5 text-zinc-800 dark:border-zinc-300/20 dark:bg-zinc-300/10 dark:text-zinc-200">
+                <div className="orchestration-status-current-label text-xs font-[760] leading-[1.4] text-muted-foreground">{current.status === 'error' ? ui('失败节点') : ui('当前节点')}</div>
+                <div className="orchestration-status-current-main truncate text-[15px] font-[860] leading-[1.35] text-zinc-950 dark:text-zinc-100">
                   {currentStage.kind === 'review'
                     ? ui(`审核 · ${stageStatusLabel(currentStage, model.rolesById, model.store)}`)
                     : ui(stageStatusLabel(currentStage, model.rolesById, model.store))}
                 </div>
-                <div className="orchestration-status-current-sub">
+                <div className="orchestration-status-current-sub text-xs font-[760] leading-[1.4] text-muted-foreground">
                   {currentStage.description?.trim() || ui(currentStatusText(current))}
                 </div>
                 {currentStage.kind === 'review' && (
-                  <div className="orchestration-status-review-meta">
-                    <span>{ui(`审核次数 ${reviewAttemptCount(run, currentStage.id)} / ${reviewMaxAttempts(currentStage)}`)}</span>
+                  <div className="orchestration-status-review-meta mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span className="rounded-full border border-zinc-500/20 bg-white px-2 py-1 font-[840] text-zinc-800 dark:border-zinc-300/25 dark:bg-zinc-300/10 dark:text-zinc-200">{ui(`审核次数 ${reviewAttemptCount(run, currentStage.id)} / ${reviewMaxAttempts(currentStage)}`)}</span>
                     <span>{currentStage.review?.onMaxAttempts === 'continue' ? ui('上限后：继续往下走') : ui('上限后：停止流程')}</span>
                   </div>
                 )}
               </div>
             )}
             {waitingLabels.length > 0 && (
-              <div className="orchestration-status-waiting">
-                <span>{ui('等待')}</span>
-                <strong>{waitingLabels.map(label => ui(label)).join('、')}</strong>
+              <div className="orchestration-status-waiting flex min-w-0 items-center gap-2 text-xs leading-[1.35] text-muted-foreground">
+                <span className="shrink-0 font-[760] text-zinc-500">{ui('等待')}</span>
+                <strong className="min-w-0 truncate font-[780] text-muted-foreground">{waitingLabels.map(label => ui(label)).join('、')}</strong>
               </div>
             )}
             <svg
-              className="orchestration-mini-flow"
+              className="orchestration-mini-flow h-full min-h-[118px] w-full overflow-visible rounded-[14px] border border-zinc-500/15 bg-white dark:bg-zinc-950"
               role="img"
               aria-label={ui('编排流程示意图')}
               viewBox={`${miniBounds.x} ${miniBounds.y} ${miniBounds.width} ${miniBounds.height}`}
@@ -332,7 +382,7 @@ export function OrchestrationStatusCard() {
                   markerHeight="5"
                   orient="auto-start-reverse"
                 >
-                  <path d="M 0 0 L 10 5 L 0 10 z" />
+                  <path className="fill-zinc-300" d="M 0 0 L 10 5 L 0 10 z" />
                 </marker>
               </defs>
               {miniEdges.map((edge, index) => {
@@ -344,14 +394,17 @@ export function OrchestrationStatusCard() {
                 return (
                   <g key={`edge-${index}`}>
                     <path
-                      className={`orchestration-mini-edge${branch ? ` branch-${branch}` : ''}`}
+                      className={[
+                        'orchestration-mini-edge fill-none stroke-2 stroke-zinc-300 [stroke-linecap:round] [stroke-linejoin:round]',
+                        branch ? `branch-${branch} ${branch === 'pass' ? 'opacity-[0.82]' : 'opacity-[0.92]'}` : '',
+                      ].filter(Boolean).join(' ')}
                       d={edgePath(source, target, edge)}
                       markerEnd={`url(#orchestration-mini-arrow-${run.id})`}
                     />
                     {branch && labelPoint && (
                       <g className="orchestration-mini-edge-label">
-                        <rect x={labelPoint.x - 24} y={labelPoint.y - 12} width="48" height="20" rx="8" />
-                        <text x={labelPoint.x} y={labelPoint.y + 3} textAnchor="middle">{branch === 'pass' ? ui('通过') : ui('不通过')}</text>
+                        <rect className="fill-white stroke-zinc-300/50 dark:fill-zinc-900" x={labelPoint.x - 24} y={labelPoint.y - 12} width="48" height="20" rx="8" />
+                        <text className="fill-[#0e6f54] text-[11px] font-[820] [dominant-baseline:middle] dark:fill-zinc-300" x={labelPoint.x} y={labelPoint.y + 3} textAnchor="middle">{branch === 'pass' ? ui('通过') : ui('不通过')}</text>
                       </g>
                     )}
                   </g>
@@ -359,11 +412,22 @@ export function OrchestrationStatusCard() {
               })}
               {miniNodes.map(node => {
                 const state = miniNodeState(run, node.stage.id)
+                // 态色 utilities 按 current > completed > error 互斥拼接（原 CSS
+                // 源序 current 胜 error）；态色只挂 dark: = 保真重现浅色 :root
+                // 组压过态规则的特异性现状。语义类名保留为测试/探针钩子。
+                const stateTint = state.current
+                  ? 'dark:stroke-[3px] dark:stroke-zinc-300 dark:[filter:drop-shadow(0_0_10px_rgba(212,212,216,0.42))]'
+                  : state.completed
+                    ? 'dark:stroke-zinc-300/75'
+                    : state.error
+                      ? 'dark:stroke-[#ff8aa5]'
+                      : ''
                 const nodeClassName = [
-                  'orchestration-mini-node',
+                  'orchestration-mini-node fill-white stroke-2 stroke-zinc-500 dark:fill-[#1c1c1f]',
                   state.current ? 'current' : '',
                   state.completed ? 'completed' : '',
                   state.error ? 'error' : '',
+                  stateTint,
                 ].filter(Boolean).join(' ')
                 return node.stage.kind === 'review' ? (
                   <polygon
@@ -391,12 +455,13 @@ export function OrchestrationStatusCard() {
                 )
               })}
               {miniNodes.map(node => (
-                <g key={`label-${node.stage.id}`} className="orchestration-mini-label">
+                <g key={`label-${node.stage.id}`} className="orchestration-mini-label pointer-events-none">
                   {miniNodeLines(node.stage, model.store, model.rolesById, run).map((line, lineIndex) => {
                     const startY = node.y + node.height / 2 - (miniNodeLines(node.stage, model.store, model.rolesById, run).length - 1) * 8
                     return (
                       <text
                         key={lineIndex}
+                        className="fill-zinc-800 text-[12px] font-[820] [dominant-baseline:middle] dark:fill-zinc-200"
                         x={node.x + node.width / 2}
                         y={startY + lineIndex * 17}
                         textAnchor="middle"
@@ -410,7 +475,7 @@ export function OrchestrationStatusCard() {
           <button
             ref={resizeHandleRef}
             type="button"
-            className="orchestration-status-resize"
+            className="orchestration-status-resize absolute bottom-[7px] right-[7px] h-3.5 w-3.5 cursor-[nwse-resize] border-0 bg-[linear-gradient(135deg,transparent_0_45%,rgba(212,212,216,0.5)_46%_54%,transparent_55%),linear-gradient(135deg,transparent_0_66%,rgba(212,212,216,0.35)_67%_75%,transparent_76%)]"
             aria-label={ui('调整编排状态大小')}
             onPointerDown={geometry.onResizePointerDown}
           />

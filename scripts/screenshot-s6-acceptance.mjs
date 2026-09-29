@@ -16,8 +16,8 @@
  *   s6-7  状态卡锚点（S2 铁律 §B.5）：position === 'absolute'、offsetParent === #app
  *         （最近 positioned 祖先就是它——「fixed 被劫持」与「absolute 锚 #app」
  *         重合的机器判据）、right:70/bottom:128 相对 #app ±3px
- *   s6-8  静态审计：legacy.css 剥注释后画布族 0 处；orchestration-canvas.css 11 处；
- *         dist team.css 画布 11 处且 status-floating absolute；globals.css 有 @import
+ *   s6-8  静态审计：legacy.css 剥注释后画布族/状态卡族 0 处；orchestration-canvas.css
+ *         11 处；dist team.css 画布 11 处；StatusCard TSX 携 absolute utilities；globals @import
  *   s6-9  亮暗双主题截图
  *
  * 口径纪律：与 s3/s4/s5 一致——CSS 计数都是**剥掉注释后的出现次数**；断言失败
@@ -47,6 +47,14 @@ async function shot(page, name) {
   await page.screenshot({ path: path.join(outDir, `s6-${name}.png`) })
   console.log(`saved screenshots/s6-${name}.png`)
 }
+
+// S7/T2：元素级截图（状态卡特写，明暗双主题视觉存档）——puppeteer API
+async function shotEl(page, selector, name) {
+  const el = await page.$(selector)
+  if (!el) throw new Error(`shotEl: ${selector} not found`)
+  await el.screenshot({ path: path.join(outDir, `s6-${name}.png`) })
+  console.log(`saved screenshots/s6-${name}.png`)
+}
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 const round = value => Math.round(value * 100) / 100
 const near = (a, b, tolerance = 3) => Math.abs(a - b) <= tolerance
@@ -73,14 +81,14 @@ const canvasCss = stripCssComments(canvasRaw)
   const distCanvas = countOccurrences(distCss, '.orchestration-stage-canvas .x6-')
   check('s6-8 dist team.css carries the 11 relocated .x6-* rules (unlayered, via globals @import)',
     distCanvas === 11, `occurrences ${distCanvas}`)
-  const floatingBlock = legacyCss.match(/\.orchestration-status-floating\s*\{[^}]*\}/)
-  check('s6-8 .orchestration-status-floating is position:absolute in legacy.css (S2 rule B.5)',
-    floatingBlock !== null && /\bposition:\s*absolute\b/.test(floatingBlock[0]),
-    floatingBlock ? (/position:\s*([a-z]+)/.exec(floatingBlock[0])?.[1] ?? 'position not found') : 'block not found')
-  const distFloating = distCss.match(/\.orchestration-status-floating\s*\{[^}]*\}/)
-  check('s6-8 dist team.css ships position:absolute for .orchestration-status-floating',
-    distFloating !== null && /\bposition:\s*absolute\b/.test(distFloating[0]),
-    distFloating ? (/position:\s*([a-z]+)/.exec(distFloating[0])?.[1] ?? 'position not found') : 'block not found')
+  // S7/T2：状态卡族随组件 utilities 化退役——legacy/dist 源不再有该族规则；
+  // absolute 定位结论改由 TSX utilities 承担（s6-7 运行时锚点断言继续覆盖）。
+  const legacyStatusFamily = countOccurrences(legacyCss, '.orchestration-status')
+  check('s6-8 legacy.css has zero status-card family occurrences after S7/T2 relocation (comments stripped)',
+    legacyStatusFamily === 0, `occurrences ${legacyStatusFamily}`)
+  const statusTsx = await readFile(path.join(root, 'src/teamPage/ui/components/orchestration/OrchestrationStatusCard.tsx'), 'utf8')
+  check('s6-8 OrchestrationStatusCard.tsx carries position:absolute via floating utilities (S2 rule B.5)',
+    /'absolute right-\[70px\] bottom-\[128px\] z-\[8\]'/.test(statusTsx), 'floating utilities present')
   check('s6-8 globals.css imports orchestration-canvas.css',
     globalsRaw.includes('@import "./orchestration-canvas.css";'), 'import statement present')
 }
@@ -504,6 +512,8 @@ try {
       near(rightDelta ?? -1, 70), `right delta=${rightDelta}`)
     check('s6-7 status card sits bottom:128px from the #app bottom edge',
       near(bottomDelta ?? -1, 128), `bottom delta=${bottomDelta}`)
+    // S7/T2：状态卡特写（暗色，utilities 迁移后视觉存档）
+    await shotEl(page, '.orchestration-status-floating', 'status-card-dark')
   }
 
   /* ---------------- s6-9 亮色主题复拍 ---------------- */
@@ -521,6 +531,10 @@ try {
       canvas === 'move', `cursor=${canvas}`)
     await shot(page, 'main-light-canvas')
     await closeById('close-orchestration', 'orchestration-modal')
+    // S7/T2：状态卡特写（亮色；同种子 running run 下应渲染，缺席则跳过）
+    if (await page.$('.orchestration-status-floating')) {
+      await shotEl(page, '.orchestration-status-floating', 'status-card-light')
+    }
   }
 } catch (error) {
   consoleErrors.push(`probe failure: ${error.message}`)
