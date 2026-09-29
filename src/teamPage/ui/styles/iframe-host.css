@@ -1,0 +1,143 @@
+/*
+ * iframe 工作台视觉（S7/T5 自 legacy.css 迁出，规则原文未改）。
+ *
+ * 刻意不进 @layer（unlayered）：#iframe-host 内部的 .chat-frame-group /
+ * .role-frame-shell / .role-frame-label 等 DOM 由 iframeHost.ts **命令式直写**
+ * className（iframeHost.ts:312/318/388/394），无法追加 Tailwind 类，只能靠
+ * 选择器穿透；unlayered 规则优先级高于一切 layered 规则，保证后续 Tailwind
+ * utilities 的层叠清理永远不会误伤工作台视觉（同 S6/T5 X6 画布的处理）。
+ *
+ * ⚠️ 搬迁时逐属性对照过 globals.css components 层的 V5 iframe 规则
+ * （globals 380-398：#iframe-host / .chat-frame-group / .chat-frame-group.active /
+ * .role-frame-shell 各一条）。components 层**恒压** legacy 层（层序优先于特异性），
+ * 故本文件只收 globals 未定义的属性；下列死声明已在迁移中丢弃（保留现状视觉）：
+ *   #iframe-host              background:#000            → var(--background)
+ *   .chat-frame-group         border / background        → var(--border)/card 混色
+ *   .chat-frame-group.active  border-color/outline/outline-offset/box-shadow 四条全被覆盖
+ *   .chat-frame-group.background  border-color           → 被 .chat-frame-group 的 border 简写覆盖
+ *   .role-frame-shell         border / border-radius / background
+ *   .role-frame-shell.jump-highlight  border-color       → 被 .role-frame-shell 的 border 简写覆盖
+ *                             （发光 box-shadow 与 transform 仍在本文件，未受影响）
+ *   浅色 #iframe-host / .chat-frame-group / .role-frame-shell 三块的
+ *   border-color & background 同理被覆盖；.chat-frame-group-title 的
+ *   color: var(--text) 因变量零定义本就无效（继承），不迁。
+ * 亮暗两态用字面色表达（工作台底色/描边走 globals 的语义 token，这里只管
+ * 几何与未被 token 化的部分）。
+ */
+
+#iframe-host {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
+  padding: 14px;
+  scroll-snap-type: y proximity;
+}
+
+#iframe-host .chat-frame-group {
+  position: relative;
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto;
+  grid-auto-rows: calc(100vh - 92px);
+  gap: 10px;
+  flex: 0 0 calc(100vh - 28px);
+  width: 100%;
+  height: calc(100vh - 28px);
+  min-height: calc(100vh - 28px);
+  border-radius: 10px;
+  padding: 10px;
+  overflow: auto;
+  scroll-snap-align: start;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, outline-color 0.18s ease;
+}
+
+#iframe-host .chat-frame-group-title {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  grid-column: 1 / -1;
+  overflow: hidden;
+  min-height: 34px;
+  border-bottom: 1px solid rgba(113, 113, 122, 0.12);
+  padding: 7px 8px 8px;
+  background: rgba(5, 8, 12, 0.96);
+  color: #e4e4e7;
+  font-size: 13px;
+  font-weight: 780;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#iframe-host .role-frame-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 240px;
+  overflow: hidden;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+/* 跳转高亮：只剩发光与上移（描边色已被 globals 的 border 简写接管） */
+#iframe-host .role-frame-shell.jump-highlight {
+  box-shadow: 0 0 0 3px rgba(53, 209, 140, 0.28), 0 0 42px rgba(53, 209, 140, 0.34);
+  transform: translateY(-2px);
+}
+
+#iframe-host .role-frame-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  padding: 6px 9px;
+  border-bottom: 1px solid rgba(113, 113, 122, 0.12);
+  color: #e4e4e7;
+  font-size: 12px;
+  font-weight: 760;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#iframe-host .role-frame-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#iframe-host .role-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: white;
+}
+
+:root[data-theme="light"] #iframe-host .chat-frame-group-title,
+:root[data-theme="light"] #iframe-host .role-frame-label {
+  border-color: rgba(113, 113, 122, 0.13);
+}
+
+:root[data-theme="light"] #iframe-host .chat-frame-group-title {
+  background: #ffffff;
+}
+
+:root[data-theme="light"] #iframe-host .role-frame-label {
+  color: #3f3f46;
+}
+
+@media (max-width: 1120px) {
+  #iframe-host .chat-frame-group {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  #iframe-host .chat-frame-group {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

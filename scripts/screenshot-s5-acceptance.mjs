@@ -360,10 +360,11 @@ for (const [needle, expected] of FAMILY_COUNTS) {
   // legacy.css 总行数（口径：换行符个数 = `wc -l`；T4 把 2769 行删到 2422 行，
   // S6/T4+T5 编排族退役后为 1724 行，S7/T2 状态卡族退役后为 1361 行，
   // S7/T3 笔记/提及/消息工具九族退役后为 1155 行，
-  // S7/T4 壳层/列表/主题/模式/模板卡族退役（约七成是零消费死码）后为 875 行
+  // S7/T4 壳层/列表/主题/模式/模板卡族退役（约七成是零消费死码）后为 875 行，
+  // S7/T5-a #iframe-host 全族迁往 styles/iframe-host.css 后为 752 行
   // ——随迁移递减，改数须附原因）
   const newlines = countOccurrences(legacyRaw, '\n')
-  check('s5-9 (e) legacy.css is 875 lines (wc -l count)', newlines === 875, `newlines=${newlines}`)
+  check('s5-9 (e) legacy.css is 752 lines (wc -l count)', newlines === 752, `newlines=${newlines}`)
 }
 
 // ---- s5-10 uiBus 消费者审计（沿用 s4-10）-----------------------------------

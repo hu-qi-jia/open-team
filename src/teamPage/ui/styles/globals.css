@@ -19,6 +19,10 @@
  * 不能被 utilities 覆盖，也不能随 legacy 退役——详见 orchestration-canvas.css 头注。 */
 @import "./orchestration-canvas.css";
 
+/* iframe 工作台规则（S7/T5 迁入）同样 unlayered：iframeHost.ts 直写
+ * className 的 DOM 无法加 Tailwind 类——详见 iframe-host.css 头注。 */
+@import "./iframe-host.css";
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 :root {
