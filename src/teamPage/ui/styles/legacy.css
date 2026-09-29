@@ -1403,121 +1403,10 @@ select:focus {
   padding-inline: 12px;
 }
 
-.orchestration-template-modal {
-  max-height: calc(100vh - 70px);
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 14px;
-  overflow: hidden;
-}
-
-.orchestration-template-content {
-  min-height: 0;
-  overflow: auto;
-  padding-right: 2px;
-}
-
-.orchestration-template-panel {
-  display: grid;
-  gap: 10px;
-}
-
-.orchestration-template-heading,
-.orchestration-template-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.orchestration-template-heading h3 {
-  margin: 0;
-  color: #e4e4e7;
-  font-size: 13px;
-}
-
-.orchestration-template-group {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  align-items: stretch;
-  gap: 10px;
-}
-
-.orchestration-template-group-title {
-  display: flex;
-  align-items: center;
-  color: #a1a1aa;
-  font-size: 12px;
-  font-weight: 820;
-}
-
-.orchestration-template-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(164px, 1fr));
-  gap: 8px;
-  min-width: 0;
-}
-
-.orchestration-template-card {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-  border: 1px solid rgba(113, 113, 122, 0.17);
-  border-radius: 12px;
-  padding: 9px 10px;
-  background: rgba(9, 9, 11, 0.66);
-  color: #e4e4e7;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-}
-
-.orchestration-template-card:hover:not(:disabled),
-.orchestration-template-card:focus-visible {
-  border-color: rgba(212, 212, 216, 0.58);
-  background: rgba(63, 63, 70, 0.86);
-  transform: translateY(-1px);
-}
-
-.orchestration-template-card:disabled {
-  cursor: wait;
-  opacity: 0.62;
-}
-
-.orchestration-template-card strong {
-  min-width: 0;
-  color: #e4e4e7;
-  font-size: 12px;
-  line-height: 1.3;
-}
-
-.orchestration-template-tags {
-  flex: 0 0 auto;
-  color: #d4d4d8;
-  font-size: 10px;
-  font-weight: 820;
-}
-
-.orchestration-template-summary,
-.orchestration-template-structure {
-  display: block;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orchestration-template-summary {
-  color: #a1a1aa;
-  font-size: 11px;
-}
-
-.orchestration-template-structure {
-  color: #d4d4d8;
-  font-size: 10px;
-  font-weight: 760;
-}
-
+/* S6/T2：编排模板选择弹窗已迁 AppModal（size=lg + auto 高度），本弹窗独占的
+ * .orchestration-template-* 暗色族 16 条整块退役；视觉由 TSX utilities 承担
+ * （卡面 bg-card、hover/focus 换 bg-accent + 边框提亮、summary/structure 走
+ * truncate + 文字 token）。类名保留为测试/脚本钩子。 */
 .orchestration-auto-modal {
   height: min(760px, calc(100vh - 70px));
   max-height: calc(100vh - 70px);
@@ -2099,8 +1988,9 @@ select:focus {
 :root[data-theme="light"] .orchestration-status-current-sub,
 :root[data-theme="light"] .orchestration-status-review-meta,
 :root[data-theme="light"] .orchestration-status-waiting,
-:root[data-theme="light"] .orchestration-template-summary,
 :root[data-theme="light"] .orchestration-auto-role-site-row span,
+/* S6/T2：摘除 .orchestration-template-summary——模板选择弹窗已迁 AppModal，
+ * 浅色次级前景由 TSX 的 text-muted-foreground 承担。 */
 :root[data-theme="light"] .orchestration-auto-role-prompt-row span {
   color: var(--muted-foreground);
 }
@@ -2201,8 +2091,8 @@ select:focus {
 :root[data-theme="light"] .orchestration-status-title,
 :root[data-theme="light"] .orchestration-status-current-main,
 :root[data-theme="light"] .orchestration-auto-task-preview strong,
-:root[data-theme="light"] .orchestration-template-heading h3,
-:root[data-theme="light"] .orchestration-template-card strong,
+/* S6/T2：摘除 .orchestration-template-heading h3 / .orchestration-template-card
+ * strong——模板选择弹窗已迁 AppModal，浅色前景由 TSX 的 text-foreground 承担。 */
 :root[data-theme="light"] .orchestration-task-strip .field,
 :root[data-theme="light"] .orchestration-arrange,
 :root[data-theme="light"] .stage-role-chip,
