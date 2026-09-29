@@ -15,6 +15,10 @@
 
 @import "./legacy.css" layer(legacy);
 
+/* X6 画布规则（S6/T5 迁入）刻意 unlayered：库内部 DOM 无法加 className，
+ * 不能被 utilities 覆盖，也不能随 legacy 退役——详见 orchestration-canvas.css 头注。 */
+@import "./orchestration-canvas.css";
+
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 :root {
