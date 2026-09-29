@@ -8,7 +8,11 @@
 `src/teamPage/ui/styles/legacy.css`（现 1724 行 / 192 个顶层块）**整文件删除**：
 所有规则迁入 utilities / 专题 css / globals 各层，或确认 dead 后直接退役；
 globals.css 摘掉 `@import "./legacy.css" layer(legacy)` 与 `@layer` 声明里的
-legacy 槽位；全部探针的 legacy 计数断言改为「文件不存在」语义。
+legacy 槽位；全部探针的 legacy 计数断言改为「样式表面零残留」语义。
+
+> **状态：✅ 收官（2026-09-30）。** `styles/` 现仅存 globals.css（944 行）、
+> iframe-host.css（147 行）、orchestration-canvas.css（56 行）；层序降为
+> `theme, base, components, utilities`。T2–T6 全部完成并合并 main。
 
 ## 现状构成（S6 收官后侦查，剥注释 1519 行）
 
@@ -46,11 +50,40 @@ legacy 槽位；全部探针的 legacy 计数断言改为「文件不存在」�
 - **T5 iframe-host 专题 + 通用/base/:root/media 收尾**：`styles/iframe-host.css`
   （unlayered，同 canvas 先例）；base 元素进 globals base 层；media query 改
   utilities 变体；隐藏钩子考证后删或留。
-- **T6 文件删除 + 探针大改数 + 全量回归**：
-  - 删 legacy.css 与 globals.css 的 @import / @layer 槽位；
-  - 探针改数：s3-12（shared families → 专题文件断言）、s5-9（legacy 行数 → 0/文件不存在）、
-    s6-8（status-floating absolute 断言改读 dist）、s1/s2/s4 各 legacy 审计组；
-  - `npm run verify` + 全部探针复跑 + 明暗双主题全量复拍。
+- **T6 文件删除 + 探针大改数 + 全量回归**：✅ 已完成（2026-09-30）
+  - 删 legacy.css（`b7a1c21`）与 globals.css 的 @import / @layer 槽位；
+  - 探针改数：s3-12（shared families → 样式表面 + 承接方双向断言）、
+    s5-9（legacy 行数 → 文件不存在 + 表面非空）、s6-8（画布族改「只在专题
+    文件」+ dist 层清单无 legacy）、s4-9 各审计组（`41071d5`）；
+  - 5 个守卫测试改判（`b7a1c21`）；新增 `ui/test/stylesheetSurface.ts`；
+  - `npm run verify` ✓ + 8 个探针全绿（bugfix/s1/s2/s3/s4/s5/s6/s7-t4）
+    + 明暗双主题全量复拍（35 张差异经像素定量确认全是种子时间戳噪声，
+    差异像素 ≤432 且包围盒落在时间文本区）。
+
+### T6 关键决策：断言对象从文件升级为「样式表面」
+legacy.css 删除后，9 个文件（5 测试 + 4 探针）里的「零残留」断言失去读取对象。
+**直接换成空串会让上百条断言变成永真空转**（s5-9 一组就有 114 条）。故统一
+改判为**退役后的样式表面**：`styles/` 下现存 CSS 剥注释后的拼接（实测
+24553 字符 / 3 文件）。语义从「旧文件里没有」升级为「任何现存样式表里都没有」。
+
+配套两条自证断言（每处各一份）：`legacy.css is retired`（文件不存在）与
+`the stylesheet surface is globals + iframe-host + orchestration-canvas`
+（表面清单固定——防止样式目录被清空而断言静默通过）。
+
+⚠️ 11 个「合法承接方」必须从零命中清单里排除，否则一片假红：
+`.orchestration-stage-canvas`（画布族，迁往 unlayered 专题文件）；
+`.role-tone-` / `.site-pill`（色板）；`.notes-editor` / `.message-tool-btn`
+（ProseMirror 后代 + ::after tooltip）；`.sidebar`（裸子串会命中存活的
+`.sidebar-resize-handle`，须用 selector-token 口径）；`.orchestration-person-site`；
+`.role-site-badge` / `.role-frame-site`。它们的正确断言形态是**双向**：
+「只在承接层 + 不在别处」。
+
+### ⚠️ T6 层序副作用（已登记在 globals.css 注释）
+`body:has(#app.minimized) .chat-frame-group-title{display:none}` 原先靠
+utilities 层压 legacy 层；该族搬进 **unlayered** 的 iframe-host.css 后，
+unlayered 恒压一切 layered 规则——本条不再靠层序取胜，而靠「属性不冲突」
+（iframe-host.css 未声明 display，且本条特异性 (1,2,1) > (1,1,0)）。
+**若日后给该族补 display 声明，必须同步把本条搬进 iframe-host.css。**
 
 ## 退役总账（legacy.css 585 行注释的浓缩存档）
 
