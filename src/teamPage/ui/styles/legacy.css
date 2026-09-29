@@ -1348,234 +1348,13 @@ select:focus {
   background: white;
 }
 
-.orchestration-modal {
-  height: min(760px, calc(100vh - 42px));
-  max-height: calc(100vh - 42px);
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  gap: 14px;
-  overflow: hidden;
-}
-
-.orchestration-task-strip {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr);
-  align-items: stretch;
-  gap: 12px;
-  border: 1px solid rgba(161, 161, 170, 0.2);
-  border-radius: 16px;
-  padding: 12px;
-  background: linear-gradient(135deg, rgba(161, 161, 170, 0.1), rgba(10, 20, 31, 0.72));
-}
-
-.orchestration-task-strip .field {
-  align-self: center;
-  margin: 0;
-  color: #e4e4e7;
-  font-size: 13px;
-  font-weight: 820;
-}
-
-.orchestration-task-input-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: stretch;
-  gap: 10px;
-  min-width: 0;
-}
-
-#orchestration-task {
-  min-height: 62px;
-  max-height: 92px;
-  resize: vertical;
-}
-
-.orchestration-auto {
-  align-self: stretch;
-  min-width: 104px;
-  padding-inline: 16px;
-}
-
-.orchestration-template-trigger {
-  align-self: stretch;
-  min-width: 72px;
-  padding-inline: 12px;
-}
-
-/* S6/T2：编排模板选择弹窗已迁 AppModal（size=lg + auto 高度），本弹窗独占的
- * .orchestration-template-* 暗色族 16 条整块退役；视觉由 TSX utilities 承担
- * （卡面 bg-card、hover/focus 换 bg-accent + 边框提亮、summary/structure 走
- * truncate + 文字 token）。类名保留为测试/脚本钩子。 */
-/* S6/T3：自动编排弹窗已迁 AppModal（size=xl + fixed 高度，输入行进 footer 槽），
- * 本弹窗独占的 .orchestration-auto-modal/-content/-chat/-messages/-empty/
- * -message(-content)/-composer/-input-shell/-input/-submit 暗色族 14 条整块退役；
- * 视觉由 TSX utilities 承担（消息气泡 bg-card/bg-accent + border token，输入壳
- * bg-background/50）。.orchestration-auto（主弹窗触发钮）、
- * .orchestration-auto-role-*（主弹窗节点设置）是别的表面的族，不在本块。 */
-.orchestration-layout {
-  display: grid;
-  grid-template-columns: 220px minmax(450px, 1fr) 300px;
-  gap: 14px;
-  min-height: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-.orchestration-layout.settings-hidden {
-  grid-template-columns: 220px minmax(450px, 1fr);
-}
-
-.orchestration-sidebar,
-.orchestration-settings {
-  display: flex;
-  min-height: 0;
-  flex-direction: column;
-  gap: 12px;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 16px;
-  padding: 14px;
-  background: rgba(8, 17, 26, 0.66);
-}
-
-.orchestration-settings[hidden] {
-  display: none;
-}
-
-.orchestration-settings {
-  overflow: auto;
-}
-
-.orchestration-settings-heading h3 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.orchestration-sidebar .section-title {
-  align-items: end;
-}
-
-.orchestration-sidebar .field,
-.orchestration-settings .field {
-  gap: 8px;
-}
-
-.orchestration-people-list {
-  display: grid;
-  min-height: 0;
-  align-content: start;
-  gap: 9px;
-  overflow: auto;
-  flex: 1 1 auto;
-  padding-right: 2px;
-}
-
-.orchestration-person {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 8px;
-  align-items: center;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 12px;
-  padding: 8px;
-  background: rgba(24, 24, 27, 0.72);
-  cursor: grab;
-  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
-}
-
-.orchestration-person:hover {
-  border-color: rgba(161, 161, 170, 0.34);
-  background: rgba(14, 30, 44, 0.86);
-}
-
-.orchestration-person:active {
-  cursor: grabbing;
-  transform: scale(0.98);
-}
-
-.orchestration-person-avatar {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  color: #09090b;
-  font-size: 12px;
-  font-weight: 860;
-}
-
-.orchestration-person-avatar.tone-blue {
-  background: #d4d4d8;
-}
-
-.orchestration-person-avatar.tone-green {
-  background: #53e6a6;
-}
-
-.orchestration-person-avatar.tone-purple {
-  background: #b18cff;
-}
-
-.orchestration-person-avatar.tone-orange {
-  background: #f8b84e;
-}
-
-.orchestration-person-body {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.orchestration-person-title {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 8px;
-}
-
-.orchestration-person-body strong,
-.orchestration-person-body .tiny {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orchestration-person-title strong {
-  min-width: 0;
-}
-
-.orchestration-workspace {
-  position: relative;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  border: 1px solid rgba(161, 161, 170, 0.24);
-  border-radius: 18px;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(161, 161, 170, 0.14), transparent 34%),
-    linear-gradient(180deg, rgba(9, 9, 11, 0.94), rgba(3, 9, 16, 0.92));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
-
-.orchestration-arrange {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
-  min-height: 30px;
-  border-color: rgba(212, 212, 216, 0.32);
-  padding: 0 12px;
-  background: rgba(9, 9, 11, 0.78);
-  color: #e4e4e7;
-  font-size: 12px;
-  backdrop-filter: blur(8px);
-}
-
-.orchestration-arrange:hover {
-  border-color: rgba(212, 212, 216, 0.62);
-  background: rgba(63, 63, 70, 0.88);
-}
-
+/* S6/T4：编排主弹窗已迁 AppModal（size=2xl + fixed 高度，footer 进壳槽），
+ * 主弹窗独占暗色族整块退役（modal/task-strip/layout/sidebar/settings/
+ * people/person(+tone)/workspace/arrange/empty-hint/stage|review-settings/
+ * node-editor-header/note/stage-role-chips/auto-role-*/json-preview/footer/
+ * rounds-field/actions）。视觉由 TSX utilities 承担；面板底 bg-card/70、
+ * 卡面 token 化。.orchestration-status*（状态卡）、.orchestration-mini-*
+ * （状态卡迷你图）是别的表面的族，不在本块。 */
 .orchestration-stage-canvas .x6-port-body {
   transition: opacity 0.16s ease, stroke 0.16s ease, transform 0.16s ease;
 }
@@ -1616,166 +1395,10 @@ select:focus {
   stroke-width: 1.7px;
 }
 
-.orchestration-empty-hint {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  max-width: 320px;
-  margin: 0;
-  border: 1px dashed rgba(161, 161, 170, 0.42);
-  border-radius: 18px;
-  padding: 16px 18px;
-  background: rgba(7, 14, 22, 0.86);
-  color: #e4e4e7;
-  line-height: 1.6;
-  text-align: center;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.orchestration-empty-hint[hidden] {
-  display: none;
-}
-
-.orchestration-stage-settings,
-.orchestration-review-settings {
-  display: grid;
-  gap: 12px;
-}
-
-.orchestration-stage-settings h3 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.orchestration-node-editor-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.orchestration-note {
-  margin: 0;
-  line-height: 1.55;
-}
-
-.stage-role-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.stage-role-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid rgba(161, 161, 170, 0.28);
-  border-radius: 999px;
-  padding: 5px 8px;
-  background: rgba(161, 161, 170, 0.1);
-  color: #e4e4e7;
-  font-size: 12px;
-}
-
-.stage-role-chip button {
-  display: grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(255, 138, 165, 0.18);
-  color: var(--danger);
-  cursor: pointer;
-}
-
-.orchestration-auto-role-sites {
-  gap: 8px;
-}
-
-.orchestration-auto-role-site-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 128px;
-  gap: 8px;
-  align-items: center;
-}
-
-.orchestration-auto-role-site-row span {
-  min-width: 0;
-  overflow: hidden;
-  color: #a1a1aa;
-  font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.orchestration-auto-role-prompt-row {
-  display: grid;
-  gap: 6px;
-}
-
-.orchestration-auto-role-prompt-row span {
-  color: #a1a1aa;
-  font-size: 12px;
-  font-weight: 760;
-}
-
-.orchestration-auto-role-prompt {
-  min-height: 86px;
-  resize: vertical;
-}
-
-.orchestration-json-preview {
-  display: grid;
-  gap: 8px;
-  border: 1px solid rgba(161, 161, 170, 0.2);
-  border-radius: 14px;
-  padding: 10px;
-  background: rgba(4, 10, 17, 0.82);
-}
-
-.orchestration-json-preview pre {
-  max-height: 130px;
-  margin: 0;
-  overflow: auto;
-  color: #d4d4d8;
-  font-size: 11px;
-  line-height: 1.55;
-  white-space: pre-wrap;
-}
-
-.orchestration-footer {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 190px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  border: 1px solid rgba(113, 113, 122, 0.16);
-  border-radius: 16px;
-  padding: 10px 12px;
-  background: rgba(8, 17, 26, 0.72);
-}
-
-.orchestration-rounds-field {
-  display: grid;
-  grid-template-columns: auto 76px;
-  align-items: center;
-  margin: 0;
-}
-
-.orchestration-rounds-field input {
-  min-height: 32px;
-}
-
-.orchestration-footer p {
-  margin: 0;
-}
-
-.orchestration-actions {
-  margin: 0;
-}
-
+/* S6/T4：主弹窗画布之后的独占暗色族（empty-hint/stage|review-settings/
+ * node-editor-header/note/stage-role-chips(含死规则 chip button——TSX 里
+ * chip 无 button 子元素)/auto-role-*/json-preview/footer/rounds-field/
+ * actions）同批退役，视觉由 TSX utilities 承担。 */
 :root[data-theme="light"] body {
   background: #ffffff;
 }
@@ -1891,11 +1514,11 @@ select:focus {
 :root[data-theme="light"] .orchestration-status-current-label,
 :root[data-theme="light"] .orchestration-status-current-sub,
 :root[data-theme="light"] .orchestration-status-review-meta,
-:root[data-theme="light"] .orchestration-status-waiting,
-:root[data-theme="light"] .orchestration-auto-role-site-row span,
 /* S6/T2：摘除 .orchestration-template-summary——模板选择弹窗已迁 AppModal，
- * 浅色次级前景由 TSX 的 text-muted-foreground 承担。 */
-:root[data-theme="light"] .orchestration-auto-role-prompt-row span {
+ * 浅色次级前景由 TSX 的 text-muted-foreground 承担。
+ * S6/T4：再摘 .orchestration-auto-role-site-row span / -prompt-row span——
+ * 主弹窗节点设置面板已迁，浅色由 TSX 的 text-muted-foreground 承担。 */
+:root[data-theme="light"] .orchestration-status-waiting {
   color: var(--muted-foreground);
 }
 
@@ -1903,13 +1526,9 @@ select:focus {
  * border-border 语义 token）——本组剩下的是编排（S6）表面。
  * S5-T4：再摘除 .group-template-option（B 组退役，浅色视觉由 bg-card /
  * border-border 承担）。 */
-:root[data-theme="light"] .orchestration-sidebar,
-:root[data-theme="light"] .orchestration-settings,
-:root[data-theme="light"] .orchestration-footer,
-:root[data-theme="light"] .orchestration-json-preview {
-  border-color: rgba(113, 113, 122, 0.16);
-  background: #ffffff;
-}
+/* S6/T4：本组 4 成员（sidebar/settings/footer/json-preview 的浅色白底补丁）
+ * 随主弹窗迁移整条退役——面板底由 TSX 的 bg-card/70 + border-border 承担
+ * （bg-card 亮色即白、暗色 zinc-900），footer 进壳槽后不再有卡片包装。 */
 
 /* S6/T3：自动编排弹窗浅色五条（message-content 三态 + input-shell）随暗色族
  * 一并退役——气泡底/边/前景由 TSX 的 bg-card|bg-accent + border-border +
@@ -1974,16 +1593,16 @@ select:focus {
 :root[data-theme="light"] .notes-editor,
 :root[data-theme="light"] .orchestration-status,
 :root[data-theme="light"] .orchestration-status-title,
-:root[data-theme="light"] .orchestration-status-current-main,
-:root[data-theme="light"] .orchestration-auto-task-preview strong,
-/* S6/T2：摘除 .orchestration-template-heading h3 / .orchestration-template-card
- * strong——模板选择弹窗已迁 AppModal，浅色前景由 TSX 的 text-foreground 承担。 */
-:root[data-theme="light"] .orchestration-task-strip .field,
-:root[data-theme="light"] .orchestration-arrange,
-:root[data-theme="light"] .stage-role-chip,
-:root[data-theme="light"] .orchestration-empty-hint {
+:root[data-theme="light"] .orchestration-status-current-main {
   color: var(--text);
 }
+
+/* S6/T2：摘除 .orchestration-template-heading h3 / .orchestration-template-card
+ * strong——模板选择弹窗已迁 AppModal，浅色前景由 TSX 的 text-foreground 承担。
+ * S6/T4：再摘 .orchestration-auto-task-preview strong（死成员：无暗色规则、
+ * 无 TSX 消费者）、.orchestration-task-strip .field / .orchestration-arrange /
+ * .stage-role-chip / .orchestration-empty-hint——主弹窗已迁，浅色前景由 TSX
+ * 的 text-foreground / text-popover-foreground 承担。 */
 
 /* S4-T4：浅色的 .template-prompt-preview 独立规则已随暗色族一并退役——
  * 凹槽底是 bg-background（浅色 #fff、暗色近黑），边框 border-border，
@@ -2066,82 +1685,25 @@ select:focus {
   fill: #ffffff;
 }
 
-:root[data-theme="light"] .orchestration-mini-edge-label text,
-:root[data-theme="light"] .orchestration-json-preview pre,
-:root[data-theme="light"] .orchestration-template-structure {
+:root[data-theme="light"] .orchestration-mini-edge-label text {
   fill: #0e6f54;
-  color: #0e6f54;
 }
 
-:root[data-theme="light"] .orchestration-workspace {
-  border-color: rgba(113, 113, 122, 0.22);
-  background: #ffffff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
-}
+/* S6/T2+T4：摘除 .orchestration-template-structure / .orchestration-json-preview
+ * pre——已迁 AppModal；pre 浅色代码绿由 TSX 的 text-emerald-800 承担。 */
 
-:root[data-theme="light"] .orchestration-task-strip {
-  border-color: rgba(113, 113, 122, 0.2);
-  background: #ffffff;
-}
+/* S6/T4：workspace/task-strip/person 系浅色白底补丁随主弹窗迁移退役——
+ * 由 TSX 的 bg-white dark:bg-[...] 与 bg-card/70 + shadow 变体承担。 */
 
-:root[data-theme="light"] .orchestration-person {
-  border-color: rgba(113, 113, 122, 0.18);
-  background: #ffffff;
-  color: var(--text);
-  box-shadow: 0 10px 22px rgba(63, 63, 70, 0.08);
-}
+/* S6/T2 补账：模板选择弹窗浅色 5 条独立规则随暗色族一并退役（T2 只摘了
+ * 分组成员，漏了这 5 条独立规则——本批补删）。 */
 
-:root[data-theme="light"] .orchestration-person:hover {
-  border-color: rgba(113, 113, 122, 0.26);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .orchestration-person .tiny {
-  color: var(--muted-foreground);
-}
-
-:root[data-theme="light"] .orchestration-template-group-title {
-  color: var(--muted-foreground);
-}
-
-:root[data-theme="light"] .orchestration-template-card {
-  border-color: rgba(113, 113, 122, 0.18);
-  background: #ffffff;
-  color: var(--text);
-  box-shadow: 0 10px 22px rgba(63, 63, 70, 0.08);
-}
-
-:root[data-theme="light"] .orchestration-template-card:hover:not(:disabled),
-:root[data-theme="light"] .orchestration-template-card:focus-visible {
-  border-color: rgba(113, 113, 122, 0.32);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .orchestration-template-tags {
-  color: #52525b;
-}
-
-:root[data-theme="light"] .orchestration-template-summary {
-  color: var(--muted-foreground);
-}
-
-:root[data-theme="light"] .orchestration-arrange {
-  border-color: rgba(113, 113, 122, 0.28);
-  background: #ffffff;
-}
-
+/* S6/T4：arrange/empty-hint/stage-role-chip 浅色补丁随主弹窗迁移退役
+ * （bg-popover / border-border 语义 token 亮暗自适应）。
+ * S6/T5 待办：.orchestration-stage-canvas .x6-edge .vertices .vertex 浅色
+ * 属 X6 族（s3-12 计数 ===11→0），随 X6 搬家一并处理。 */
 :root[data-theme="light"] .orchestration-stage-canvas .x6-edge .vertices .vertex {
   fill: #ffffff;
-}
-
-:root[data-theme="light"] .orchestration-empty-hint {
-  border-color: rgba(113, 113, 122, 0.32);
-  background: #ffffff;
-}
-
-:root[data-theme="light"] .stage-role-chip {
-  border-color: rgba(113, 113, 122, 0.24);
-  background: #ffffff;
 }
 
 @media (max-width: 1120px) {

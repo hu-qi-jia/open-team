@@ -55,12 +55,20 @@ import {
 } from '../../lib/orchestrationStreamStore'
 import { showError, showSuccess } from '../../lib/toast'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog'
+import { AppModal } from '../common/AppModal'
 import { CanvasPortal } from '../containers/CanvasPortal'
 import { Button } from '../ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '../ui/empty'
 import { OrchestrationAutoModal } from './OrchestrationAutoModal'
 import { OrchestrationTemplatePickerModal } from './OrchestrationTemplatePickerModal'
+
+/** 头像 tone 色 → utilities（原 legacy .orchestration-person-avatar.tone-* 的对译）。 */
+const AVATAR_TONE: Record<string, string> = {
+  'tone-blue': 'bg-zinc-300',
+  'tone-green': 'bg-[#53e6a6]',
+  'tone-purple': 'bg-[#b18cff]',
+  'tone-orange': 'bg-[#f8b84e]',
+}
 
 /** sendRuntimeMessage 的编排扩展字段（background 在 RuntimeResponse 顶层附加） */
 interface OrchestrationCommandResponse {
@@ -611,239 +619,28 @@ export function OrchestrationModal() {
 
   return (
     <>
-      <Dialog open={open}>
-        <DialogContent
-          id="orchestration-modal"
-          aria-labelledby="orchestration-title"
-          showCloseButton={false}
-          className="orchestration-modal w-[min(1160px,calc(100vw-42px))] max-w-none sm:max-w-none gap-3.5 bg-popover"
-          onEscapeKeyDown={event => event.preventDefault()}
-          onInteractOutside={event => event.preventDefault()}
-          onOpenAutoFocus={event => {
-            event.preventDefault()
-            document.getElementById('orchestration-task')?.focus()
-          }}
-        >
-          <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
-            <div>
-              <DialogTitle id="orchestration-title">{ui('编排任务')}</DialogTitle>
-              <DialogDescription className="tiny">{ui('画布节点按连线顺序执行；同一个节点内的多个人员会并行工作。')}</DialogDescription>
-            </div>
-            <Button id="close-orchestration" variant="ghost" size="icon-sm" type="button" aria-label={ui('关闭编排任务')} onClick={close}>×</Button>
-          </DialogHeader>
-          <div className="orchestration-task-strip">
-            <label className="field" htmlFor="orchestration-task">{ui('任务')}</label>
-            <div className="orchestration-task-input-row">
-              <textarea
-                id="orchestration-task"
-                value={task}
-                placeholder={ui('描述要让编排流程完成的任务；不需要 @ 人员。')}
-                onChange={event => setTask(event.target.value)}
-              />
-              <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
-              <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto" type="button" disabled={busy} onClick={openAutoPanel}>
-                {autoGenerating ? ui('生成中...') : ui('自动编排')}
-              </Button>
-            </div>
-          </div>
-          <div className={`orchestration-layout${selectedStage ? '' : ' settings-hidden'}`}>
-            <aside className="orchestration-sidebar">
-              <div className="section-title">
-                <h3>{ui('人员')}</h3>
-                <span className="tiny">{ui('拖到画布创建节点')}</span>
-              </div>
-              <div id="orchestration-people-list" className="orchestration-people-list">
-                {roles.length === 0 ? (
-                  <Empty className="my-1 p-3">
-                    <EmptyHeader className="max-w-none">
-                      <EmptyMedia variant="icon" className="size-8"><Users className="size-4" /></EmptyMedia>
-                      <EmptyTitle className="text-xs font-medium">{ui('当前群聊暂无人员')}</EmptyTitle>
-                      <EmptyDescription className="text-xs">{ui('无法编排任务，请先为群聊添加人员。')}</EmptyDescription>
-                    </EmptyHeader>
-                  </Empty>
-                ) : roles.map(role => {
-                  const model = roleModelDisplay(role, store)
-                  return (
-                    <div
-                      key={role.id}
-                      className="orchestration-person"
-                      draggable
-                      onDragStart={event => event.dataTransfer?.setData('application/x-openteam-role-id', role.id)}
-                    >
-                      <span className={`orchestration-person-avatar ${roleToneClass(role.id)}`}>{roleInitial(role.name)}</span>
-                      <div className="orchestration-person-body">
-                        <div className="orchestration-person-title">
-                          <strong>{role.name}</strong>
-                          <span className={`site-pill orchestration-person-site ${model.className}`}>{model.label}</span>
-                        </div>
-                        <span className="tiny">{role.description || ui('拖到画布创建节点')}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </aside>
-            <section className="orchestration-workspace">
-              <Button id="arrange-orchestration" variant="outline" size="sm" className="orchestration-arrange" type="button" onClick={arrangeCanvas}>{ui('整理')}</Button>
-              {open && (
-                <CanvasPortal
-                  stages={stages}
-                  selectedStageId={selectedStageId}
-                  graphEdges={graphEdges}
-                  canvasKey={canvasKey}
-                  storeVersion={storeVersion}
-                  onStageSelected={setSelectedStageId}
-                  onRoleDropped={addRoleAsStage}
-                  onGraphChanged={edges => setGraphEdges(cloneGraphEdges(edges))}
-                />
-              )}
-              <p id="orchestration-empty-hint" className="orchestration-empty-hint" hidden={stages.length > 0}>
-                {ui('把人员拖到画布生成节点，再从节点端口拖线编排执行关系。')}
-              </p>
-            </section>
-            <aside className="orchestration-settings" hidden={!selectedStage}>
-              <div className="orchestration-settings-heading">
-                <h3>{ui('节点设置')}</h3>
-                <span className="tiny">{ui('选择画布节点后编辑')}</span>
-              </div>
-              {selectedStage && (
-                <div id="orchestration-stage-settings" className="orchestration-stage-settings" key={selectedStage.id}>
-                  <div className="orchestration-node-editor-header">
-                    <h3>{selectedStage.kind === 'review' ? ui('审核节点') : ui('执行节点')}</h3>
-                    <Button className="text-lg" size="icon-sm" type="button" variant="ghost" aria-label={ui('关闭节点设置')} onClick={clearSelectedStage}>×</Button>
-                  </div>
-                  <label className="field">
-                    {ui('节点类型')}
-                    <select
-                      data-stage-kind="true"
-                      value={selectedStage.kind}
-                      onChange={event => setStageKind(selectedStage, event.target.value === 'review' ? 'review' : 'roles')}
-                    >
-                      <option value="roles">{ui('执行')}</option>
-                      <option value="review">{ui('审核')}</option>
-                    </select>
-                  </label>
-                  <label className="field">
-                    {ui('节点名称')}
-                    <input
-                      defaultValue={selectedStage.name}
-                      onInput={event => {
-                        const value = event.currentTarget.value
-                        changeStage(selectedStage.id, current => ({ ...current, name: value.trim() || (current.kind === 'review' ? '审核' : '执行节点') }))
-                      }}
-                    />
-                  </label>
-                  <label className="field">
-                    {ui('任务描述')}
-                    <textarea
-                      defaultValue={selectedStage.description ?? ''}
-                      placeholder={ui('给这个节点单独补充任务说明，例如：先澄清目标，只输出优先级和风险。')}
-                      onInput={event => {
-                        const value = event.currentTarget.value.trim()
-                        changeStage(selectedStage.id, current => (value ? { ...current, description: value } : withoutDescription(current)))
-                      }}
-                    />
-                  </label>
-                  <div className="field">
-                    {selectedStage.kind === 'review' ? ui('审核人员') : ui('执行人员')}
-                    <div className="stage-role-chips">
-                      {selectedRoleIds(selectedStage).map(roleId => (
-                        <span key={roleId} className="stage-role-chip">{getRoleName(roleId)}</span>
-                      ))}
-                    </div>
-                  </div>
-                  {editableAutoRoles.length > 0 && (
-                    <div className="field orchestration-auto-role-sites">
-                      <span>{ui('自动人员设置')}</span>
-                      {editableAutoRoles.map(role => (
-                        <Fragment key={role.id}>
-                          <label className="orchestration-auto-role-site-row">
-                            <span>{role.name}</span>
-                            <select
-                              value={visibleChatSite(role.chatSite ?? store.settings.defaultChatSite)}
-                              onChange={event => {
-                                const value = event.target.value as ChatSite
-                                updateAutoGeneratedRoleSite(role.id, value).catch(error => showError(error instanceof Error ? error.message : String(error)))
-                              }}
-                            >
-                              {editableChatSites().map(site => (
-                                <option key={site} value={site}>{ui(siteLabel(site))}</option>
-                              ))}
-                            </select>
-                          </label>
-                          <label className="orchestration-auto-role-prompt-row">
-                            <span>{ui(`${role.name} 人设提示词`)}</span>
-                            <textarea
-                              className="orchestration-auto-role-prompt"
-                              defaultValue={role.systemPrompt ?? ''}
-                              placeholder={ui('只修改自动编排生成的人员人设；已有群成员不会在这里改。')}
-                              onBlur={event => {
-                                const value = event.currentTarget.value
-                                if (value === (role.systemPrompt ?? '')) return
-                                updateAutoGeneratedRolePrompt(role.id, value).catch(error => showError(error instanceof Error ? error.message : String(error)))
-                              }}
-                            />
-                          </label>
-                        </Fragment>
-                      ))}
-                    </div>
-                  )}
-                  <Button variant="destructive" size="sm" type="button" onClick={() => removeStage(selectedStage.id)}>{ui('删除节点')}</Button>
-                </div>
-              )}
-              {selectedStage?.kind === 'review' && (
-                <div id="orchestration-review-settings" className="orchestration-review-settings">
-                  <p className="tiny orchestration-note">{ui('审核节点由一个群聊人员根据标准判断通过或不通过。')}</p>
-                  <label className="field">
-                    {ui('审核标准')}
-                    <textarea
-                      value={selectedStage.review?.instructions ?? ''}
-                      placeholder={ui('例如：答案需要覆盖风险、方案和下一步行动。未满足时返回 fail。')}
-                      onChange={event => {
-                        const value = event.currentTarget.value
-                        changeStage(selectedStage.id, current => ({ ...current, review: normalizedReviewConfig(current, { instructions: value }) }))
-                      }}
-                    />
-                  </label>
-                  <label className="field">
-                    {ui('最大审核次数')}
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      defaultValue={String(selectedStage.review?.maxAttempts ?? DEFAULT_ORCHESTRATION_REVIEW_MAX_ATTEMPTS)}
-                      onInput={event => {
-                        const value = event.currentTarget.value
-                        changeStage(selectedStage.id, current => ({ ...current, review: normalizedReviewConfig(current, { maxAttempts: clampReviewAttempts(Number(value || DEFAULT_ORCHESTRATION_REVIEW_MAX_ATTEMPTS)) }) }))
-                      }}
-                    />
-                  </label>
-                  <label className="field">
-                    {ui('达到上限后')}
-                    <select
-                      value={selectedStage.review?.onMaxAttempts ?? 'stop'}
-                      onChange={event => {
-                        const value = event.target.value
-                        changeStage(selectedStage.id, current => ({ ...current, review: normalizedReviewConfig(current, { onMaxAttempts: value === 'continue' ? 'continue' : 'stop' }) }))
-                      }}
-                    >
-                      <option value="stop">{ui('停止流程')}</option>
-                      <option value="continue">{ui('继续往下走')}</option>
-                    </select>
-                  </label>
-                  <div className="orchestration-json-preview">
-                    <span className="tiny">{ui('审核返回 JSON 预览')}</span>
-                    <pre>{JSON_PREVIEW_TEXT}</pre>
-                  </div>
-                </div>
-              )}
-            </aside>
-          </div>
-          <div className="orchestration-footer">
-            <label className="field orchestration-rounds-field" htmlFor="orchestration-max-rounds">
+      <AppModal
+        open={open}
+        onOpenChange={next => { if (!next) close() }}
+        onClose={close}
+        size="2xl"
+        height="fixed"
+        closeOn="button-only"
+        initialFocusId="orchestration-task"
+        contentId="orchestration-modal"
+        titleId="orchestration-title"
+        closeId="close-orchestration"
+        closeLabel={ui('关闭编排任务')}
+        title={ui('编排任务')}
+        description={ui('画布节点按连线顺序执行；同一个节点内的多个人员会并行工作。')}
+        bodyClassName="flex flex-col gap-3.5 overflow-hidden"
+        footer={
+          <div className="orchestration-footer grid grid-cols-[190px_minmax(0,1fr)_auto] items-center gap-3.5">
+            <label className="field orchestration-rounds-field m-0 grid grid-cols-[auto_76px] items-center" htmlFor="orchestration-max-rounds">
               <span>{ui('最大节点执行数')}</span>
               <input
                 id="orchestration-max-rounds"
+                className="min-h-8"
                 type="number"
                 min={1}
                 max={MAX_ORCHESTRATION_MAX_NODE_EXECUTIONS}
@@ -851,14 +648,227 @@ export function OrchestrationModal() {
                 onChange={event => setMaxRounds(event.target.value)}
               />
             </label>
-            <p className="tiny">{ui('默认 50 个，最多 200 个；用于防止循环流程无限执行，执行节点和审核节点都会计数。')}</p>
-            <div className="template-actions orchestration-actions">
+            <p className="tiny m-0">{ui('默认 50 个，最多 200 个；用于防止循环流程无限执行，执行节点和审核节点都会计数。')}</p>
+            {/* .template-actions 的 flex 行布局来自共享分组规则（S7 清），
+                这里写全 utilities 让本弹窗不再依赖它。 */}
+            <div className="template-actions orchestration-actions m-0 flex items-center justify-between gap-2.5">
               <Button id="save-orchestration" variant="outline" size="sm" type="button" disabled={busy} onClick={() => void saveOrchestrationFlow()}>{ui('保存')}</Button>
               <Button id="run-orchestration" size="sm" type="button" disabled={busy} onClick={() => void runOrchestration()}>{ui('运行')}</Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        }
+      >
+        <div className="orchestration-task-strip grid grid-cols-[88px_minmax(0,1fr)] items-stretch gap-3 rounded-2xl border border-zinc-400/20 p-3 bg-white shadow-none dark:bg-[linear-gradient(135deg,rgba(161,161,170,0.1),rgba(10,20,31,0.72))]">
+          {/* 浅色白底/暗色渐变：legacy 浅色覆盖的 dark: 对译（S6/T4）。 */}
+          <label className="field self-center m-0 text-[13px] font-extrabold text-foreground" htmlFor="orchestration-task">{ui('任务')}</label>
+          <div className="orchestration-task-input-row grid grid-cols-[minmax(0,1fr)_auto_auto] items-stretch gap-2.5 min-w-0">
+            <textarea
+              id="orchestration-task"
+              className="min-h-[62px] max-h-[92px] resize-y"
+              value={task}
+              placeholder={ui('描述要让编排流程完成的任务；不需要 @ 人员。')}
+              onChange={event => setTask(event.target.value)}
+            />
+            <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger self-stretch min-w-[72px] px-3" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
+            <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto self-stretch min-w-[104px] px-4" type="button" disabled={busy} onClick={openAutoPanel}>
+              {autoGenerating ? ui('生成中...') : ui('自动编排')}
+            </Button>
+          </div>
+        </div>
+        <div className={`orchestration-layout grid min-h-0 flex-1 gap-3.5 overflow-hidden ${selectedStage ? 'grid-cols-[220px_minmax(450px,1fr)_300px]' : 'grid-cols-[220px_minmax(450px,1fr)]'}`}>
+          <aside className="orchestration-sidebar flex min-h-0 flex-col gap-3 rounded-2xl border border-border bg-card/70 p-3.5">
+            <div className="section-title items-end">
+              <h3>{ui('人员')}</h3>
+              <span className="tiny">{ui('拖到画布创建节点')}</span>
+            </div>
+            <div id="orchestration-people-list" className="orchestration-people-list grid min-h-0 content-start gap-[9px] overflow-auto flex-1 pr-0.5">
+              {roles.length === 0 ? (
+                <Empty className="my-1 p-3">
+                  <EmptyHeader className="max-w-none">
+                    <EmptyMedia variant="icon" className="size-8"><Users className="size-4" /></EmptyMedia>
+                    <EmptyTitle className="text-xs font-medium">{ui('当前群聊暂无人员')}</EmptyTitle>
+                    <EmptyDescription className="text-xs">{ui('无法编排任务，请先为群聊添加人员。')}</EmptyDescription>
+                  </EmptyHeader>
+                </Empty>
+              ) : roles.map(role => {
+                const model = roleModelDisplay(role, store)
+                return (
+                  <div
+                    key={role.id}
+                    className="orchestration-person grid grid-cols-[28px_minmax(0,1fr)] gap-2 items-center rounded-xl border border-zinc-500/20 bg-card/70 p-2 shadow-sm shadow-zinc-700/10 shadow-none dark:shadow-none cursor-grab transition-[border-color,background-color,transform] duration-150 hover:border-zinc-400/35 hover:bg-accent active:cursor-grabbing active:scale-[0.98]"
+                    draggable
+                    onDragStart={event => event.dataTransfer?.setData('application/x-openteam-role-id', role.id)}
+                  >
+                    <span className={`orchestration-person-avatar grid size-7 place-items-center rounded-full text-zinc-950 text-xs font-extrabold ${AVATAR_TONE[roleToneClass(role.id)] ?? ''}`}>{roleInitial(role.name)}</span>
+                    <div className="orchestration-person-body grid min-w-0 gap-0.5">
+                      <div className="orchestration-person-title flex min-w-0 items-center gap-2">
+                        <strong className="min-w-0 truncate">{role.name}</strong>
+                        <span className={`site-pill orchestration-person-site truncate ${model.className}`}>{model.label}</span>
+                      </div>
+                      <span className="tiny truncate">{role.description || ui('拖到画布创建节点')}</span>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </aside>
+          <section className="orchestration-workspace relative min-w-0 min-h-0 overflow-hidden rounded-2xl border border-zinc-500/25 bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] dark:bg-[radial-gradient(circle_at_50%_0%,rgba(161,161,170,0.14),transparent_34%),linear-gradient(180deg,rgba(9,9,11,0.94),rgba(3,9,16,0.92))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+            <Button id="arrange-orchestration" variant="outline" size="sm" className="orchestration-arrange absolute top-3 right-3 z-[2] min-h-[30px] px-3 text-xs border-zinc-500/30 bg-popover/80 text-popover-foreground backdrop-blur-md hover:border-zinc-500/60 hover:bg-accent" type="button" onClick={arrangeCanvas}>{ui('整理')}</Button>
+            {open && (
+              <CanvasPortal
+                stages={stages}
+                selectedStageId={selectedStageId}
+                graphEdges={graphEdges}
+                canvasKey={canvasKey}
+                storeVersion={storeVersion}
+                onStageSelected={setSelectedStageId}
+                onRoleDropped={addRoleAsStage}
+                onGraphChanged={edges => setGraphEdges(cloneGraphEdges(edges))}
+              />
+            )}
+            <p id="orchestration-empty-hint" className="orchestration-empty-hint absolute left-1/2 top-1/2 max-w-[320px] m-0 -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-dashed border-zinc-500/40 bg-popover/90 p-4 text-center leading-[1.6] text-popover-foreground pointer-events-none" hidden={stages.length > 0}>
+              {ui('把人员拖到画布生成节点，再从节点端口拖线编排执行关系。')}
+            </p>
+          </section>
+          <aside className={`orchestration-settings flex min-h-0 flex-col gap-3 overflow-auto rounded-2xl border border-border bg-card/70 p-3.5 ${selectedStage ? '' : 'hidden'}`} hidden={!selectedStage}>
+            <div className="orchestration-settings-heading">
+              <h3 className="m-0 text-[15px]">{ui('节点设置')}</h3>
+              <span className="tiny">{ui('选择画布节点后编辑')}</span>
+            </div>
+            {selectedStage && (
+              <div id="orchestration-stage-settings" className="orchestration-stage-settings grid gap-3" key={selectedStage.id}>
+                <div className="orchestration-node-editor-header flex items-center justify-between gap-2">
+                  <h3 className="m-0 text-[15px]">{selectedStage.kind === 'review' ? ui('审核节点') : ui('执行节点')}</h3>
+                  <Button className="text-lg" size="icon-sm" type="button" variant="ghost" aria-label={ui('关闭节点设置')} onClick={clearSelectedStage}>×</Button>
+                </div>
+                <label className="field gap-2">
+                  {ui('节点类型')}
+                  <select
+                    data-stage-kind="true"
+                    value={selectedStage.kind}
+                    onChange={event => setStageKind(selectedStage, event.target.value === 'review' ? 'review' : 'roles')}
+                  >
+                    <option value="roles">{ui('执行')}</option>
+                    <option value="review">{ui('审核')}</option>
+                  </select>
+                </label>
+                <label className="field gap-2">
+                  {ui('节点名称')}
+                  <input
+                    defaultValue={selectedStage.name}
+                    onInput={event => {
+                      const value = event.currentTarget.value
+                      changeStage(selectedStage.id, current => ({ ...current, name: value.trim() || (current.kind === 'review' ? '审核' : '执行节点') }))
+                    }}
+                  />
+                </label>
+                <label className="field gap-2">
+                  {ui('任务描述')}
+                  <textarea
+                    defaultValue={selectedStage.description ?? ''}
+                    placeholder={ui('给这个节点单独补充任务说明，例如：先澄清目标，只输出优先级和风险。')}
+                    onInput={event => {
+                      const value = event.currentTarget.value.trim()
+                      changeStage(selectedStage.id, current => (value ? { ...current, description: value } : withoutDescription(current)))
+                    }}
+                  />
+                </label>
+                <div className="field gap-2">
+                  {selectedStage.kind === 'review' ? ui('审核人员') : ui('执行人员')}
+                  <div className="stage-role-chips flex flex-wrap gap-2">
+                    {selectedRoleIds(selectedStage).map(roleId => (
+                      <span key={roleId} className="stage-role-chip inline-flex items-center gap-1.5 rounded-full border border-zinc-400/30 bg-zinc-400/10 px-2 py-[5px] text-xs text-foreground">{getRoleName(roleId)}</span>
+                    ))}
+                  </div>
+                </div>
+                {editableAutoRoles.length > 0 && (
+                  <div className="field orchestration-auto-role-sites gap-2">
+                    <span>{ui('自动人员设置')}</span>
+                    {editableAutoRoles.map(role => (
+                      <Fragment key={role.id}>
+                        <label className="orchestration-auto-role-site-row grid grid-cols-[minmax(0,1fr)_128px] gap-2 items-center">
+                          <span className="min-w-0 truncate text-xs text-muted-foreground">{role.name}</span>
+                          <select
+                            value={visibleChatSite(role.chatSite ?? store.settings.defaultChatSite)}
+                            onChange={event => {
+                              const value = event.target.value as ChatSite
+                              updateAutoGeneratedRoleSite(role.id, value).catch(error => showError(error instanceof Error ? error.message : String(error)))
+                            }}
+                          >
+                            {editableChatSites().map(site => (
+                              <option key={site} value={site}>{ui(siteLabel(site))}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="orchestration-auto-role-prompt-row grid gap-1.5">
+                          <span className="text-xs font-bold text-muted-foreground">{ui(`${role.name} 人设提示词`)}</span>
+                          <textarea
+                            className="orchestration-auto-role-prompt min-h-[86px] resize-y"
+                            defaultValue={role.systemPrompt ?? ''}
+                            placeholder={ui('只修改自动编排生成的人员人设；已有群成员不会在这里改。')}
+                            onBlur={event => {
+                              const value = event.currentTarget.value
+                              if (value === (role.systemPrompt ?? '')) return
+                              updateAutoGeneratedRolePrompt(role.id, value).catch(error => showError(error instanceof Error ? error.message : String(error)))
+                            }}
+                          />
+                        </label>
+                      </Fragment>
+                    ))}
+                  </div>
+                )}
+                <Button variant="destructive" size="sm" type="button" onClick={() => removeStage(selectedStage.id)}>{ui('删除节点')}</Button>
+              </div>
+            )}
+            {selectedStage?.kind === 'review' && (
+              <div id="orchestration-review-settings" className="orchestration-review-settings grid gap-3">
+                <p className="tiny orchestration-note m-0 leading-[1.55]">{ui('审核节点由一个群聊人员根据标准判断通过或不通过。')}</p>
+                <label className="field gap-2">
+                  {ui('审核标准')}
+                  <textarea
+                    value={selectedStage.review?.instructions ?? ''}
+                    placeholder={ui('例如：答案需要覆盖风险、方案和下一步行动。未满足时返回 fail。')}
+                    onChange={event => {
+                      const value = event.currentTarget.value
+                      changeStage(selectedStage.id, current => ({ ...current, review: normalizedReviewConfig(current, { instructions: value }) }))
+                    }}
+                  />
+                </label>
+                <label className="field gap-2">
+                  {ui('最大审核次数')}
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    defaultValue={String(selectedStage.review?.maxAttempts ?? DEFAULT_ORCHESTRATION_REVIEW_MAX_ATTEMPTS)}
+                    onInput={event => {
+                      const value = event.currentTarget.value
+                      changeStage(selectedStage.id, current => ({ ...current, review: normalizedReviewConfig(current, { maxAttempts: clampReviewAttempts(Number(value || DEFAULT_ORCHESTRATION_REVIEW_MAX_ATTEMPTS)) }) }))
+                    }}
+                  />
+                </label>
+                <label className="field gap-2">
+                  {ui('达到上限后')}
+                  <select
+                    value={selectedStage.review?.onMaxAttempts ?? 'stop'}
+                    onChange={event => {
+                      const value = event.target.value
+                      changeStage(selectedStage.id, current => ({ ...current, review: normalizedReviewConfig(current, { onMaxAttempts: value === 'continue' ? 'continue' : 'stop' }) }))
+                    }}
+                  >
+                    <option value="stop">{ui('停止流程')}</option>
+                    <option value="continue">{ui('继续往下走')}</option>
+                  </select>
+                </label>
+                <div className="orchestration-json-preview grid gap-2 rounded-xl border border-zinc-400/20 bg-popover/80 p-2.5">
+                  <span className="tiny">{ui('审核返回 JSON 预览')}</span>
+                  <pre className="max-h-[130px] m-0 overflow-auto text-[11px] leading-[1.55] text-emerald-800 dark:text-zinc-400 whitespace-pre-wrap">{JSON_PREVIEW_TEXT}</pre>
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
+      </AppModal>
 
       <OrchestrationAutoModal
         open={open && autoPanelOpen}
