@@ -11,6 +11,7 @@ import type { NoteEditorAdapter, NoteEditorFactory } from '../../lib/noteEditor'
 import { notifyAppState } from '../../lib/appStore'
 import { createFakeServices, renderWithServices } from '../../test/TestProviders'
 import { NotesPanel } from './NotesPanel'
+import { legacyStylesheetExists, readStylesheetSurface } from '../../test/stylesheetSurface'
 
 /*
  * 笔记面板 RTL（notesView.test.ts 重写）。开合 / 范围切换 / 工具栏命令 /
@@ -368,10 +369,11 @@ describe('team page notes panel', () => {
   })
 })
 
-describe('NotesPanel legacy.css retirement', () => {
+describe('NotesPanel stylesheet retirement', () => {
   it('retires every notes-panel family rule and keeps the shared ones', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    // S7/T6：legacy.css 已删除，改判**退役后的整个样式表面**。
+    expect(legacyStylesheetExists()).toBe(false)
+    const cssWithoutComments = readStylesheetSurface()
 
     for (const retired of [
       '.notes-panel',

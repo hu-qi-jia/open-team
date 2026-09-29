@@ -52,6 +52,75 @@ legacy 槽位；全部探针的 legacy 计数断言改为「文件不存在」�
     s6-8（status-floating absolute 断言改读 dist）、s1/s2/s4 各 legacy 审计组；
   - `npm run verify` + 全部探针复跑 + 明暗双主题全量复拍。
 
+## 退役总账（legacy.css 585 行注释的浓缩存档）
+
+legacy.css 删文件后，其 585 行「为什么删/迁到哪」的 rationale 从源码里消失。
+这里留一份按族归类的总账，供后续回归时对照（逐条细节仍在 git 历史里）。
+
+### 判死直删的三类（不迁、无视觉变化）
+1. **零消费死族**：主题分段控件（`.theme-switch`/`.theme-option`）、设置菜单
+   （`.settings-menu`）、旧壳挂名族（`.sidebar` 全家 / `.brand-mark` /
+   `.logo-dot` / `.workspace` / `.chat-header` / `.chat-title*` /
+   `.chat-subtitle` / `#chat-status`）、`.manual-mention-toggle`、
+   `.template-card.active`、`.icon-btn` / `.floating-toolbar` / `.window-dot`
+   （窗控三钮 React 化后废弃）、`#d4d4d8-role-form`。
+2. **被 utilities 恒压的死覆盖**：`.mode-options` / `.mode-name` /
+   `.chat-create-template-btn` / `.two-col` / `.role-name` / `.all-note-toolbar`
+   底色 / `.reference-box` 的 border-bg-color 等——调用点已有同值或更强的
+   utilities，规则从不生效。
+3. **`[hidden]` 归 preflight**：`#settings-button[hidden]` /
+   `#open-orchestration[hidden]` / `.launcher[hidden]` / `.field[hidden]` /
+   `.site-segment[hidden]`——Tailwind v4 preflight 的
+   `[hidden]:where(:not([hidden=until-found])){display:none!important}` 带
+   `!important`，压得住 utilities 层的 display。
+
+### 搬往 globals.css components 层（选择器穿透 / 动态 DOM 例外）
+- `.role-tone-*` / `.site-pill*` 动态色板（S3 Task 4）+ 四位「靠源序压过基类」
+  的冲突伴侣：`.add-person-site-option` / `.role-site-badge` /
+  `#iframe-host .role-frame-site` / `.orchestration-person-site`。
+- `.notes-editor .ProseMirror` 后代 ×4（ProseMirror 动态 DOM）、
+  `.message-tool-btn::after` tooltip ×2（伪元素声明集过大）。
+- `.markdown-body` 排版规则（S2 Task 4 原文搬迁）。
+- `.app-shell` 几何 / `.sidebar-resize-handle`（S1 Task 7）。
+
+### 搬往 unlayered 专题文件（库/非 React DOM 无法加 className）
+- `styles/orchestration-canvas.css`：X6 画布 11 条（S6/T5）。
+- `styles/iframe-host.css`：`#iframe-host` 全族（S7/T5-a）。unlayered 理由同
+  画布；搬迁时逐属性对照 globals V5 iframe 规则，被覆盖的死声明就地丢弃。
+
+### 搬往 globals.css base 层（S7/T5-c）
+- body 的 min-height/overflow/CJK 字体栈、h1/h2/h3、label、
+  input·textarea·select 本体 + `:focus` + 浅色覆盖、`:root` 的
+  `color-scheme` 两条。
+- ⚠️ `input` 系的 `color` 必须显式迁：preflight 给表单元素是
+  `color:inherit`，删了会取到 label 的 muted-foreground。
+- 判死未迁（preflight 同值）：`*` 的 box-sizing、body 的 `margin:0`、
+  button 的 `border:0`、h1-h3+p 的 `margin:0`、表单 `font:inherit`、
+  textarea 的 `resize:vertical`。
+
+### 翻成行内 utilities（亮色默认 + `dark:` 覆盖单份表达）
+- T2 状态卡族、T3 笔记/提及/消息工具九族、T4 壳层/列表/主题/模式/模板卡族、
+  T5 通用族（`.muted`/`.tiny`/`.field`/`.modal-form`/`.section-title`/
+  `.reference-box`/`.role-*`/`.message-*`/.orchestration-review-*）。
+- **语义类名一律保留在 TSX 上**作测试与探针钩子——「删规则」不等于「删类名」。
+- 浅色专属声明（暗色侧本就没有对应规则）用新增的 `light:` 变体承载
+  （globals.css 的 `@custom-variant light`，`dark:` 的反面）。
+
+### ⚠️ 前序纠正：死变量误判（T5-b 补账）
+T2–T5-a 曾按「变量零定义」判死 `--text/--subtle/--shadow/--glow`。
+**这是误判**：四者由 globals.css components 层的 V5 remap 块真定义
+（167/177/184-185 暗色，206-207/214-215 浅色）。已补回两处可见回归：
+launcher 的 `box-shadow: var(--shadow), var(--glow)` 与浅色
+`.chat-frame-group-title` 的 `color: var(--text)`。第三处 `.mode-name` 的
+`color: var(--text)` 经查无回归（继承链同值 + `.mode-help` 自带
+`text-muted-foreground`），不补。**教训：判「变量零定义」前必须全库 grep
+定义点，不能只看 legacy.css。**
+
+### Tailwind v4 陷阱（T4）
+`background` 简写里「渐变 + 纯色」合成一条 `bg-[...]` 会被整体推断为
+`background-image`，纯色层非法 → **整条声明被静默丢弃**（launcher 暗色变白
+圆）。修复：拆 `bg-[rgba(...)]` + `bg-[radial-gradient(...)]` 两条。
+
 ## 纪律（沿用）
 
 - 每任务「先红后绿」：改数前探针必红，迁完必绿；不许跳过红灯直接改数。

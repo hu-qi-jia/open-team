@@ -13,6 +13,7 @@ import { showError, showSuccess } from '../../lib/toast'
 import { createFakeServices, renderWithServices } from '../../test/TestProviders'
 import type { TeamPageServices } from '../../context/ServicesContext'
 import { Messages } from './Messages'
+import { legacyStylesheetExists, readStylesheetSurface } from '../../test/stylesheetSurface'
 
 vi.mock('../../lib/toast', () => ({
   showError: vi.fn(),
@@ -222,9 +223,11 @@ describe('team page messages (React)', () => {
     expect(gridSource).toContain('message-image-download absolute right-2 bottom-2')
     expect(gridSource).toContain('group-hover/image:opacity-100')
 
-    // .message-image-* / .mark-menu 族随迁移退役：剥掉退役注释后不得复现
-    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+    // .message-image-* / .mark-menu 族随迁移退役：剥掉退役注释后不得复现。
+    // S7/T6：legacy.css 已删除，改判**退役后的整个样式表面**（见
+    // ui/test/stylesheetSurface.ts）——任何现存样式表里都不许复现。
+    expect(legacyStylesheetExists()).toBe(false)
+    const cssWithoutComments = readStylesheetSurface()
     expect(cssWithoutComments).not.toContain('.message-image')
     expect(cssWithoutComments).not.toContain('.mark-menu')
   })

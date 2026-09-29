@@ -10,6 +10,7 @@ import { createTeamPageState } from '../../../appState'
 import { notifyAppState } from '../../lib/appStore'
 import { renderWithServices, type RenderWithServicesOptions } from '../../test/TestProviders'
 import { Composer } from './Composer'
+import { legacyStylesheetExists, readStylesheetSurface } from '../../test/stylesheetSurface'
 
 /*
  * 输入区 RTL（composerView.test.ts 重写）。目标预览 9 分支、@ 面板键序、
@@ -444,8 +445,10 @@ describe('team page composer v2 visual', () => {
     expect(form.className).toContain('relative')
   })
 
-  it('retires composer id rules and the mention panel family from legacy.css', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+  it('retires composer id rules and the mention panel family from the stylesheet surface', () => {
+    // S7/T6：legacy.css 已删除，改判**退役后的整个样式表面**。
+    expect(legacyStylesheetExists()).toBe(false)
+    const css = readStylesheetSurface()
 
     expect(css).not.toMatch(/#message-input\s*[,{]/)
     expect(css).not.toContain('#send-message')

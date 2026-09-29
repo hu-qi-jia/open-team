@@ -14,6 +14,7 @@ import { AppShellFrame } from '../shell/AppShellFrame'
 import { resetSidebarPrefsForTests } from '../../hooks/useSidebarPrefs'
 import { SidebarProvider } from '../ui/sidebar'
 import { renderWithServices, type RenderWithServicesOptions } from '../../test/TestProviders'
+import { legacyStylesheetExists, readStylesheetSurface } from '../../test/stylesheetSurface'
 
 afterEach(() => {
   cleanup()
@@ -308,10 +309,13 @@ describe('ChatList icon-strip form (medium tier)', () => {
   })
 })
 
-describe('ChatList legacy.css retirement', () => {
-  it('retires the .chat-list/.chat-item families from legacy.css', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-    const cssWithoutComments = css.replace(/\/\*[\s\S]*?\*\//g, '')
+describe('ChatList stylesheet retirement', () => {
+  it('retires the .chat-list/.chat-item families from the stylesheet surface', () => {
+    // S7/T6：legacy.css 整文件下线（585 行退役注释随文件删除）。这批「零残留」
+    // 断言改判**退役后的样式表面**——退役族不许在**任何**现存样式表里复现，
+    // 比原先只查 legacy.css 更强（详见 ui/test/stylesheetSurface.ts 头注）。
+    expect(legacyStylesheetExists()).toBe(false)
+    const cssWithoutComments = readStylesheetSurface()
 
     for (const retired of [
       '.chat-list',
@@ -340,8 +344,8 @@ describe('ChatList legacy.css retirement', () => {
     const personTemplate = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/people/PersonTemplateModal.tsx'), 'utf8')
     expect(personTemplate).toContain('template-actions flex items-center justify-between gap-2.5')
 
-    // S3 Task 4：浅色 role-tone 平涂随动态色板一并归位到 globals components 层
-    expect(cssWithoutComments).not.toContain('.chat-avatar.role-tone-0')
+    // S3 Task 4：浅色 role-tone 平涂随动态色板一并「搬往」globals components 层
+    // ——属承接方而非退役族，故本用例只断「承接方持有」，不再断表面零命中。
     const globals = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/styles/globals.css'), 'utf8')
     expect(globals).toContain('.chat-avatar.role-tone-0')
   })

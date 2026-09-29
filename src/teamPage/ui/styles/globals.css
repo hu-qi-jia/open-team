@@ -2,21 +2,20 @@
  * React UI 全局样式入口（Tailwind v4 + shadcn/ui zinc 主题）。
  *
  * 分层顺序（先声明后导入，首条 @layer 决定最终顺序）：
- *   theme → base → legacy → components → utilities
- * - legacy：public/team.css 的全部遗留规则（随各阶段迁移逐步删除），
- *   压在 base 之上、utilities 之下——新写的 Tailwind 工具类可以覆盖旧样式，
- *   而旧样式继续压过 token base，保证迁移期未迁移区域视觉不变。
+ *   theme → base → components → utilities
+ * - S7/T6：legacy 槽位已随 src/teamPage/ui/styles/legacy.css 一并删除——
+ *   该文件 2026-09-28 起承接 public/team.css 的全部遗留规则，压在 base 之上、
+ *   utilities 之下保证迁移期视觉不变；S7 逐族迁移完毕（T2–T5）后文件下线。
+ *   现存层序里：components 直接压过 base，utilities 最后。
  * - dark 变体沿用 themeController 的 <html data-theme> 机制（不用 .dark 类）。
  */
-@layer theme, base, legacy, components, utilities;
+@layer theme, base, components, utilities;
 
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@import "./legacy.css" layer(legacy);
-
 /* X6 画布规则（S6/T5 迁入）刻意 unlayered：库内部 DOM 无法加 className，
- * 不能被 utilities 覆盖，也不能随 legacy 退役——详见 orchestration-canvas.css 头注。 */
+ * 不能被 utilities 覆盖——详见 orchestration-canvas.css 头注。 */
 @import "./orchestration-canvas.css";
 
 /* iframe 工作台规则（S7/T5 迁入）同样 unlayered：iframeHost.ts 直写
@@ -885,9 +884,10 @@
 
 /*
  * 壳内 sidebar 原语矫正（utilities 层）。为什么不在 components 层写：
- * utilities 层恒胜 components 层（层序 theme/base/legacy/components/
- * utilities，构建产物 team.css 已核实 .fixed/.h-svh/.min-h-svh 全部晚于
- * components 块输出），sidebar 原语（ui/sidebar.tsx）自带的
+ * utilities 层恒胜 components 层（层序 theme/base/components/utilities——
+ * S7/T6 起 legacy 槽位已删除；构建产物 team.css 已核实
+ * .fixed/.h-svh/.min-h-svh 全部晚于 components 块输出），sidebar 原语
+ * （ui/sidebar.tsx）自带的
  * min-h-svh / fixed / h-svh 在 components 层覆盖不掉。这里与官方 utility
  * 同层，特异性（0-2-0 > 0-1-0）与源序双重取胜：
  * - wrapper：min-height 归零——官方 min-h-svh 是视口高，壳内必须随 #app
@@ -933,8 +933,13 @@
   /*
    * 最小化时 #iframe-host 的编排窗口组标题悬空残影（S1 T9 发现）：floatingWindow
    * 只把 #app 收进托盘，#iframe-host 是 body 直子级、不在 #app 裁剪范围内，
-   * 里面的 .chat-frame-group-title 仍悬在原位。runtime 不动，纯 CSS 规避；
-   * 放 utilities 层恒压 legacy 层的同选择器规则（层序恒胜，不靠特异性）。
+   * 里面的 .chat-frame-group-title 仍悬在原位。runtime 不动，纯 CSS 规避。
+   * ⚠️ S7/T6 层序变更：原先靠 utilities 层压 legacy 层；legacy 下线后该族的
+   * 规则搬进了 **unlayered** 的 styles/iframe-host.css，unlayered 恒压一切
+   * layered 规则——本条不再靠层序取胜，而是靠「属性不冲突」：
+   * iframe-host.css 的 .chat-frame-group-title 未声明 display，故本条的
+   * display:none 仍生效（特异性也更高：(1,2,1) > (1,1,0)）。
+   * 若日后给该族补 display 声明，必须同步把本条搬进 iframe-host.css。
    * 注意 :has() 参数不能带引号（简报里的 :has('#app.minimized') 是非法选择器，
    * 浏览器会整条丢弃）——须写裸选择器 :has(#app.minimized)。
    */
