@@ -21,13 +21,15 @@
  *   s5-7  两栏 / 网格结构：全部笔记工作区左栏 240px + 右栏 1fr；
  *         群模板列表为多列网格（1500 宽下 ≥2 列）
  *   s5-8  亮/暗双主题对比度（主文本 ≥4.5，次级文本 ≥3）
- *   s5-9  legacy 审计：(a) 退役族零命中 / (b) 共享族仍在 / (c) TSX 钩子类仍在
+ *   s5-9  退役审计：(a) 退役族零命中 / (b) 共享族归零 / (c) TSX 钩子类仍在
  *         / (d) dist 里新写 utilities 存在 / (e) 按族精确计数（销 S3 终审 M-2）
+ *         ⚠️ S7/T6：审计对象由 legacy.css（已删除）改为**退役后的样式表面**，
+ *         (e) 的 legacy.css 行数断言改为「文件已退役」。
  *   s5-10 uiBus 消费者审计（emit 必有对应 on）
  *   s5-11 响应式回归：700px（<760）单栏 + 列表横向可滚；1024px 两栏 240px + 1fr
  *
  * 口径纪律（本阶段已因混淆「行数 vs 规则数」栽过两次）：
- *   - 所有 legacy.css 计数都是**剥掉 CSS 注释后的**「出现次数」（occurrence），
+ *   - 所有样式表面计数都是**剥掉 CSS 注释后的**「出现次数」（occurrence），
  *     不是行数、不是规则条数；断言文案里逐条注明。
  *   - 不写「负面存在性」断言（「某裸类在 dist 出现 0 次」这类会随 Tailwind
  *     合并同值规则而变）；只断**存在**与**精确计数**。
@@ -44,7 +46,7 @@
  */
 import puppeteer from 'puppeteer'
 import { mkdtemp, mkdir } from 'node:fs/promises'
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -193,8 +195,22 @@ function splitTracks(value) {
 const COUNT_NOTE = 'post-comment-strip occurrence count'
 
 // ---- s5-9 (a)：本阶段独占族（A 组全部笔记族 + B 组群模板族 + .btn + 760px 媒体块）----
-const legacyRaw = readFileSync(path.join(root, 'src/teamPage/ui/styles/legacy.css'), 'utf8')
-const legacyCss = stripCssComments(legacyRaw)
+// ⚠️ S7/T6 改判：legacy.css 已整文件删除，审计对象改为**退役后的样式表面**
+// （styles/ 下现存 CSS 的剥注释拼接）。直接换成空串会让下面上百条零残留断言
+// 全部变成永真空转；改成表面后语义升级为「任何现存样式表里都不许复现」。
+const styleDir = path.join(root, 'src/teamPage/ui/styles')
+const styleFiles = readdirSync(styleDir).filter(name => name.endsWith('.css')).sort()
+const legacyPath = path.join(styleDir, 'legacy.css')
+const legacyCss = styleFiles
+  .map(name => stripCssComments(readFileSync(path.join(styleDir, name), 'utf8')))
+  .join('\n')
+
+check('s5-9 (a) legacy.css is retired (file deleted after the S7 purge)',
+  existsSync(legacyPath) === false, existsSync(legacyPath) ? 'file still present' : 'file absent')
+check('s5-9 (a) the stylesheet surface is globals + iframe-host + orchestration-canvas',
+  styleFiles.join(',') === 'globals.css,iframe-host.css,orchestration-canvas.css',
+  `files=${styleFiles.join(',')}`)
+
 const RETIRED_A_SELECTORS = [
   'all-notes-modal', 'all-notes-workspace', 'all-notes-list', 'all-notes-empty',
   'all-note-target', 'all-note-target-title', 'all-note-target-meta',
@@ -202,20 +218,20 @@ const RETIRED_A_SELECTORS = [
 ]
 for (const name of RETIRED_A_SELECTORS) {
   const hits = countOccurrences(legacyCss, `.${name}`)
-  check(`s5-9 (a) legacy.css has no .${name} rule`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+  check(`s5-9 (a) stylesheet surface has no .${name} rule`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
 }
 for (const name of ['group-template', 'group-template-modal', 'group-template-option', 'group-template-risk-professional']) {
   const hits = countOccurrences(legacyCss, `.${name}`)
-  check(`s5-9 (a) legacy.css has no .${name} rule`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+  check(`s5-9 (a) stylesheet surface has no .${name} rule`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
 }
 {
   const hits = countOccurrences(legacyCss, '.btn')
-  check('s5-9 (a) legacy.css has no .btn rule (retired in T4)', hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+  check('s5-9 (a) stylesheet surface has no .btn rule (retired in T4)', hits === 0, `hits=${hits} (${COUNT_NOTE})`)
   // ⚠️ 口径：只断「@media (max-width: 760px)」这条**媒体查询**零命中。
   // 不断「760px 字面量零命中」——legacy 里还有两条别的族的
   // `height: min(760px, …)` 声明（1197/1367 行），那会是一条假红。
   const media = countOccurrences(legacyCss, '@media (max-width: 760px)')
-  check('s5-9 (a) legacy.css has no @media (max-width: 760px) block (notes responsive moved to utilities)',
+  check('s5-9 (a) stylesheet surface has no @media (max-width: 760px) block (notes responsive moved to utilities)',
     media === 0, `hits=${media} (${COUNT_NOTE})`)
 }
 
@@ -223,42 +239,71 @@ for (const name of ['group-template', 'group-template-modal', 'group-template-op
 // 组件 utilities 化退役，断言从「still owns exactly N×」翻转为「gone」；
 // 承担方断言由 s3-12 ⑤（globals 例外块）与 NotesPanel 守卫测试（TSX 钩子）覆盖）----
 // 口径：全为「剥注释后的子串出现次数」。
+// ⚠️ S7/T6：`.notes-editor` 移出本清单——它是**承接方**：`.notes-editor
+// .ProseMirror` 四条后代规则（ProseMirror 动态 DOM，无法加 className）住在
+// globals.css components 层。改由下方「承接方只在 globals」断言覆盖。
 const RETIRED_S7_T3 = [
-  'notes-editor', 'note-tool-btn', 'note-toolbar',
+  'note-tool-btn', 'note-toolbar',
   'note-toolbar-spacer', 'all-note-toolbar',
 ]
 for (const needle of RETIRED_S7_T3) {
   const hits = countOccurrences(legacyCss, `.${needle}`)
-  check(`s5-9 (b) legacy.css has zero .${needle} occurrences after S7/T3 (comments stripped)`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+  check(`s5-9 (b) stylesheet surface has zero .${needle} occurrences after S7/T3 (comments stripped)`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+}
+{
+  // 承接方双向断言：规则在 globals，且不在两个 unlayered 专题文件里。
+  const globalsStripped = stripCssComments(readFileSync(path.join(styleDir, 'globals.css'), 'utf8'))
+  const nonGlobalSurface = styleFiles.filter(name => name !== 'globals.css')
+    .map(name => stripCssComments(readFileSync(path.join(styleDir, name), 'utf8'))).join('\n')
+  check('s5-9 (b) .notes-editor ProseMirror carrier lives in globals.css (S7/T3)',
+    globalsStripped.includes('.notes-editor .ProseMirror'),
+    `globals=${globalsStripped.includes('.notes-editor .ProseMirror')}`)
+  check('s5-9 (b) .notes-editor carrier is absent from the unlayered special files',
+    countOccurrences(nonGlobalSurface, '.notes-editor') === 0,
+    `hits=${countOccurrences(nonGlobalSurface, '.notes-editor')}`)
 }
 {
   // 原「规则本体」钉串（`.note-toolbar {`，带空格+花括号）随族归零
   const hits = countOccurrences(legacyCss, '.note-toolbar {')
-  check('s5-9 (b) legacy.css has zero .note-toolbar rule bodies after S7/T3', hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+  check('s5-9 (b) stylesheet surface has zero .note-toolbar rule bodies after S7/T3', hits === 0, `hits=${hits} (${COUNT_NOTE})`)
 }
 // S7/T4：壳层/列表/主题/模式/模板卡族随 utilities 化或零消费退役（暗浅双份 +
 // media 1120 成员一并清零）。注意 .launcher 类名仍在 App.tsx（视觉已迁行内
 // utilities），故用规则本体 `.launcher {` 钉串而非裸 token。
+// ⚠️ S7/T6：`sidebar` 移出本清单——globals.css 有**合法存活**的
+// `.sidebar-resize-handle`（S1 Task 7 搬迁的壳层拖拽手柄，不是 T4 退役的旧
+// `.sidebar` 全家）。裸子串 `.sidebar` 会命中它造成假红，故改用
+// hasSelectorToken（要求 `.sidebar` 后紧跟分隔符，`-resize-handle` 不算）。
 const RETIRED_S7_T4 = [
   'theme-switch', 'theme-option', 'settings-menu', 'chat-header',
-  'chat-title-block', 'chat-subtitle', 'chat-status', 'workspace', 'sidebar',
+  'chat-title-block', 'chat-subtitle', 'chat-status', 'workspace',
   'logo-dot', 'brand-mark', 'template-card', 'template-list', 'mode-options',
   'mode-name', 'mode-help', 'chat-create-template-row', 'chat-create-template-btn',
 ]
 for (const needle of RETIRED_S7_T4) {
   const hits = countOccurrences(legacyCss, `.${needle}`)
-  check(`s5-9 (b) legacy.css has zero .${needle} occurrences after S7/T4 (comments stripped)`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+  check(`s5-9 (b) stylesheet surface has zero .${needle} occurrences after S7/T4 (comments stripped)`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+}
+{
+  // 旧 `.sidebar` 全家（本体/品牌行/分区标签…）已随新壳退役；存活的只有
+  // `.sidebar-resize-handle`，用 selector-token 口径把两者区分开。
+  const oldSidebar = hasSelectorToken(legacyCss, 'sidebar')
+  check('s5-9 (b) stylesheet surface has no bare .sidebar selector after S7/T4 (.sidebar-resize-handle survives)',
+    oldSidebar === false, `selector-token=${oldSidebar}`)
+  const handleKept = countOccurrences(legacyCss, '.sidebar-resize-handle')
+  check('s5-9 (b) .sidebar-resize-handle is still carried by globals.css',
+    handleKept > 0, `hits=${handleKept} (${COUNT_NOTE})`)
 }
 {
   const launcherRule = countOccurrences(legacyCss, '.launcher {')
-  check('s5-9 (b) legacy.css has zero .launcher rule bodies after S7/T4 (class stays in App.tsx as hook)',
+  check('s5-9 (b) stylesheet surface has zero .launcher rule bodies after S7/T4 (class stays in App.tsx as hook)',
     launcherRule === 0, `hits=${launcherRule} (${COUNT_NOTE})`)
   const rowSelectors = countOccurrences(legacyCss, '.chat-row')
-  check('s5-9 (b) legacy.css has zero .chat-row selectors after S7/T4 (shared group keeps only .role-row/.template-actions)',
+  check('s5-9 (b) stylesheet surface has zero .chat-row selectors after S7/T4',
     rowSelectors === 0, `hits=${rowSelectors} (${COUNT_NOTE})`)
 }
 // S7/T5：最后一批共享族（通用族）随 utilities 化退役，断言翻转为「归零」——
-// 类名一律保留在 TSX 上作测试/探针钩子，本探针只审 legacy 侧规则。
+// 类名一律保留在 TSX 上作测试/探针钩子，本探针只审样式表侧规则。
 const RETIRED_S7_T5_SHARED = [
   'tiny', 'muted', 'modal-form', 'field', 'template-actions', 'section-title',
   'reference-box', 'two-col', 'role-row', 'role-name', 'role-site-control',
@@ -267,20 +312,28 @@ const RETIRED_S7_T5_SHARED = [
 ]
 for (const name of RETIRED_S7_T5_SHARED) {
   const present = hasSelectorToken(legacyCss, name)
-  check(`s5-9 (b) legacy.css no longer owns .${name} after S7/T5`, !present, `selector-token=${present}`)
+  check(`s5-9 (b) stylesheet surface no longer owns .${name} after S7/T5`, !present, `selector-token=${present}`)
 }
 {
   const persona = countOccurrences(legacyCss, '#template-persona-generation-status')
-  check('s5-9 (b) legacy.css no longer owns #template-persona-generation-status after S7/T5',
+  check('s5-9 (b) stylesheet surface no longer owns #template-persona-generation-status after S7/T5',
     persona === 0, `hits=${persona}`)
 }
 {
   // S7/T3：.note-* 前缀全族退役归零。
-  // S7/T5：.orchestration-*（review 系，T5 最后两条）同批归零。
+  // S7/T5：.orchestration-review-*（T5 最后两条）同批归零。
+  // ⚠️ S7/T6：`.orchestration-` 全前缀不能断零——现存样式表里有两位**合法
+  // 承接方**：`.orchestration-person-site`（globals components 层）与
+  // `.orchestration-stage-canvas`（unlayered 画布专题文件 11 条）。故收窄为
+  // `.orchestration-review-`，并补一条承接方在位断言。
   const note = countOccurrences(legacyCss, '.note-')
-  check('s5-9 (b) legacy.css has zero .note-* occurrences after S7/T3 (comments stripped)', note === 0, `hits=${note}`)
-  const orch = countOccurrences(legacyCss, '.orchestration-')
-  check('s5-9 (b) legacy.css has zero .orchestration-* rules after S7/T5 (comments stripped)', orch === 0, `hits=${orch}`)
+  check('s5-9 (b) stylesheet surface has zero .note-* occurrences after S7/T3 (comments stripped)', note === 0, `hits=${note}`)
+  const orch = countOccurrences(legacyCss, '.orchestration-review-')
+  check('s5-9 (b) stylesheet surface has zero .orchestration-review-* rules after S7/T5 (comments stripped)', orch === 0, `hits=${orch}`)
+  const carriers = ['.orchestration-person-site', '.orchestration-stage-canvas']
+  const missingCarriers = carriers.filter(token => !legacyCss.includes(token))
+  check('s5-9 (b) the two .orchestration-* carriers are intact (person-site in globals, canvas in the special file)',
+    missingCarriers.length === 0, missingCarriers.length === 0 ? 'both present' : `missing: ${missingCarriers.join(', ')}`)
 }
 
 // ---- s5-9 (c)：钩子类仍出现在 TSX（剥注释后按 className 系列 prop 精确搜）----
@@ -356,8 +409,12 @@ for (const needle of DIST_UTILITIES) {
 // .tiny / .section-title 命中（empty-hint / stage-settings 等编排族），
 // 快照 3→1、2→1；共享族剩余命中由 s3-12 ⑤ 的「>0」断言兜底。
 // S7/T3 更新：.all-note- / .mention-shortcut 随九族退役归零（2→0）。
+// ⚠️ S7/T6 改数（附原因链）：计数目标从 legacy.css 换成**退役后的样式表面**，
+// 而 .tiny / .reference-box / .section-title 这三族的最后命中本来就在 legacy
+// 里（通用族），T5-d 已随 utilities 化全部退役 —— 表面侧实测 0、0、0，
+// 故期望值 1→0、2→0、1→0。
 const FAMILY_COUNTS = [
-  ['.all-note-', 0], ['.tiny', 1], ['.reference-box', 2], ['.section-title', 1], ['.mention-shortcut', 0],
+  ['.all-note-', 0], ['.tiny', 0], ['.reference-box', 0], ['.section-title', 0], ['.mention-shortcut', 0],
 ]
 for (const [needle, expected] of FAMILY_COUNTS) {
   const hits = countOccurrences(legacyCss, needle)
@@ -366,23 +423,23 @@ for (const [needle, expected] of FAMILY_COUNTS) {
 {
   // S7/T3：.all-note- 前缀全族退役归零（原「2 处均为共享族 toolbar」检查随之失效）
   const total = countOccurrences(legacyCss, '.all-note-')
-  check('s5-9 (e) .all-note-* is fully gone from legacy.css after S7/T3',
+  check('s5-9 (e) .all-note-* is fully gone from the stylesheet surface after S7/T3',
     total === 0, `total=${total}`)
 }
 {
-  // legacy.css 总行数（口径：换行符个数 = `wc -l`；T4 把 2769 行删到 2422 行，
-  // S6/T4+T5 编排族退役后为 1724 行，S7/T2 状态卡族退役后为 1361 行，
-  // S7/T3 笔记/提及/消息工具九族退役后为 1155 行，
-  // S7/T4 壳层/列表/主题/模式/模板卡族退役（约七成是零消费死码）后为 875 行，
-  // S7/T5-a #iframe-host 全族迁往 styles/iframe-host.css 后为 752 行，
-  // S7/T5-c base 元素（body/h1-h3/label/input 系 + 浅色覆盖）、:root 的
-  // color-scheme 两条与 1120/720 两个 media 块迁往 globals base 层 /
-  // utilities 变体后为 647 行，
-  // S7/T5-d 通用族（.muted/.tiny/.field/.modal-form/.section-title/.two-col/
-  // .reference-box/.role-*/.message-*/.orchestration-review-* 与浅色块最后
-  // 三条）全部 utilities 化后仅剩退役注释，为 585 行 ——随迁移递减，改数须附原因）
-  const newlines = countOccurrences(legacyRaw, '\n')
-  check('s5-9 (e) legacy.css is 585 lines (wc -l count)', newlines === 585, `newlines=${newlines}`)
+  // legacy.css 行数递减史（口径：换行符个数 = `wc -l`）：
+  //   2769（起点）→ 2422（T4）→ 1724（S6 编排族）→ 1361（S7/T2 状态卡族）
+  //   → 1155（T3 笔记/提及/消息工具九族）→ 875（T4 壳层/列表/主题/模式/模板卡族，
+  //   约七成是零消费死码）→ 752（T5-a #iframe-host 全族迁 styles/iframe-host.css）
+  //   → 647（T5-c base 元素 + color-scheme + 1120/720 media 迁 globals/utilities）
+  //   → 585（T5-d 通用族全批 utilities 化，只剩退役注释）
+  //   → **0**（T6：文件删除，绞杀者模式终点）。
+  // 行数断言随文件下线作废，改为「文件已退役 + 表面仍非空」的自证：
+  // 后者防止「样式目录被清空却没人发现」这类静默事故。
+  check('s5-9 (e) legacy.css is retired — 0 lines because the file is gone',
+    existsSync(legacyPath) === false, existsSync(legacyPath) ? 'file still present' : 'file absent')
+  check('s5-9 (e) the surviving stylesheet surface is non-empty',
+    legacyCss.trim().length > 0, `comment-stripped chars=${legacyCss.trim().length}`)
 }
 
 // ---- s5-10 uiBus 消费者审计（沿用 s4-10）-----------------------------------

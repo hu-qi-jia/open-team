@@ -2,7 +2,9 @@
  * S3 面板验收探针（Task 5，harness 模板：screenshot-s2-acceptance.mjs）：
  * 成员抽屉（T2：RolePanel → 非模态 shadcn Sheet）与笔记浮卡（T3：
  * NotesPanel → 浮动 Card + CanvasPortal 宿主 utilities 化）的浏览器级回归，
- * 外加 legacy.css 的零残留审计（T2/T3/T4 三阶段退役结果的静态复核）。
+ * 外加退役族的零残留审计（T2/T3/T4 三阶段退役结果的静态复核）。
+ *   ⚠️ S7/T6：审计对象从 legacy.css 改为**退役后的样式表面**——legacy.css
+ *   已整文件删除，改读 styles/ 下现存 CSS 的剥注释拼接（见下方 s3-12 注释）。
  *
  * - 抽屉（T2）：#app 内 portal、absolute（不是 fixed）、右缘贴合 #app、
  *   宽 min(340, 容器宽−54)、无遮罩、非模态（工作区可点、外点关闭）、
@@ -19,21 +21,21 @@
  *   出现的 dragging/resizing 类（几何钩子未被 Card 化破坏）；
  * - 共享族（T3 的「不得删」清单）：打开「全部笔记」弹窗，.notes-editor /
  *   .note-tool-btn 仍有非零尺寸与 legacy 声明的背景/边框/内边距；
- * - legacy 审计（s3-12）：**剥注释口径**（先例：ChatList.test.tsx 的
- *   legacy retirement 用例）——legacy.css 中退役 + 归位共 23 个 token 零命中
- *   （T2/T3 的 11 个族 + T2 台账声明零残留的 role 族 9 个 + T4 归位后 legacy
- *   已归零的 3 簇 `.role-site-badge`/`.role-frame-site`/`.orchestration-person-site`；
+ * - 退役审计（s3-12）：**剥注释口径**（先例：ChatList.test.tsx 的
+ *   retirement 用例）——退役 + 归位共 23 个 token 在**样式表面**零命中
+ *   （T2/T3 的 11 个族 + T2 台账声明零残留的 role 族 9 个 + T4 归位后已归零的
+ *   3 簇 `.role-site-badge`/`.role-frame-site`/`.orchestration-person-site`；
  *   `.role-panel-actions` 被前缀 token `.role-panel` 吸收）；
- *   `.orchestration-stage-canvas` 断「宿主基块（裸选择器规则）零命中」+ 逐处扫描
- *   每一处出现都必须是「空格 + .x6-」后代选择器 + 计数硬断言 === 11
- *   （深色 10 + 浅色 1，属 **S6 范围**、T3 报告已声明保留——**S6 退役后本数需
- *   归零并改数**；`CanvasPortal.test.tsx` 只断 React 侧类名，不读 legacy.css）；
- *   .role-tone-/.site-pill 在 legacy 零命中且在 globals.css **components 层**
- *   命中；T4 范围扩张的 4 簇（.add-person-site-option 族、.role-site-badge、
+ *   `.orchestration-stage-canvas` 断「宿主基块（裸选择器规则）零命中」+
+ *   该族只出现在 styles/orchestration-canvas.css（S6/T5 原文迁往的 unlayered
+ *   专题文件），计数硬断言 === 11（深色 10 + 浅色 1）；
+ *   .role-tone-/.site-pill 由 globals.css **components 层**持有（承接方断言）；
+ *   T4 范围扩张的 4 簇（.add-person-site-option 族、.role-site-badge、
  *   #iframe-host .role-frame-site、.orchestration-person-site）同样在
- *   components 层（其中 `.add-person-site-option` 在 legacy 还剩 1 条浅色例外，
- *   记录在案、不写硬零）；dist/team.css 按 @layer 切块复核（退役族全层零命中、
- *   色板落在 components 层）并确认新增 utilities 真的进了产物
+ *   components 层（历史上 `.add-person-site-option` 在 legacy 还剩 1 条浅色
+ *   例外，记录在案；该例外已随 legacy.css 一并下线）；
+ *   dist/team.css 按 @layer 切块复核（退役族全层零命中、色板落在 components
+ *   层、**已无 legacy 层**）并确认新增 utilities 真的进了产物
  *   （紧贴 ${ 被静默吞掉的复检）。
  *
  * s3-1..s3-11 的可视断言组在暗色与亮色各跑一遍（s3-7 的亮色段另断抽屉背景
@@ -51,6 +53,7 @@
  */
 import puppeteer from 'puppeteer'
 import { mkdtemp, mkdir, readFile } from 'node:fs/promises'
+import { existsSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -876,8 +879,16 @@ try {
   record('shell geometry at light-phase start (shellGeometry reset)', await shellGeometryOf())
   await runPanelVisuals('light')
 
-  // ---- 组 s3-12：legacy 审计（剥注释口径；与主题无关，跑一次）----
-  // 口径先例：ChatList.test.tsx 的 'ChatList legacy.css retirement'
+  // ---- 组 s3-12：退役审计（剥注释口径；与主题无关，跑一次）----------------
+  // ⚠️ S7/T6 改判：legacy.css 已整文件删除（1724 行 → 585 行退役注释 → 0）。
+  // 原先「legacy.css 零残留」的断言若直接换成空串会全部变成**永真空转**，
+  // 故改判**退役后的样式表面**：styles/ 下现存 CSS（globals.css /
+  // iframe-host.css / orchestration-canvas.css）剥注释后的拼接。语义从
+  // 「旧文件里没有」升级为「任何现存样式表里都没有」——既守住退役成果，也挡住
+  // 死规则被重新塞回 globals 或某个专题文件。
+  // 例外：确有搬进 globals / canvas 的族（见下方 ②③④）不走表面零命中，
+  // 改写成「承接方持有 + 不在别处」的双向断言。
+  // 口径先例：ChatList.test.tsx 的 'ChatList stylesheet retirement'
   // （css.replace(/\/\*[\s\S]*?\*\//g, '') 后再 toContain/not.toContain）。
   const stripComments = css => css.replace(/\/\*[\s\S]*?\*\//g, '')
   const countOccurrences = (text, token) => text.split(token).length - 1
@@ -901,22 +912,38 @@ try {
     return blocks
   }
 
-  const legacyRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/legacy.css'), 'utf8')
   const canvasRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/orchestration-canvas.css'), 'utf8')
+  const iframeRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/iframe-host.css'), 'utf8')
   const globalsRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/globals.css'), 'utf8')
   const distCss = await readFile(path.join(dist, 'team.css'), 'utf8')
-  const legacyCss = stripComments(legacyRaw)
+  // 样式表面 = 现存三份 CSS 的剥注释拼接；nonGlobalSurface 排除了 globals
+  // （给「搬往 globals 的族」做「不在别处复现」的反向断言用）。
   const globalsCss = stripComments(globalsRaw)
+  const canvasCss = stripComments(canvasRaw)
+  const iframeCss = stripComments(iframeRaw)
+  const legacyCss = [globalsCss, iframeCss, canvasCss].join('\n')
+  const nonGlobalSurface = [iframeCss, canvasCss].join('\n')
+
+  // ①′ legacy.css 本身必须已下线（文件不存在）。
+  const legacyPath = path.join(root, 'src/teamPage/ui/styles/legacy.css')
+  const legacyRetired = !existsSync(legacyPath)
+  check('s3-12 legacy.css is retired (file deleted after the S7 purge)',
+    legacyRetired, legacyRetired ? 'file absent' : 'file still present')
+  const styleFiles = readdirSync(path.join(root, 'src/teamPage/ui/styles')).filter(name => name.endsWith('.css')).sort()
+  check('s3-12 the stylesheet surface is exactly globals + iframe-host + orchestration-canvas',
+    styleFiles.join(',') === 'globals.css,iframe-host.css,orchestration-canvas.css',
+    `files=${styleFiles.join(',')}`)
   const globalsComponents = layerBlocks(globalsCss).filter(block => block.name === 'components')
     .map(block => block.body).join('\n')
   const distLayers = layerBlocks(distCss)
   const distLayer = name => distLayers.filter(block => block.name === name).map(block => block.body).join('\n')
 
-  // 行数统计只按「含该字样的行」计（**不判定是否位于注释内**）；剥注释口径下这些行不参与断言
-  const paletteLineCount = legacyRaw.split('\n').filter(line => /role-tone|site-pill/.test(line)).length
-  record('s3-12 legacy.css sanity', `raw ${legacyRaw.length} chars → comment-stripped ${legacyCss.length} chars; raw 源里含 role-tone-/site-pill 字样的行 ${paletteLineCount} 行（未判定注释归属；剥注释后这些字样零命中）`)
+  // 表面规模照实记录（legacy.css 已下线，这里换成现存三份 CSS 的合计；
+  // role-tone-/site-pill 字样在 globals components 层是**承接方**，非零属正常）。
+  const paletteLineCount = globalsCss.split('\n').filter(line => /role-tone|site-pill/.test(line)).length
+  record('s3-12 stylesheet surface sanity', `comment-stripped ${legacyCss.length} chars across ${styleFiles.length} files; globals.css 含 role-tone-/site-pill 字样的行 ${paletteLineCount} 行（色板承接方，非零属预期）`)
 
-  // ① legacy.css 里 T2/T3 退役族的零命中。
+  // ① 样式表面里 T2/T3 退役族的零命中。
   //    T2 台账里声明零残留的 role 族 token 共 17 个：`.role-panel-actions` 已被前缀
   //    token `.role-panel` 吸收（本断言是子串匹配），其余 9 个本轮补入
   //    （.role-list/.role-form/.role-description/.role-site-menu/.role-site-option/
@@ -929,33 +956,32 @@ try {
     '.role-list', '.role-form', '.role-description', '.role-site-menu', '.role-site-option',
     '.role-prompt-detail', '.role-refresh', '.role-jump', '.role-delete',
   ]
-  // T4 搬走、legacy 侧实测已归零的族外 3 簇（它们在 dist 的 components 层仍有规则，
-  // 故只进 legacy 零残留断言，不进 ⑥ 的「dist 全层零命中」）
-  const legacyRelocatedFamilies = ['.role-site-badge', '.role-frame-site', '.orchestration-person-site']
-  const legacyZeroTokens = [...retiredFamilies, ...legacyRelocatedFamilies]
-  const retiredHits = legacyZeroTokens.filter(token => legacyCss.includes(token))
-  check('s3-12 legacy.css has zero residue for the retired + relocated families (comments stripped)',
+  const retiredHits = retiredFamilies.filter(token => legacyCss.includes(token))
+  check('s3-12 stylesheet surface has zero residue for the retired families (comments stripped)',
     retiredHits.length === 0,
-    retiredHits.length === 0 ? `${legacyZeroTokens.length} tokens all absent` : `still present: ${retiredHits.join(', ')}`)
-  // 记录在案的例外（不写成硬零）：浅色共享组内的
-  // :root[data-theme="light"] .add-person-site-option —— 搬前搬后都被同特异性更晚的
-  // 浅色 .site-pill/.site-pill-* 压住（长期 dead），属 S4 人员库重写范围。
-  record('s3-12 legacy.css recorded exception', `:root[data-theme="light"] .add-person-site-option 仍有 1 条（legacy.css 原文 2832 行；搬前即 dead、S4 范围），故未列入硬零断言；其余 .add-person-site-option 规则均在 components 层（globals.css×8 / dist components×8）`)
+    retiredHits.length === 0 ? `${retiredFamilies.length} tokens all absent` : `still present: ${retiredHits.join(', ')}`)
+  // T4 搬走的族外 3 簇（.role-site-badge / .role-frame-site / .orchestration-person-site）
+  // 是**承接方**：它们理应在 globals components 层有规则（④ 已断），故不再列入
+  // 「表面零命中」清单——否则同一条规则会被两个方向相反的断言同时盯上。
+  // 历史上记录在案的例外（:root[data-theme="light"] .add-person-site-option 在
+  // legacy.css 剩 1 条长期 dead 的浅色规则）已随 legacy.css 一并下线，不再需要豁免。
 
   // ② .orchestration-stage-canvas：宿主基块（裸选择器）必须退役；
   //    `.orchestration-stage-canvas .x6-*` 后代族 11 条（深色 10 + 浅色 1）已按计划
   //    **S6/T5 原文迁往 styles/orchestration-canvas.css**（unlayered：X6 库内部 DOM
-  //    无法加 className，视觉不能被 utilities 覆盖）——legacy 内归零、新文件接住
-  //    同样 11 处（防止「只删不搬」的静默视觉回退），dist 断言见 ⑥。
+  //    无法加 className，视觉不能被 utilities 覆盖）。S7/T6 起改判为双向：
+  //    既有「新文件接住同样 11 处」（防只删不搬的静默视觉回退），也有「该族
+  //    **只**在 canvas 专题文件里，globals/iframe-host 零命中」（防回流）。
   const canvasHostRule = /\.orchestration-stage-canvas\s*[,{]/
-  const canvasDescendantCount = countOccurrences(legacyCss, '.orchestration-stage-canvas')
-  check('s3-12 legacy.css retires the bare .orchestration-stage-canvas host block',
+  const canvasOutsideCount = countOccurrences(globalsCss, '.orchestration-stage-canvas')
+    + countOccurrences(iframeCss, '.orchestration-stage-canvas')
+  check('s3-12 the stylesheet surface retires the bare .orchestration-stage-canvas host block',
     canvasHostRule.test(legacyCss) === false,
     `bare selector rule ${canvasHostRule.test(legacyCss) ? 'still present' : 'absent'}`
   )
-  check('s3-12 legacy.css retires all .orchestration-stage-canvas rules (X6 family relocated in S6)',
-    canvasDescendantCount === 0,
-    `occurrences ${canvasDescendantCount}`
+  check('s3-12 .orchestration-stage-canvas lives only in orchestration-canvas.css (X6 family relocated in S6)',
+    canvasOutsideCount === 0,
+    `globals+iframe-host occurrences ${canvasOutsideCount}`
   )
   const canvasCssStripped = stripComments(canvasRaw)
   const canvasRelocatedCount = countOccurrences(canvasCssStripped, '.orchestration-stage-canvas .x6-')
@@ -964,11 +990,12 @@ try {
     `occurrences ${canvasRelocatedCount}`
   )
 
-  // ③ .role-tone- / .site-pill：legacy 零命中（剥注释）、globals components 层命中
+  // ③ .role-tone- / .site-pill：色板族是搬往 globals components 层的**承接方**
+  //    （S7/T6 起不再断「表面零命中」，只断「承接方持有」+「不在专题文件里」）。
   const paletteTokens = ['.role-tone-', '.site-pill']
-  const paletteLegacyHits = paletteTokens.filter(token => legacyCss.includes(token))
-  check('s3-12 legacy.css has zero residue for .role-tone-/.site-pill (comments stripped)',
-    paletteLegacyHits.length === 0, paletteLegacyHits.join(', ') || 'both absent')
+  const paletteSpecialHits = paletteTokens.filter(token => nonGlobalSurface.includes(token))
+  check('s3-12 the dynamic palettes live only in globals.css (not in the unlayered special files)',
+    paletteSpecialHits.length === 0, paletteSpecialHits.join(', ') || 'both absent from iframe-host/canvas')
   const paletteGlobalsHits = paletteTokens.map(token => `${token}×${countOccurrences(globalsComponents, token)}`)
   check('s3-12 globals.css components layer carries the dynamic palettes',
     paletteTokens.every(token => countOccurrences(globalsComponents, token) > 0),
@@ -991,17 +1018,23 @@ try {
     '.role-row', '.role-name', '.role-site-control',
   ]
   const sharedHits = sharedFamilies.map(token => `${token}×${countOccurrences(legacyCss, token)}`)
-  check('s3-12 shared families are off legacy.css after S7/T5',
+  check('s3-12 shared families are off the stylesheet surface after S7/T5',
     sharedFamilies.every(token => countOccurrences(legacyCss, token) === 0),
     sharedHits.join(' '))
-  // S7/T3：relocated 族改口——legacy 归零（剥注释）+ globals 例外块承担
+  // S7/T3：relocated 族改口——表面归零（剥注释）+ globals 例外块承担
   // （ProseMirror 动态 DOM 后代 ×4、message-tool-btn ::after tooltip）；
   // TSX 类名钩子由 NotesPanel 守卫测试覆盖，此处不重复。
-  const relocatedT3 = ['.note-toolbar', '.note-tool-btn', '.notes-editor', '.all-note-toolbar', '.mention-avatar', '.mention-shortcut', '.message-tool-btn', '.message-site-jump-btn', '.manual-mention-toggle']
+  // ⚠️ `.notes-editor` 与 `.message-tool-btn` 是**承接方**（规则就住在 globals 的
+  // components 层），故它们只断「不在专题文件里」，不断「表面零命中」。
+  const relocatedT3 = ['.note-toolbar', '.note-tool-btn', '.all-note-toolbar', '.mention-avatar', '.mention-shortcut', '.message-site-jump-btn', '.manual-mention-toggle']
   const relocatedHits = relocatedT3.map(token => `${token}×${countOccurrences(legacyCss, token)}`)
-  check('s3-12 T3 relocated families are gone from legacy.css (comments stripped)',
+  check('s3-12 T3 relocated families are gone from the stylesheet surface (comments stripped)',
     relocatedT3.every(token => countOccurrences(legacyCss, token) === 0),
     relocatedHits.join(' '))
+  const relocatedCarriers = ['.notes-editor', '.message-tool-btn']
+  const carrierSpecialHits = relocatedCarriers.filter(token => nonGlobalSurface.includes(token))
+  check('s3-12 T3 relocated carriers live only in globals.css (ProseMirror + tooltip)',
+    carrierSpecialHits.length === 0, carrierSpecialHits.join(', ') || 'both absent from iframe-host/canvas')
   check('s3-12 T3 relocated carriers live in globals.css (ProseMirror descendants + tooltip pseudo)',
     countOccurrences(globalsComponents, '.notes-editor .ProseMirror') >= 4
       && countOccurrences(globalsComponents, '.message-tool-btn::after') >= 2,
@@ -1009,7 +1042,9 @@ try {
 
   // ⑥ 构建产物：按 @layer 切块复核（退役族全层零命中；色板落在 components 层）。
   //    只断 retiredFamilies（真退役、任何层都不该再有规则）；T4 归位的 3 簇
-  //    （legacyRelocatedFamilies）在 components 层**应该**有规则，故不在此列（见 ④）。
+  //    （.role-site-badge/.role-frame-site/.orchestration-person-site）在 components
+  //    层**应该**有规则，故不在此列（见 ④）。
+  //    ⚠️ S7/T6：dist 里已无 legacy 层，改断「层清单里不含 legacy」。
   const distRetiredRows = retiredFamilies.map(token => ({
     token,
     rows: distLayers.map(block => [block.name, countOccurrences(block.body, token)]).filter(([, count]) => count > 0),
@@ -1025,11 +1060,14 @@ try {
   const distPalette = paletteTokens.map(token => ({
     token,
     components: countOccurrences(distLayer('components'), token),
-    legacy: countOccurrences(distLayer('legacy'), token),
   }))
-  check('s3-12 dist CSS keeps the palettes in the components layer (not legacy)',
-    distPalette.every(row => row.components > 0 && row.legacy === 0),
+  check('s3-12 dist CSS keeps the palettes in the components layer',
+    distPalette.every(row => row.components > 0),
     JSON.stringify(distPalette))
+  const distLayerNames = [...new Set(distLayers.map(block => block.name))]
+  check('s3-12 dist CSS has no legacy layer after the S7 purge',
+    distLayerNames.includes('legacy') === false,
+    `layers=${distLayerNames.join(',')}`)
 
   // ⑦ 新增 utilities 真的进了产物（紧贴 ${ 被静默吞掉的复检）
   const utilityChecks = [
