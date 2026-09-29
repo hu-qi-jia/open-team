@@ -24,6 +24,11 @@
 @import "./iframe-host.css";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+/* S7/T5：新增 light 变体——themeController 只在 `<html data-theme>` 上写值，
+ * 默认（无属性）即暗色，故「浅色专属」必须靠本变体表达（dark: 的反面）。
+ * 首例消费：QuickCreateChat 的 .mode-option 选中态内阴影（原 legacy 浅色块
+ * 成员，暗色侧本就没有对应声明）。 */
+@custom-variant light (&:where([data-theme=light], [data-theme=light] *));
 
 :root {
   --radius: 0.625rem;
@@ -144,6 +149,109 @@
      的 `.app-shell.minimized + .notes-panel` 相邻兄弟约束。 */
   #root {
     display: contents;
+  }
+
+  /*
+   * S7/T5：legacy.css 的 base 元素规则与 color-scheme 迁回 base 层。
+   * 层序说明：这些规则原先在 legacy 层（恒压 base），迁回 base 后靠「写在
+   * 本块末尾」继续压过同层的 preflight 与 `*` 规则——层内后写者胜，结果与
+   * 迁移前逐条等价。
+   * 已核对 preflight 并判死、不再搬入的声明：
+   *   * 的 box-sizing/margin/padding/border、body 的 margin:0、button 的
+   *   border:0、h1-h3+p 的 margin:0、表单元素的 font:inherit、textarea 的
+   *   resize:vertical、input/textarea/select 的 color（preflight 已是
+   *   color:inherit）。
+   * body 的渐变底也不搬：components 层的 `body{background:var(--background)}`
+   * 恒压 base（层序优先于特异性），渐变与浅色 #fff 补丁早已是死声明，现状
+   * 底色就是扁平 --background。
+   */
+  :root,
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+  }
+
+  :root[data-theme='light'] {
+    color-scheme: light;
+  }
+
+  body {
+    min-height: 100vh;
+    overflow: hidden;
+    /* CJK 字体栈（含 PingFang SC）必须留：Tailwind 默认 --font-sans 无中文
+       族名，删掉会让中文回退到系统默认字形。 */
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'PingFang SC', 'Segoe UI', sans-serif;
+  }
+
+  /* h1/h3 目前无 TSX 直接消费，随 h2 整块搬（h2 由 Radix Dialog/Sheet 的
+     标题原语渲染；SheetTitle 只给了 font-semibold 未给字号，17px 仍生效）。
+     标题原语自带 text-lg 的那几个由 utilities 压过，不受影响。 */
+  h1 {
+    font-size: 22px;
+    line-height: 1.1;
+    font-weight: 760;
+  }
+
+  h2 {
+    font-size: 17px;
+    font-weight: 760;
+  }
+
+  h3 {
+    font-size: 13px;
+    font-weight: 760;
+  }
+
+  label {
+    color: var(--muted-foreground);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  input,
+  textarea,
+  select {
+    width: 100%;
+    border: 1px solid rgba(113, 113, 122, 0.18);
+    border-radius: 8px;
+    background: rgba(3, 9, 15, 0.5);
+    /* ⚠️ 必须显式写 --foreground：preflight 给表单元素是 color:inherit，
+       删掉会让输入框取到父级前景（如 label 的 --muted-foreground），暗色下
+       由白字变灰字。原 legacy 写的是 var(--text)，即 V5 remap 的 --foreground。 */
+    color: var(--foreground);
+    outline: none;
+  }
+
+  input,
+  select {
+    height: 36px;
+    padding: 0 11px;
+  }
+
+  textarea {
+    min-height: 74px;
+    padding: 10px 11px;
+    line-height: 1.5;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(161, 161, 170, 0.62);
+    box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.1);
+  }
+
+  :root[data-theme='light'] input,
+  :root[data-theme='light'] textarea,
+  :root[data-theme='light'] select {
+    border-color: rgba(113, 113, 122, 0.22);
+    background: #ffffff;
+  }
+
+  :root[data-theme='light'] input:focus,
+  :root[data-theme='light'] textarea:focus,
+  :root[data-theme='light'] select:focus {
+    border-color: rgba(113, 113, 122, 0.52);
+    box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.12);
   }
 }
 

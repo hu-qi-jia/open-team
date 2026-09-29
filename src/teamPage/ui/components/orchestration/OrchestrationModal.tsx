@@ -669,8 +669,11 @@ export function OrchestrationModal() {
               placeholder={ui('描述要让编排流程完成的任务；不需要 @ 人员。')}
               onChange={event => setTask(event.target.value)}
             />
-            <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger self-stretch min-w-[72px] px-3" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
-            <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto self-stretch min-w-[104px] px-4" type="button" disabled={busy} onClick={openAutoPanel}>
+            {/* S7/T5：≤720px 的 min-height:40px 由本行 utilities 承担（原
+                legacy 媒体查询；Button size="sm" 只钉 height，min-height 是
+                另一个属性、压不住，故必须显式写）。两个按钮同款。 */}
+            <Button id="open-orchestration-template" variant="outline" size="sm" className="orchestration-template-trigger self-stretch min-w-[72px] px-3 max-[720px]:min-h-10" type="button" disabled={busy} onClick={openTemplatePicker}>{ui('模板')}</Button>
+            <Button id="auto-orchestration" variant="outline" size="sm" className="orchestration-auto self-stretch min-w-[104px] px-4 max-[720px]:min-h-10" type="button" disabled={busy} onClick={openAutoPanel}>
               {autoGenerating ? ui('生成中...') : ui('自动编排')}
             </Button>
           </div>

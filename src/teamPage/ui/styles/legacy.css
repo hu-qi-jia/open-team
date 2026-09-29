@@ -15,42 +15,28 @@
  * 现删掉这组声明，21 处文字色改指 --muted-foreground（随主题翻转、语义
  * 相符）；globals 侧同理。
  */
-:root,
-:root[data-theme="dark"] {
-  color-scheme: dark;
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 0;
-  min-height: 100vh;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 17% 0%, rgba(63, 63, 70, 0.18), transparent 32%),
-    radial-gradient(circle at 86% 18%, rgba(161, 161, 170, 0.09), transparent 28%),
-    linear-gradient(180deg, #1c1c1f, #111113 34%, #09090b);
-  color: var(--text);
-  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Segoe UI", sans-serif;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button {
-  border: 0;
-}
+/*
+ * S7/T5：base 元素 / :root color-scheme / 媒体查询三批退役——
+ * - :root 与 :root[data-theme] 的 color-scheme 两条迁 globals.css base 层
+ *   （随 data-theme 翻转，无其它声明竞争）；
+ * - base 元素（body / h1-h3 / label / input·textarea·select 与 focus 态，
+ *   含浅色覆盖）整批迁 globals.css base 层，写在 base 块末尾以继续压过
+ *   同层 preflight 的等价声明（层内后写者胜，逐条等价）。判死未迁的：
+ *   * 的 box-sizing、body 的 margin:0、button 的 border:0、h1-h3+p 的
+ *   margin:0、表单 font:inherit、textarea 的 resize:vertical（preflight
+ *   同值覆盖）；body 的渐变底与浅色 #fff 补丁被 components 层的
+ *   `body{background:var(--background)}` 恒压，现状底色本就是扁平 token；
+ *   body 的 color: var(--text) 等于 --foreground，由 base 的 text-foreground
+ *   接住；input 系的 color 必须显式迁（preflight 是 color:inherit，删了会
+ *   取到 label 的 muted-foreground）。
+ * - @media 1120 整块（body overflow 与 base 同值、.app-shell 的 width/
+ *   height 被 globals components 层同名声明恒压、grid-template-columns 在
+ *   非 grid 容器上无效应）判死删除；
+ * - @media 720：.orchestration-task-input-row 的 grid-template-columns 被
+ *   调用点的 grid-cols-[...] utilities 恒压（判死）；
+ *   .orchestration-template-trigger / .orchestration-auto 的 min-height:40px
+ *   改 max-[720px]:min-h-10 utilities 写进 OrchestrationModal 两个按钮。
+ */
 
 /* S7/T4：.launcher 全族退役——本体（fixed 右下 64px 圆钮 + 渐变底 + blur）
  * 迁 App.tsx #window-launcher 的行内 utilities（亮色默认 + dark: 覆盖；
@@ -105,28 +91,8 @@ button {
  * 12px/760 被 text-xs/font-medium 压死；.mode-help 活声明仅 margin-top:2px
  * 与 line-height:1.35（迁 mt-[2px] leading-[1.35]）。类名保留作钩子。 */
 
-h1,
-h2,
-h3,
-p {
-  margin: 0;
-}
-
-h1 {
-  font-size: 22px;
-  line-height: 1.1;
-  font-weight: 760;
-}
-
-h2 {
-  font-size: 17px;
-  font-weight: 760;
-}
-
-h3 {
-  font-size: 13px;
-  font-weight: 760;
-}
+/* S7/T5：h1/h2/h3 三块的字号/字重（含 p 的 margin:0）迁 globals base 层，
+ * 见文件头的 T5 说明。 */
 
 .muted {
   color: var(--muted-foreground);
@@ -177,42 +143,9 @@ h3 {
   color: var(--muted-foreground);
 }
 
-label {
-  color: var(--muted-foreground);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-input,
-textarea,
-select {
-  width: 100%;
-  border: 1px solid rgba(113, 113, 122, 0.18);
-  border-radius: 8px;
-  background: rgba(3, 9, 15, 0.5);
-  color: var(--text);
-  outline: none;
-}
-
-input,
-select {
-  height: 36px;
-  padding: 0 11px;
-}
-
-textarea {
-  min-height: 74px;
-  resize: vertical;
-  padding: 10px 11px;
-  line-height: 1.5;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: rgba(161, 161, 170, 0.62);
-  box-shadow: 0 0 0 3px rgba(161, 161, 170, 0.1);
-}
+/* S7/T5：label 与 input/textarea/select（本体 + input/select 的 36px、
+ * textarea 的 min-height/padding、:focus 描边与光圈，含文件尾浅色块的同名
+ * 覆盖）整批迁 globals.css base 层，见文件头 T5 说明。 */
 
 /* S2 Task 7：.chat-list/.chat-item 族退役——容器滚动/留白改由 ChatList 的
  * utilities 提供（滚动条隐藏以 [scrollbar-width:none] 工具类续命），条目
@@ -568,23 +501,12 @@ select:focus {
  * node-editor-header/note/stage-role-chips(含死规则 chip button——TSX 里
  * chip 无 button 子元素)/auto-role-* /json-preview/footer/rounds-field/
  * actions）同批退役，视觉由 TSX utilities 承担。 */
-:root[data-theme="light"] body {
-  background: #ffffff;
-}
+/* S7/T5：本条随 base 元素一块退役——components 层的
+ * `body{background:var(--background)}` 恒压 legacy（层序优先于特异性），
+ * 浅色底色本就取 --background（= #fff），本条是死声明。 */
 
-/* S7/T4：浅色块 T4 族成员退役——.settings-menu / .launcher（暗色正典已迁
- * App.tsx utilities，浅色差异走 dark: 反转）/ .sidebar / .workspace /
- * .sidebar-section-label / .chat-header / .theme-switch 全部零类名消费，
- * 死代码删除；.app-shell 浅色补丁留给 T5（壳层族 globals 归属考证）。
- * 混组两处摘成员保组：.chat-header 摘出（#iframe-host 两成员 T5 处理）、
- * .theme-option[aria-pressed] 摘出（.mode-option:has(input:checked) 的
- * color/box-shadow 仍被浅色 checked 态消费——border/bg 已被 TSX 的
- * has-[]:border-ring/bg-accent 压死，保留无妨）。 */
-:root[data-theme="light"] .app-shell {
-  border-color: rgba(113, 113, 122, 0.24);
-  background: #ffffff;
-  box-shadow: 0 32px 90px rgba(17, 24, 39, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
-}
+/* S7/T5：浅色 .app-shell 补丁退役——globals components 层的 .app-shell
+ * 已声明 border/background/box-shadow 三件套，层序恒压本条（三条全是死值）。 */
 
 /* S5-T4：本组摘除 .all-notes-workspace / .all-notes-editor-header（A 组退役，
  * 浅色边框由 border-border 承担）。
@@ -609,24 +531,11 @@ select:focus {
 /* S7/T3：.manual-mention-toggle[aria-pressed] 浅色补丁随死族一并退役
  * （全库零消费，见暗色块注释）。 */
 
-:root[data-theme="light"] .field {
-  color: var(--text);
-}
-
-:root[data-theme="light"] input,
-:root[data-theme="light"] textarea,
-:root[data-theme="light"] select {
-  border-color: rgba(113, 113, 122, 0.22);
-  background: #ffffff;
-  color: var(--text);
-}
-
-:root[data-theme="light"] input:focus,
-:root[data-theme="light"] textarea:focus,
-:root[data-theme="light"] select:focus {
-  border-color: rgba(113, 113, 122, 0.52);
-  box-shadow: 0 0 0 3px rgba(113, 113, 122, 0.12);
-}
+/* S7/T5：本组四条随 base 元素一块迁 globals.css base 层——
+ * .field 的 color: var(--text) 等于 --foreground，与它继承得到的
+ * --popover-foreground 同值（本主题两者相等），属死等价声明，不迁；
+ * input/textarea/select 的 border-color/background 与 :focus 两条是活声明，
+ * 原文迁往 base 层的同族规则下方（浅色框体白底）。 */
 
 /* S2 Task 7：.chat-item/.chat-name:hover 的浅色变体随本族一并退役——
  * hover/active 底色已由条目 utilities（bg-accent 系）承担。
@@ -720,33 +629,19 @@ select:focus {
  * （bg-popover / border-border 语义 token 亮暗自适应）。
  * S6/T5：vertex 浅色 1 条已随 X6 族迁往 orchestration-canvas.css。 */
 
-@media (max-width: 1120px) {
-  body {
-    overflow: hidden;
-  }
+/* S7/T5：@media (max-width:1120px) 整块退役——
+ * body{overflow:hidden} 与 base 层同名声明同值（重复声明）；
+ * .app-shell 的 width/height 被 globals components 层的 .app-shell 恒压
+ * （层序优先于特异性，媒体查询也救不回）；
+ * grid-template-columns 在新壳上是惰性声明——globals 未给 .app-shell 设
+ * display:grid，三列轨道无从生效。
+ * （#iframe-host .chat-frame-group 的两列降级此前已随 iframe 族迁往
+ * styles/iframe-host.css 的同名 media 块。） */
 
-  .app-shell {
-    width: calc(100vw - 28px);
-    height: calc(100vh - 28px);
-    grid-template-columns: 48px minmax(188px, 230px) minmax(300px, 1fr);
-  }
-
-  /* S7/T4：本块摘除 .workspace（border-right:0，壳层死族）、.chat-header
-   * （padding-right:72px，死族）与 .theme-switch / .theme-option(+span)
-   * 三条（分段控件死族）——全部零消费。
-   * S7/T5：#iframe-host .chat-frame-group 的两列降级随 iframe 族迁往
-   * styles/iframe-host.css 的同名 media 块；body/.app-shell 待本任务后续处理。 */
-}
-
-@media (max-width: 720px) {
-  /* S7/T5：#iframe-host .chat-frame-group 的单列降级随 iframe 族迁往
-   * styles/iframe-host.css；编排两条待本任务后续处理。 */
-  .orchestration-task-input-row {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .orchestration-template-trigger,
-  .orchestration-auto {
-    min-height: 40px;
-  }
-}
+/* S7/T5：@media (max-width:720px) 整块退役——
+ * .orchestration-task-input-row 的 grid-template-columns 被调用点的
+ * grid-cols-[minmax(0,1fr)_auto_auto] utilities 恒压（utilities 层最后，
+ * 媒体查询不改变层序），判死；
+ * .orchestration-template-trigger / .orchestration-auto 的 min-height:40px
+ * 是活声明（height 与 min-height 不同属性，Button size="sm" 的 h-8 压不
+ * 住），改 max-[720px]:min-h-10 utilities 写进 OrchestrationModal 两个按钮。 */
