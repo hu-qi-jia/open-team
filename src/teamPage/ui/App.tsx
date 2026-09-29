@@ -62,7 +62,14 @@ export function App() {
 
       <span id="template-summary" hidden></span>
       <div id="template-list" hidden></div>
-      <button id="window-launcher" className="launcher" type="button" aria-label="打开 OpenTeam" hidden>⌁</button>
+      {/* S7/T4：.launcher 视觉 utilities 化（亮色默认 + dark: 覆盖；原规则里
+          box-shadow: var(--shadow), var(--glow) 因变量零定义本就无效，不迁）；
+          hidden 折叠交给 preflight 的 [hidden] !important 规则。类名保留作钩子。
+          ⚠️ 原暗色底是 background 简写「渐变 + 纯色」，utilities 需拆两条：
+          bg-[rgba(...)] 推断为 background-color、bg-[radial-gradient(...)]
+          推断为 background-image——合成一条会让 Tailwind 把纯色也塞进
+          background-image（非法 image），整条声明被浏览器丢弃。 */}
+      <button id="window-launcher" className="launcher fixed right-6 bottom-6 z-[4] grid size-16 cursor-pointer place-items-center rounded-full border border-zinc-500/34 bg-white text-[24px] font-[780] text-zinc-600 backdrop-blur-[18px] dark:border-zinc-400/46 dark:bg-[rgba(8,17,26,0.94)] dark:bg-[radial-gradient(circle_at_35%_22%,rgba(122,240,210,0.32),transparent_38%)] dark:text-zinc-200" type="button" aria-label="打开 OpenTeam" hidden>⌁</button>
 
       <AllNotesModal />
       <PeopleLibraryModal />

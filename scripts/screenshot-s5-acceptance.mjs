@@ -236,7 +236,28 @@ for (const needle of RETIRED_S7_T3) {
   const hits = countOccurrences(legacyCss, '.note-toolbar {')
   check('s5-9 (b) legacy.css has zero .note-toolbar rule bodies after S7/T3', hits === 0, `hits=${hits} (${COUNT_NOTE})`)
 }
-const SHARED_PRESENT = ['tiny', 'modal-form', 'field', 'template-card', 'template-list', 'template-actions', 'section-title', 'reference-box']
+// S7/T4：壳层/列表/主题/模式/模板卡族随 utilities 化或零消费退役（暗浅双份 +
+// media 1120 成员一并清零）。注意 .launcher 类名仍在 App.tsx（视觉已迁行内
+// utilities），故用规则本体 `.launcher {` 钉串而非裸 token。
+const RETIRED_S7_T4 = [
+  'theme-switch', 'theme-option', 'settings-menu', 'chat-header',
+  'chat-title-block', 'chat-subtitle', 'chat-status', 'workspace', 'sidebar',
+  'logo-dot', 'brand-mark', 'template-card', 'template-list', 'mode-options',
+  'mode-name', 'mode-help', 'chat-create-template-row', 'chat-create-template-btn',
+]
+for (const needle of RETIRED_S7_T4) {
+  const hits = countOccurrences(legacyCss, `.${needle}`)
+  check(`s5-9 (b) legacy.css has zero .${needle} occurrences after S7/T4 (comments stripped)`, hits === 0, `hits=${hits} (${COUNT_NOTE})`)
+}
+{
+  const launcherRule = countOccurrences(legacyCss, '.launcher {')
+  check('s5-9 (b) legacy.css has zero .launcher rule bodies after S7/T4 (class stays in App.tsx as hook)',
+    launcherRule === 0, `hits=${launcherRule} (${COUNT_NOTE})`)
+  const rowSelectors = countOccurrences(legacyCss, '.chat-row')
+  check('s5-9 (b) legacy.css has zero .chat-row selectors after S7/T4 (shared group keeps only .role-row/.template-actions)',
+    rowSelectors === 0, `hits=${rowSelectors} (${COUNT_NOTE})`)
+}
+const SHARED_PRESENT = ['tiny', 'modal-form', 'field', 'template-actions', 'section-title', 'reference-box']
 for (const name of SHARED_PRESENT) {
   const present = hasSelectorToken(legacyCss, name)
   check(`s5-9 (b) legacy.css still owns .${name}`, present, `selector-token=${present}`)
@@ -338,9 +359,11 @@ for (const [needle, expected] of FAMILY_COUNTS) {
 {
   // legacy.css 总行数（口径：换行符个数 = `wc -l`；T4 把 2769 行删到 2422 行，
   // S6/T4+T5 编排族退役后为 1724 行，S7/T2 状态卡族退役后为 1361 行，
-  // S7/T3 笔记/提及/消息工具九族退役后为 1155 行——随迁移递减，改数须附原因）
+  // S7/T3 笔记/提及/消息工具九族退役后为 1155 行，
+  // S7/T4 壳层/列表/主题/模式/模板卡族退役（约七成是零消费死码）后为 875 行
+  // ——随迁移递减，改数须附原因）
   const newlines = countOccurrences(legacyRaw, '\n')
-  check('s5-9 (e) legacy.css is 1155 lines (wc -l count)', newlines === 1155, `newlines=${newlines}`)
+  check('s5-9 (e) legacy.css is 875 lines (wc -l count)', newlines === 875, `newlines=${newlines}`)
 }
 
 // ---- s5-10 uiBus 消费者审计（沿用 s4-10）-----------------------------------

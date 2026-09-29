@@ -160,7 +160,8 @@ export function ExternalModelsModal() {
         // 不再加 overflow-auto——滚动归壳的 max-h 封顶，正文行只做收缩
         bodyClassName="p-6"
       >
-        <div id="external-models-list" className="template-list">
+        {/* S7/T4：.template-list 规则退役，grid/gap/content-start 由 utilities 承担 */}
+        <div id="external-models-list" className="template-list grid content-start gap-2">
           {models.length === 0 ? (
             <Empty className="my-4 p-4">
               <EmptyHeader>

@@ -132,7 +132,10 @@ export function ChatList({ query = '' }: { query?: string }) {
                 {/* 头像壳：图标条档缩为 size-8 居中，未读角标（原 .chat-avatar::after 红点）
                     改为 Badge 压角，两档通用；群名经 title 提供悬停 tooltip */}
                 <span className="relative shrink-0" aria-hidden="true">
-                  <div className={`chat-avatar ${chat.tone} flex size-9 shrink-0 items-center justify-center rounded-md bg-none bg-secondary text-xs font-medium text-secondary-foreground group-data-[collapsible=icon]:size-8`} title={chat.name}>{chat.initial}</div>
+                  {/* 浅色描边（原 :root[light] .chat-avatar 的 1px rgba(17,24,39,.1)）
+                      由 S7/T4 的 utilities 承担（暗色本就无边框）；bg/color/shadow
+                      三条浅色声明此前已被 bg-none/bg-secondary 压死，不迁 */}
+                  <div className={`chat-avatar ${chat.tone} flex size-9 shrink-0 items-center justify-center rounded-md border border-zinc-950/10 bg-none bg-secondary text-xs font-medium text-secondary-foreground group-data-[collapsible=icon]:size-8 dark:border-none`} title={chat.name}>{chat.initial}</div>
                   {chat.hasActivity && (
                     <Badge variant="destructive" className="absolute -right-0.5 -top-0.5 size-4 rounded-full px-1 text-[10px]" />
                   )}

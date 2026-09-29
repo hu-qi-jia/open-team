@@ -137,10 +137,10 @@ export function QuickCreateChatForm() {
       <div className="field space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">{t('群聊模式')}</label>
         <div className="mode-options grid grid-cols-1 gap-1.5">
-          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-collaborative:checked]]:border-ring has-[[#new-chat-mode-collaborative:checked]]:bg-accent" htmlFor="new-chat-mode-collaborative">
+          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border bg-zinc-500/[0.06] p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-collaborative:checked]]:border-ring has-[[#new-chat-mode-collaborative:checked]]:bg-accent" htmlFor="new-chat-mode-collaborative">
             <input
               id="new-chat-mode-collaborative"
-              className="mt-0.5 accent-[var(--primary)]"
+              className="mt-0.5 size-3.5 accent-[var(--primary)]"
               type="radio"
               name="new-chat-mode"
               value="collaborative"
@@ -149,13 +149,13 @@ export function QuickCreateChatForm() {
             />
             <span className="grid gap-0.5">
               <span className="mode-name text-xs font-medium">{t('协作群聊')}</span>
-              <span className="mode-help text-xs text-muted-foreground">{t('人员参考群聊上下文，适合接力讨论。')}</span>
+              <span className="mode-help mt-[2px] text-xs leading-[1.35] text-muted-foreground">{t('人员参考群聊上下文，适合接力讨论。')}</span>
             </span>
           </label>
-          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-independent:checked]]:border-ring has-[[#new-chat-mode-independent:checked]]:bg-accent" htmlFor="new-chat-mode-independent">
+          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border bg-zinc-500/[0.06] p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-independent:checked]]:border-ring has-[[#new-chat-mode-independent:checked]]:bg-accent" htmlFor="new-chat-mode-independent">
             <input
               id="new-chat-mode-independent"
-              className="mt-0.5 accent-[var(--primary)]"
+              className="mt-0.5 size-3.5 accent-[var(--primary)]"
               type="radio"
               name="new-chat-mode"
               value="independent"
@@ -164,7 +164,7 @@ export function QuickCreateChatForm() {
             />
             <span className="grid gap-0.5">
               <span className="mode-name text-xs font-medium">{t('独立专家')}</span>
-              <span className="mode-help text-xs text-muted-foreground">{t('人员独立回答，适合并行评审。')}</span>
+              <span className="mode-help mt-[2px] text-xs leading-[1.35] text-muted-foreground">{t('人员独立回答，适合并行评审。')}</span>
             </span>
           </label>
         </div>
@@ -173,7 +173,9 @@ export function QuickCreateChatForm() {
         <Button id="cancel-create-chat" type="button" variant="outline" onClick={cancel}>{t('取消')}</Button>
         <Button type="submit">{t('创建')}</Button>
       </div>
-      <div className="chat-create-template-row">
+      {/* S7/T4：.chat-create-template-row 规则退役（grid/border-top/pt 8 由
+          行内 utilities 承担）；类名保留作钩子。 */}
+      <div className="chat-create-template-row grid border-t border-zinc-500/12 pt-2">
         <TemplateCreateButton />
       </div>
     </form>

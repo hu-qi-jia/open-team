@@ -209,7 +209,8 @@ export function PeopleLibraryModal() {
               }}
             />
           </div>
-          <div id="people-library-list" className="template-list min-h-0 overflow-auto pr-0.5">
+          {/* S7/T4：.template-list 规则退役，grid/gap/content-start 由 utilities 承担 */}
+          <div id="people-library-list" className="template-list grid content-start gap-2 min-h-0 overflow-auto pr-0.5">
             {view.templates.length === 0 ? (
               <EmptyState title={emptyTitle} body={emptyBody} />
             ) : view.visible.map(template => (
