@@ -202,7 +202,7 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
           <div className="all-notes-editor-header flex items-center justify-between gap-3 border-b border-border px-[18px] pt-4 pb-3">
             <div>
               <h3 id="all-notes-active-title" className="m-0 text-base text-foreground">{activeTarget ? t(activeTarget.title) : ''}</h3>
-              <p id="all-notes-active-meta" className="tiny">{activeTarget ? t(activeTarget.meta) : ''}</p>
+              <p id="all-notes-active-meta" className="tiny text-[12px] text-muted-foreground/72">{activeTarget ? t(activeTarget.meta) : ''}</p>
             </div>
           </div>
           {/* S7/T3：legacy .note-toolbar/.all-note-toolbar 已退役——几何

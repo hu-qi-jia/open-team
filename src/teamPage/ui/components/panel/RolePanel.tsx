@@ -255,7 +255,9 @@ export function RolePanel() {
         </SheetHeader>
         {/* 原 .role-scroll 的 padding/overflow（legacy 14px 14px 22px）已翻成 utilities */}
         <div className="role-scroll relative min-h-0 overflow-auto px-3.5 pt-3.5 pb-[22px]">
-          <div className="section-title flex items-center justify-between px-4 pb-1.5 pt-3">
+          {/* S7/T5：原 .section-title 未被本行覆盖的活声明是 gap:10px 与
+              margin: 6px 0 12px（display/align/justify 已由 utilities 承担）。 */}
+          <div className="section-title mt-1.5 mb-3 flex items-center justify-between gap-2.5 px-4 pb-1.5 pt-3">
             <h3 className="text-xs font-medium text-muted-foreground">{ui('当前群聊人员')}</h3>
             <Button
               id="close-people-drawer"
@@ -450,7 +452,10 @@ function RoleCard(props: RoleCardProps) {
         </div>
         <div className="role-description mt-0.5 line-clamp-2 text-xs text-muted-foreground">{role.description || ui('未填写人员描述')}</div>
         <div className="role-meta mt-1.5 flex flex-wrap items-center gap-2 text-[11px] font-medium text-muted-foreground">
-          <div className="role-site-control">
+          {/* S7/T5：原 .role-site-control 的 position:relative 与
+              display:inline-flex 两条活声明在此 utilities 化（下拉菜单的
+              定位锚点与行内排布都靠它）。 */}
+          <div className="role-site-control relative inline-flex">
             <DropdownMenu open={props.siteMenuOpen} onOpenChange={props.onSiteMenuOpenChange}>
               <DropdownMenuTrigger
                 className={`site-pill ${model.className} inline-flex h-6 cursor-pointer items-center rounded-md border border-border bg-none bg-muted px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground`}
@@ -478,8 +483,10 @@ function RoleCard(props: RoleCardProps) {
           <span className="role-meta-item truncate">{roleContextProgressText(role, ui)}</span>
           <span className="role-meta-item shrink-0">{roleConnectionStatusText(role, ui)}</span>
         </div>
+        {/* S7/T5：同 MessageItem 的 ReferenceBox——下面那行的 mx-0/mb-0 已把
+            margin 全压死，只剩 line-clamp-2 四件套与 opacity:.68。 */}
         {role.status === 'error' && (
-          <div className="reference-box mx-0 mb-0 mt-1.5 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
+          <div className="reference-box mx-0 mb-0 mt-1.5 line-clamp-2 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs text-muted-foreground opacity-[0.68]">{ui('人员异常。若目标站点未登录，请打开登录页后点击恢复人员。')}</div>
         )}
       </div>
       <div className="role-card-actions flex flex-col gap-0.5">

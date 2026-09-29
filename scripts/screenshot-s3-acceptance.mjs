@@ -981,18 +981,18 @@ try {
     movedCompanions.every(token => countOccurrences(globalsComponents, token) > 0),
     companionHits.join(' '))
 
-  // ⑤ 共享族存活（S7/T3 起口径收窄：notes 工具栏/编辑器、mention shortcut/
-  //    avatar、message-tool 六族已随组件 utilities 化退役，改口见下方
-  //    relocated 检查；此处保留 T4/T5 未到的族 + role 族刻意保留的 3 token：
-  //    .role-row/.role-name 与模板卡共用、.role-site-control 被 AddPersonModal
-  //    使用（T2 偏差 4））
+  // ⑤ 共享族：S7/T5 起全部 utilities 化，断言从「存活」翻转为「归零」。
+  //   （S7/T3 起 notes/mention/message-tool 六族已翻过一次；本轮轮到最后
+  //   一批通用族：.tiny/.reference-box/.section-title 与 role 三兄弟
+  //   .role-row/.role-name/.role-site-control ——类名仍留在 TSX 上作钩子，
+  //   视觉由各消费点的 utilities 承担。）
   const sharedFamilies = [
     '.tiny', '.reference-box', '.section-title',
     '.role-row', '.role-name', '.role-site-control',
   ]
   const sharedHits = sharedFamilies.map(token => `${token}×${countOccurrences(legacyCss, token)}`)
-  check('s3-12 shared families survive in legacy.css',
-    sharedFamilies.every(token => countOccurrences(legacyCss, token) > 0),
+  check('s3-12 shared families are off legacy.css after S7/T5',
+    sharedFamilies.every(token => countOccurrences(legacyCss, token) === 0),
     sharedHits.join(' '))
   // S7/T3：relocated 族改口——legacy 归零（剥注释）+ globals 例外块承担
   // （ProseMirror 动态 DOM 后代 ×4、message-tool-btn ::after tooltip）；

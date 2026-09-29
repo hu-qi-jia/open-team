@@ -122,7 +122,7 @@ export function QuickCreateChatForm() {
       <div id="chat-create-popover">
         <h3 className="text-sm font-semibold">{t('新建群聊')}</h3>
       </div>
-      <div className="field space-y-1.5">
+      <div className="field grid gap-[7px] space-y-1.5">
         <label htmlFor="new-chat-name" className="text-xs font-medium text-muted-foreground">{t('群聊名称')}</label>
         <Input
           id="new-chat-name"
@@ -134,10 +134,15 @@ export function QuickCreateChatForm() {
           onChange={event => setName(event.target.value)}
         />
       </div>
-      <div className="field space-y-1.5">
+      <div className="field grid gap-[7px] space-y-1.5">
         <label className="text-xs font-medium text-muted-foreground">{t('群聊模式')}</label>
         <div className="mode-options grid grid-cols-1 gap-1.5">
-          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border bg-zinc-500/[0.06] p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-collaborative:checked]]:border-ring has-[[#new-chat-mode-collaborative:checked]]:bg-accent" htmlFor="new-chat-mode-collaborative">
+          {/* S7/T5：原浅色块的 .mode-option:has(input:checked) 只剩两条活声明
+              —— 浅色专属的 inset 内阴影与 #27272a 前景（border-color/background
+              已被本行的 has-[]:border-ring / has-[]:bg-accent utilities 压死）。
+              暗色侧本就没有对应声明，故用新增的 light: 变体限定（dark: 的反面：
+              themeController 只在 <html data-theme> 上写值，默认即暗色）。 */}
+          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border bg-zinc-500/[0.06] p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-collaborative:checked]]:border-ring has-[[#new-chat-mode-collaborative:checked]]:bg-accent light:has-[[#new-chat-mode-collaborative:checked]]:text-[#27272a] light:has-[[#new-chat-mode-collaborative:checked]]:shadow-[inset_0_0_0_1px_rgba(113,113,122,0.14)]" htmlFor="new-chat-mode-collaborative">
             <input
               id="new-chat-mode-collaborative"
               className="mt-0.5 size-3.5 accent-[var(--primary)]"
@@ -152,7 +157,7 @@ export function QuickCreateChatForm() {
               <span className="mode-help mt-[2px] text-xs leading-[1.35] text-muted-foreground">{t('人员参考群聊上下文，适合接力讨论。')}</span>
             </span>
           </label>
-          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border bg-zinc-500/[0.06] p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-independent:checked]]:border-ring has-[[#new-chat-mode-independent:checked]]:bg-accent" htmlFor="new-chat-mode-independent">
+          <label className="mode-option flex cursor-pointer items-start gap-2 rounded-md border border-border bg-zinc-500/[0.06] p-2.5 text-left transition-colors hover:bg-accent/50 has-[[#new-chat-mode-independent:checked]]:border-ring has-[[#new-chat-mode-independent:checked]]:bg-accent light:has-[[#new-chat-mode-independent:checked]]:text-[#27272a] light:has-[[#new-chat-mode-independent:checked]]:shadow-[inset_0_0_0_1px_rgba(113,113,122,0.14)]" htmlFor="new-chat-mode-independent">
             <input
               id="new-chat-mode-independent"
               className="mt-0.5 size-3.5 accent-[var(--primary)]"
@@ -169,6 +174,8 @@ export function QuickCreateChatForm() {
           </label>
         </div>
       </div>
+      {/* S7/T5：.two-col 全族退役（grid / grid-cols-2 / gap-8px 已被本行
+          utilities 压死），类名保留作钩子。 */}
       <div className="two-col grid grid-cols-2 gap-2">
         <Button id="cancel-create-chat" type="button" variant="outline" onClick={cancel}>{t('取消')}</Button>
         <Button type="submit">{t('创建')}</Button>

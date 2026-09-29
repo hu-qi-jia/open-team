@@ -173,9 +173,9 @@ export function PeopleLibraryModal() {
         {/* 工具行 / 列表 / 分页的 4 行栅格（原 .people-library-pane 对译）：
             头部与工具行不动，minmax(0,1fr) 那一行自己滚 */}
         <div className="grid h-full min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] overflow-hidden">
-          <div className="section-title">
+          <div className="section-title mt-1.5 mb-3 flex items-center justify-between gap-2.5">
             <h3>{ui('人员列表')}</h3>
-            <span id="people-library-summary" className="tiny">{ui(`${view.templates.length} 人`)}</span>
+            <span id="people-library-summary" className="tiny text-[12px] text-muted-foreground/72">{ui(`${view.templates.length} 人`)}</span>
           </div>
           <div className="grid gap-2.5 mb-3">
             <Input

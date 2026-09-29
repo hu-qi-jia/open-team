@@ -82,16 +82,16 @@ export function TemporaryPersonModal() {
       // 收掉了原语基类的 p-6
       bodyClassName="p-6"
     >
-      <form id="add-temporary-person-form" className="modal-form mt-0" onSubmit={submit}>
-        <div className="field">
+      <form id="add-temporary-person-form" className="modal-form mt-0 grid gap-3" onSubmit={submit}>
+        <div className="field grid gap-[7px]">
           <label htmlFor="temporary-person-name">{ui('人员名称')}</label>
           <Input id="temporary-person-name" type="text" autoComplete="off" value={name} onChange={event => setName(event.target.value)} />
         </div>
-        <div className="field">
+        <div className="field grid gap-[7px]">
           <label htmlFor="temporary-person-description">{ui('描述')}</label>
           <Textarea id="temporary-person-description" value={description} onChange={event => setDescription(event.target.value)} />
         </div>
-        <div className="field">
+        <div className="field grid gap-[7px]">
           <label htmlFor="temporary-person-prompt">{ui('人设')}</label>
           <Textarea id="temporary-person-prompt" value={prompt} onChange={event => setPrompt(event.target.value)} />
         </div>

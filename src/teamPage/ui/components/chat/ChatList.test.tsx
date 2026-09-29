@@ -327,9 +327,18 @@ describe('ChatList legacy.css retirement', () => {
       expect(cssWithoutComments, `expected ${retired} to be retired`).not.toContain(retired)
     }
 
-    // 共享规则保留：role-list / 模板弹窗（.role-row/.role-name/.template-actions）
-    expect(cssWithoutComments).toContain('.role-row')
-    expect(cssWithoutComments).toContain('.role-name')
+    // S7/T5：共享规则本身也随通用族退役——.role-row/.role-name/.template-actions
+    // 的 flex 行与截断四件套由各消费点的 utilities 承担（类名留在 TSX 上作钩子）。
+    expect(cssWithoutComments).not.toContain('.role-row')
+    expect(cssWithoutComments).not.toContain('.role-name')
+    expect(cssWithoutComments).not.toContain('.template-actions')
+    // 承接方：RolePanel 的 .role-row/.role-name 行与 PersonTemplateModal 的
+    // .template-actions 都已写成行内 utilities。
+    const rolePanel = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/panel/RolePanel.tsx'), 'utf8')
+    expect(rolePanel).toContain('role-row flex min-w-0 items-center justify-between gap-2')
+    expect(rolePanel).toContain('role-name mention-shortcut min-w-0 flex-1 cursor-pointer truncate')
+    const personTemplate = readFileSync(resolve(process.cwd(), 'src/teamPage/ui/components/people/PersonTemplateModal.tsx'), 'utf8')
+    expect(personTemplate).toContain('template-actions flex items-center justify-between gap-2.5')
 
     // S3 Task 4：浅色 role-tone 平涂随动态色板一并归位到 globals components 层
     expect(cssWithoutComments).not.toContain('.chat-avatar.role-tone-0')

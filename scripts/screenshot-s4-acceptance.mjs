@@ -171,23 +171,26 @@ for (const name of RETIRED_SELECTORS) {
   check('s4-9 (a) legacy.css has no #d4d4d8-role-form rule', hits === 0, `hits=${hits}`)
 }
 
-// (b) 共享族（T5 还要用）：规则必须仍在。
-// S7/T4：.template-card / .template-list 随 utilities 化退役（归零断言在
-// s5-9 (b) 的 RETIRED_S7_T4 清单）——移出本清单。
-const SHARED_SELECTORS = ['field', 'template-actions', 'tiny', 'section-title', 'reference-box', 'modal-form']
-for (const name of SHARED_SELECTORS) {
+// (b) 共享族：S7/T5 起全部 utilities 化，断言从「仍在」翻转为「归零」
+//     （原「T5 还要用」的前提已失效——本轮就是最后一批共享族）。
+//     S7/T4 已把 .template-card / .template-list 移出本清单（归零断言在
+//     s5-9 (b) 的 RETIRED_S7_T4）。
+const RETIRED_S7_T5_SHARED = ['field', 'template-actions', 'tiny', 'section-title', 'reference-box', 'modal-form', 'muted', 'two-col', 'role-name', 'role-row', 'role-site-control', 'message-name-text', 'message-tools', 'orchestration-review-summary', 'orchestration-review-line']
+for (const name of RETIRED_S7_T5_SHARED) {
   const present = hasSelectorToken(legacyCss, name)
-  check(`s4-9 (b) legacy.css still owns .${name}`, present, `selector-token=${present}`)
+  check(`s4-9 (b) legacy.css no longer owns .${name} after S7/T5`, !present, `selector-token=${present}`)
 }
 // S7/T3 补账：.note-* 九族退役后全前缀归零（原「S5/S6 还要用」前提失效，
-// T3 漏同步本探针，T4 一并修正）；.orchestration-*（review 系）留给 T5。
+// T3 漏同步本探针，T4 一并修正）。
 {
   const note = countOccurrences(legacyCss, '.note-')
   check('s4-9 (b) legacy.css has zero .note-* occurrences after S7/T3 (comments stripped)', note === 0, `hits=${note}`)
 }
 for (const prefix of ['orchestration-']) {
+  // S7/T5：.orchestration-review-summary / -review-line 最后两条随 MessageItem
+  // utilities 化退役，legacy 里的 .orchestration-* 规则清零（类名保留作钩子）。
   const hits = countOccurrences(legacyCss, `.${prefix}`)
-  check(`s4-9 (b) legacy.css still owns .${prefix}*`, hits > 0, `hits=${hits}`)
+  check(`s4-9 (b) legacy.css has zero .${prefix}* rules after S7/T5`, hits === 0, `hits=${hits}`)
 }
 
 // (c) 保留类名的钩子仍出现在 TSX 里（剥注释后按 className 值精确搜）。

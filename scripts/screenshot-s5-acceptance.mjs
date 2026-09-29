@@ -257,17 +257,30 @@ for (const needle of RETIRED_S7_T4) {
   check('s5-9 (b) legacy.css has zero .chat-row selectors after S7/T4 (shared group keeps only .role-row/.template-actions)',
     rowSelectors === 0, `hits=${rowSelectors} (${COUNT_NOTE})`)
 }
-const SHARED_PRESENT = ['tiny', 'modal-form', 'field', 'template-actions', 'section-title', 'reference-box']
-for (const name of SHARED_PRESENT) {
+// S7/T5：最后一批共享族（通用族）随 utilities 化退役，断言翻转为「归零」——
+// 类名一律保留在 TSX 上作测试/探针钩子，本探针只审 legacy 侧规则。
+const RETIRED_S7_T5_SHARED = [
+  'tiny', 'muted', 'modal-form', 'field', 'template-actions', 'section-title',
+  'reference-box', 'two-col', 'role-row', 'role-name', 'role-site-control',
+  'message-name-text', 'message-tools', 'orchestration-review-summary',
+  'orchestration-review-line',
+]
+for (const name of RETIRED_S7_T5_SHARED) {
   const present = hasSelectorToken(legacyCss, name)
-  check(`s5-9 (b) legacy.css still owns .${name}`, present, `selector-token=${present}`)
+  check(`s5-9 (b) legacy.css no longer owns .${name} after S7/T5`, !present, `selector-token=${present}`)
 }
 {
-  // S7/T3：.note-* 前缀全族退役归零；.orchestration-*（review 系等）留给 T5
+  const persona = countOccurrences(legacyCss, '#template-persona-generation-status')
+  check('s5-9 (b) legacy.css no longer owns #template-persona-generation-status after S7/T5',
+    persona === 0, `hits=${persona}`)
+}
+{
+  // S7/T3：.note-* 前缀全族退役归零。
+  // S7/T5：.orchestration-*（review 系，T5 最后两条）同批归零。
   const note = countOccurrences(legacyCss, '.note-')
   check('s5-9 (b) legacy.css has zero .note-* occurrences after S7/T3 (comments stripped)', note === 0, `hits=${note}`)
   const orch = countOccurrences(legacyCss, '.orchestration-')
-  check('s5-9 (b) legacy.css still owns .orchestration-*', orch > 0, `hits=${orch}`)
+  check('s5-9 (b) legacy.css has zero .orchestration-* rules after S7/T5 (comments stripped)', orch === 0, `hits=${orch}`)
 }
 
 // ---- s5-9 (c)：钩子类仍出现在 TSX（剥注释后按 className 系列 prop 精确搜）----
@@ -364,9 +377,12 @@ for (const [needle, expected] of FAMILY_COUNTS) {
   // S7/T5-a #iframe-host 全族迁往 styles/iframe-host.css 后为 752 行，
   // S7/T5-c base 元素（body/h1-h3/label/input 系 + 浅色覆盖）、:root 的
   // color-scheme 两条与 1120/720 两个 media 块迁往 globals base 层 /
-  // utilities 变体后为 647 行 ——随迁移递减，改数须附原因）
+  // utilities 变体后为 647 行，
+  // S7/T5-d 通用族（.muted/.tiny/.field/.modal-form/.section-title/.two-col/
+  // .reference-box/.role-*/.message-*/.orchestration-review-* 与浅色块最后
+  // 三条）全部 utilities 化后仅剩退役注释，为 585 行 ——随迁移递减，改数须附原因）
   const newlines = countOccurrences(legacyRaw, '\n')
-  check('s5-9 (e) legacy.css is 647 lines (wc -l count)', newlines === 647, `newlines=${newlines}`)
+  check('s5-9 (e) legacy.css is 585 lines (wc -l count)', newlines === 585, `newlines=${newlines}`)
 }
 
 // ---- s5-10 uiBus 消费者审计（沿用 s4-10）-----------------------------------

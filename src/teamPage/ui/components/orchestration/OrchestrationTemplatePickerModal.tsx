@@ -50,7 +50,7 @@ export function OrchestrationTemplatePickerModal({ open, disabled, onApply, onCl
       <section className="orchestration-template-panel grid gap-2.5">
         <div className="orchestration-template-heading flex items-center justify-between gap-2.5">
           <h3 className="m-0 text-[13px] text-foreground">{ui('从模板开始')}</h3>
-          <span className="tiny">{ui('选择后生成草稿，可继续调整。')}</span>
+          <span className="tiny text-[12px] text-muted-foreground/72">{ui('选择后生成草稿，可继续调整。')}</span>
         </div>
         {(['structure', 'scenario'] as const).map(category => (
           <div key={category} className="orchestration-template-group grid grid-cols-[72px_minmax(0,1fr)] items-stretch gap-2.5">

@@ -60,7 +60,9 @@ export function ReplyControlBubble({ role, showName = true, showAvatar = true, m
               onClick={onMentionShortcut}
               onContextMenu={onMentionContextMenu}
             >
-              <span className="message-name-text">{role.name}</span>
+              {/* S7/T5：同 MessageItem——原 .message-name-text 三件套改
+                  min-w-0 + truncate。类名保留作钩子。 */}
+              <span className="message-name-text min-w-0 truncate">{role.name}</span>
               <SiteBadge role={role} mentionLabelOptions={mentionLabelOptions} />
               <SiteJumpButton chatId={role.chatId} role={role} />
             </div>

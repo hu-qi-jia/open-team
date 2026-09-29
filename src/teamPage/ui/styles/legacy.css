@@ -94,15 +94,12 @@
 /* S7/T5：h1/h2/h3 三块的字号/字重（含 p 的 margin:0）迁 globals base 层，
  * 见文件头的 T5 说明。 */
 
-.muted {
-  color: var(--muted-foreground);
-}
-
-.tiny {
-  color: var(--subtle);
-  font-size: 12px;
-}
-
+/* S7/T5：.muted 退役——唯一消费方（Composer 的 #target-preview）自带
+ * text-muted-foreground utilities，恒压本条，纯死代码删除；类名保留作钩子。
+ * .tiny 退役——font-size:12px 与 color:var(--subtle)（= muted-foreground 72%
+ * 的 color-mix）由各消费点的 text-[12px] text-muted-foreground/72 utilities
+ * 承担；自带 text-xs/text-muted-foreground 的几处（AppModal 描述行、NotesPanel
+ * 副标题、Composer/StoreSummary 预览行）本就是死覆盖。类名保留作钩子。 */
 /* S7/T4：.workspace / .chat-header 两条 + .chat-header .chat-row 后代规则 +
  * #chat-status 退役——新壳下 .workspace 仅存 id（AppShellFrame 的 main，
  * 无 class 消费）、.chat-header/.chat-title 系列/.chat-subtitle/#chat-status
@@ -119,14 +116,10 @@
  * 带 !important，压得住 utilities 层的 grid。
  */
 
-.field {
-  display: grid;
-  gap: 7px;
-}
-
-.field[hidden] {
-  display: none;
-}
+/* S7/T5：.field 退役——display:grid 与 gap:7px 由 18 处消费点的
+ * `grid gap-[7px]` utilities 承担（OrchestrationModal 里已写 gap-2/gap-1.5
+ * 的那几处只补 grid）；.field[hidden] 归 preflight 的 [hidden] !important。
+ * 类名保留作钩子。 */
 
 /*
  * S4-T3：AI 人设面板族退役——唯一使用者 PersonTemplateModal 已把视觉值翻成
@@ -136,12 +129,9 @@
  * 共享规则继续提供（OrchestrationModal 仍在用 → S6）。
  */
 
-#template-persona-generation-status {
-  min-height: 16px;
-  margin: 0;
-  /* 原 #d4d4d8 是暗色专用字面量，浅色下白底灰字不可读（本规则无浅色覆盖） */
-  color: var(--muted-foreground);
-}
+/* S7/T5：#template-persona-generation-status 退役——min-height:16px /
+ * margin:0 / color:var(--muted-foreground) 由 PersonTemplateModal 该 <p> 的
+ * min-h-4 / m-0 / text-muted-foreground utilities 承担。 */
 
 /* S7/T5：label 与 input/textarea/select（本体 + input/select 的 36px、
  * textarea 的 min-height/padding、:focus 描边与光圈，含文件尾浅色块的同名
@@ -160,19 +150,13 @@
  * 单子元素下 space-between 无视觉差）；.chat-name 摘出（truncate + text-sm
  * font-medium 全压死）；.role-row/.role-name/.template-actions 保留
  * （s3-12 ⑤ 存活断言与弹窗表单仍在消费）。 */
-.role-row, .template-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.role-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 760;
-}
+/* S7/T5：共享组 .role-row/.template-actions 退役——flex 行四件套由
+ * ExternalModelsModal 与 PersonTemplateModal（×2）的
+ * `flex items-center justify-between gap-2.5` 承担；RolePanel 的 .role-row
+ * 与 OrchestrationModal 的 .template-actions 本就有同值 utilities（死覆盖）。
+ * .role-name 全族退役——两个消费方都带 truncate + font-medium，四条声明
+ * （overflow/text-overflow/white-space/font-weight）被逐条压死。
+ * 类名一律保留作钩子（s3-12 ⑤ 存活断言与探针仍按它们取元素）。 */
 
 /* S7/T4：.workspace / .chat-header 两条 + .chat-header .chat-row 后代规则 +
  * #chat-status + #open-orchestration[hidden] 退役——新壳下 .workspace 仅存
@@ -202,11 +186,9 @@
  * 行/内层/名称行几何与配色改由 MessageItem/ReplyControlBubble 的行内
  * utilities 提供（类名保留作选择器钩子，useMarkMenu 等仍在用）。 */
 
-.message-name-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+/* S7/T5：.message-name-text 退役——min-width:0 与截断三件套由 MessageItem /
+ * ReplyControlBubble 两处 `min-w-0 truncate` 承担（父级已有
+ * whitespace-nowrap）。类名保留作钩子。 */
 
 /* S7/T3：.message-site-jump-btn 退役——尺寸/圆角是死规则（MessageToolButton
  * 基础类 size-6/rounded-md utilities 恒压），opacity 0.72 由调用点的
@@ -227,23 +209,9 @@
  * OrchestrationMessageLabel 的行内 utilities（mb-1/rounded-sm/bg-muted/
  * text-[10px] 等）承担；.orchestration-review-* 保留归 S6。 */
 
-.orchestration-review-summary {
-  display: grid;
-  gap: 4px;
-  margin: 0 10px 10px;
-  border: 1px solid rgba(161, 161, 170, 0.18);
-  border-radius: 6px;
-  padding: 7px 8px;
-  background: rgba(255, 255, 255, 0.06);
-  color: currentColor;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.orchestration-review-line span:first-child {
-  color: rgba(243, 245, 246, 0.62);
-  font-weight: 760;
-}
+/* S7/T5：.orchestration-review-summary / -review-line 退役——全量翻成
+ * MessageItem 的 utilities（暗色差异走 dark: 覆盖；暗色的 color:currentColor
+ * 是 no-op，对译为 dark:text-inherit）。类名保留作钩子。 */
 
 /* S2 Task 3：.message-time-divider / .message-system-pill 规则退役——
  * 两类元素保留类名作钩子，视觉已由行内 utilities 承担（原 72% 上限随
@@ -262,29 +230,17 @@
  * 加载文案由 ::after content 改为显式节点，下载浮层换 ghost 样式
  * （bg-background/80 + backdrop-blur-sm）。类名保留作选择器钩子。 */
 
-.reference-box {
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 0 10px 10px;
-  border: 0;
-  border-radius: 6px;
-  padding: 6px 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: currentColor;
-  opacity: 0.68;
-  font-size: 12px;
-  line-height: 1.45;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
+/* S7/T5：.reference-box 退役——活声明只有 line-clamp 四件套
+ * （display:-webkit-box / overflow:hidden / -webkit-line-clamp:2 /
+ * -webkit-box-orient:vertical，合起来即 Tailwind 的 line-clamp-2）与
+ * opacity:.68，加上 MessageItem 侧未被 mt-2 压死的 mx/mb 10px；
+ * border:0 / radius / padding / background / color / font-size / line-height
+ * 全被行内 utilities 压死。类名保留作钩子。 */
 
-.message-tools {
-  display: flex;
-  justify-content: flex-start;
-  gap: 4px;
-  margin-top: -4px;
-  padding: 0 8px 7px;
-}
+/* S7/T5：.message-tools 退役——活声明只有 justify-content:flex-start 与
+ * padding:0 8px 7px（display/gap 被 flex/gap-0.5 压死、margin-top:-4px 被
+ * mt-1 压死），由 MessageItem 的 justify-start px-2 pb-[7px] 承担。
+ * 类名保留作钩子。 */
 
 /* S2 Task 4：.message-row.thinking/.stopped 的 .message-body/.message-tools
  * 定位规则退役——ReplyControlBubble 状态行重排为「左文右钮」单行
@@ -391,21 +347,18 @@
 /* 共享族（不得随 role 卡族退役）：成员抽屉成员卡与 AddPersonModal 的站点行
    都挂这个类——RolePanel 侧的站点菜单仍靠本规则提供 display:inline-flex 与
    position:relative（screenshot-s3-acceptance.mjs 的存活断言也在用它）。 */
-.role-site-control {
-  position: relative;
-  display: inline-flex;
-}
+/* S7/T5：.role-site-control 退役——RolePanel 的站点菜单容器补
+ * `relative inline-flex`；AddPersonModal 那处自带 flex，只需补 relative
+ * （下拉菜单定位锚点）。类名保留作钩子（s3 探针断言它）。 */
 
 /* S4-T4：.add-person-site-control（gap 6 / wrap / 右对齐）与 .template-description
  * （mt 2 / 12px / 1.45 / --muted-foreground）退役——视觉翻成 utilities 写进
  * AddPersonModal；两个类名都保留作钩子（bugfix 探针断言站点 pill 取色与描述
  * 行对比度），但本文件不再有它们的规则。 */
 
-.modal-form {
-  display: grid;
-  gap: 12px;
-  margin-top: 12px;
-}
+/* S7/T5：.modal-form 退役——display:grid / gap:12px / margin-top:12px 由四个
+ * 弹窗表单的 `mt-3 grid gap-3` 承担（TemporaryPersonModal 自带 mt-0，只补
+ * grid gap-3）。类名保留作钩子（ExternalModelsModal.test 断言它）。 */
 
 /*
  * S4-T2：人员库弹窗这一族已退役——外壳交给公共组合壳 common/AppModal
@@ -463,19 +416,12 @@
  * 直接断言 #add-library-people-list .select-row 的行几何与取色。
  * #d4d4d8-role-form 零 TSX 使用者，同批免费清理。 */
 
-.section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 6px 0 12px;
-}
-
-.two-col {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
+/* S7/T5：.section-title 退役——flex 行四件套 + margin:6px 0 12px 由
+ * PeopleLibraryModal / RolePanel / OrchestrationModal 三处的 utilities 承担
+ * （后两者已有部分同值 utilities，只补差集；OrchestrationModal 的 items-end
+ * 覆盖 align-items）。
+ * .two-col 全族退役——唯一消费方 QuickCreateChat 自带 grid grid-cols-2 gap-2，
+ * 三条全压死。类名保留作钩子。 */
 
 /* S7/T5：#iframe-host 全族（暗色 8 块 + 浅色 3 块 + 1120/720 两个 media 成员）
  * 迁往 styles/iframe-host.css（unlayered，同 X6 画布先例）——iframeHost.ts
@@ -521,12 +467,10 @@
  * （B 组退役；两者的浅色选中态由 aria-pressed 变体 utilities 承担）。
  * S7/T4：再摘 .theme-option[aria-pressed="true"]（分段控件死族）；
  * .mode-option:has(input:checked) 保留（浅色 checked 前景/内阴影仍活）。 */
-:root[data-theme="light"] .mode-option:has(input:checked) {
-  border-color: rgba(113, 113, 122, 0.36);
-  background: #ffffff;
-  color: #27272a;
-  box-shadow: inset 0 0 0 1px rgba(113, 113, 122, 0.14);
-}
+/* S7/T5：本条退役——border-color/background 已被 TSX 的
+ * has-[]:border-ring / has-[]:bg-accent utilities 压死；活声明只有
+ * color:#27272a 与 inset 内阴影，且**只在浅色生效**（暗色侧本就没有对应
+ * 规则），故用新增的 light: 变体写进 QuickCreateChat 两个 mode-option。 */
 
 /* S7/T3：.manual-mention-toggle[aria-pressed] 浅色补丁随死族一并退役
  * （全库零消费，见暗色块注释）。 */
@@ -570,16 +514,10 @@
  * 就被 ghost 的 hover:bg-accent utilities 压住 = 死规则）与 .note-tool-btn
  * （共享族退役，浅色 border/bg/前景由消费组件 utilities 承担）；
  * .orchestration-review-summary / .reference-box 留给 T5。 */
-:root[data-theme="light"] .orchestration-review-summary,
-:root[data-theme="light"] .reference-box {
-  border-color: rgba(113, 113, 122, 0.16);
-  background: #ffffff;
-  color: var(--muted-foreground);
-}
-
-:root[data-theme="light"] .orchestration-review-line span:first-child {
-  color: rgba(63, 63, 70, 0.68);
-}
+/* S7/T5：本组两条退役——.reference-box 三条（border-color/background/color）
+ * 全被 MessageItem/RolePanel 行内 utilities 压死；.orchestration-review-summary
+ * 与 -review-line span:first-child 的浅色值随暗色正典一起翻成
+ * 「浅色默认 + dark: 覆盖」单份表达写进 MessageItem。 */
 
 /* S2 Task 4：浅色 .markdown-body 覆盖规则随暗色族一并搬迁至 globals.css
  * components 层。
