@@ -123,6 +123,9 @@ export function OrchestrationStatusCard() {
     maxWidth: MAX_CARD_WIDTH,
     maxHeight: MAX_CARD_HEIGHT,
     margin: 8,
+    // S6/T5：.orchestration-status-floating 已转 absolute（S2 铁律：#app 内禁
+    // fixed）——拖拽/缩放几何同步迁 #app 坐标系；每次现查 closest 免维护 ref。
+    getContainer: () => panelRef.current?.closest('.app-shell') ?? null,
   })
 
   // 偏好落内联样式（原 applyFloatingPosition + clampViewportPosition 对译）：
@@ -138,6 +141,9 @@ export function OrchestrationStatusCard() {
     card.style.width = `${width}px`
     card.style.height = `${height}px`
     if (typeof cardPrefs.x === 'number' && typeof cardPrefs.y === 'number') {
+      // 注意：x/y 当前无写入点（writePrefs 仅 collapse 落盘，位置持久化在
+      // React 化时未接回），本分支为原实现保留的死路径；若恢复持久化，
+      // 下方 window.innerWidth 钳制需随 S6/T5 的 absolute 一并迁 #app 坐标系。
       const maxLeft = Math.max(PANEL_MARGIN, window.innerWidth - width - PANEL_MARGIN)
       const maxTop = Math.max(PANEL_MARGIN, window.innerHeight - height - PANEL_MARGIN)
       card.style.left = `${Math.min(Math.max(PANEL_MARGIN, cardPrefs.x), maxLeft)}px`

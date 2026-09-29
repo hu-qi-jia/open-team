@@ -71,11 +71,20 @@ export interface AppModalProps {
   /** 给 footer 行加布局类（如 'flex justify-end'）；壳本身不焊死对齐方式。 */
   footerClassName?: string
   /**
-   * 背板点击语义。'default' 维持 Radix 默认（背板点击关）；
-   * 'escape-only' 只认 × 与 Escape（群模板现状逐字对译）。
-   * 两种模式下 × 与 Escape 都必须仍能关闭。
+   * 关闭语义（三档）。
+   * - 'default'：维持 Radix 默认（背板点击关；Escape 照旧）。
+   * - 'escape-only'：只认 × 与 Escape（群模板现状逐字对译）。行为增量只有
+   *   背板 pointerdown——焦点外移在本壳（modal 弹窗）里早已被 Radix 自己挡掉
+   *   （DialogContentModal 内置 onFocusOutside preventDefault）。
+   * - 'button-only'：× 与调用方动作钮是唯一出口，Escape 与背板**都**不关
+   *   （S6 编排三弹窗的现状语义：onEscapeKeyDown + onInteractOutside 双
+   *   preventDefault + 无 onOpenChange 的不受控 Dialog）。
+   *   ⚠️ 机制：本壳的 Dialog 是受控的（onOpenChange(false) → onClose），所以
+   *   两条 dismiss 路径**都必须** preventDefault——只挡背板的话 Escape 仍会
+   *   经 onOpenChange(false) 关掉弹窗，语义就变了。
+   * 所有档位下 × 都必须仍能关闭。
    */
-  closeOn?: 'default' | 'escape-only'
+  closeOn?: 'default' | 'escape-only' | 'button-only'
   children: React.ReactNode
 }
 
@@ -183,14 +192,20 @@ export function AppModal({
           contentClassName,
         )}
         onOpenAutoFocus={handleOpenAutoFocus}
-        // 'escape-only' 时挂掉 outside 交互。⚠️ 真正的**行为增量只有背板 pointerdown**：
-        // 焦点外移在本壳（modal 弹窗）里早已被 Radix 自己挡掉——DialogContentModal 内置
-        // onFocusOutside: event => event.preventDefault()，所以焦点路径本来就到不了 onDismiss。
-        // 机制：DismissableLayer 在 onInteractOutside 之后看 event.defaultPrevented 决定是否
-        // onDismiss，因此 preventDefault 即可——与群模板迁移前的写法逐字一致。
-        // 'default' 时**不传**该 prop，维持 Radix 默认（背板点击关）。
-        {...(closeOn === 'escape-only'
+        // 'escape-only' / 'button-only' 时挂掉 outside 交互。⚠️ 真正的**行为增量只有背板
+        // pointerdown**：焦点外移在本壳（modal 弹窗）里早已被 Radix 自己挡掉——
+        // DialogContentModal 内置 onFocusOutside: event => event.preventDefault()，
+        // 所以焦点路径本来就到不了 onDismiss。机制：DismissableLayer 在 onInteractOutside
+        // 之后看 event.defaultPrevented 决定是否 onDismiss，因此 preventDefault 即可——
+        // 与群模板迁移前的写法逐字一致。'default' 时**不传**该 prop，维持 Radix 默认。
+        {...(closeOn !== 'default'
           ? { onInteractOutside: (event: InteractOutsideEvent) => event.preventDefault() }
+          : {})}
+        // 'button-only' 再挂掉 Escape（受控 Dialog 下必须显式 preventDefault，
+        // 否则 Radix 仍会走 onOpenChange(false) → onClose——见 prop 注释）。
+        // 'escape-only' / 'default' 不传：Escape 照旧生效。
+        {...(closeOn === 'button-only'
+          ? { onEscapeKeyDown: (event: KeyboardEvent) => event.preventDefault() }
           : {})}
       >
         <DialogHeader className="flex-row items-start justify-between gap-3 border-b border-border px-6 py-4 text-left">

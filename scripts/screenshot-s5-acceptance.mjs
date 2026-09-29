@@ -315,8 +315,11 @@ for (const needle of DIST_UTILITIES) {
 }
 
 // ---- s5-9 (e)：⭐ 按族精确计数（销 S3 终审 M-2）----
+// S6 更新（09-29）：编排三弹窗迁 AppModal 后 T4/T5 删掉了主弹窗专属的
+// .tiny / .section-title 命中（empty-hint / stage-settings 等编排族），
+// 快照 3→1、2→1；共享族剩余命中由 s3-12 ⑤ 的「>0」断言兜底。
 const FAMILY_COUNTS = [
-  ['.all-note-', 2], ['.tiny', 3], ['.reference-box', 2], ['.section-title', 2], ['.mention-shortcut', 2],
+  ['.all-note-', 2], ['.tiny', 1], ['.reference-box', 2], ['.section-title', 1], ['.mention-shortcut', 2],
 ]
 for (const [needle, expected] of FAMILY_COUNTS) {
   const hits = countOccurrences(legacyCss, needle)
@@ -330,9 +333,10 @@ for (const [needle, expected] of FAMILY_COUNTS) {
     total === 2 && toolbar === 2, `total=${total} toolbar=${toolbar}`)
 }
 {
-  // legacy.css 总行数（口径：换行符个数 = `wc -l`；T4 把 2769 行删到 2422 行）
+  // legacy.css 总行数（口径：换行符个数 = `wc -l`；T4 把 2769 行删到 2422 行，
+  // S6/T4+T5 编排族退役后为 1724 行——随迁移递减，改数须附原因）
   const newlines = countOccurrences(legacyRaw, '\n')
-  check('s5-9 (e) legacy.css is 2422 lines (wc -l count)', newlines === 2422, `newlines=${newlines}`)
+  check('s5-9 (e) legacy.css is 1724 lines (wc -l count)', newlines === 1724, `newlines=${newlines}`)
 }
 
 // ---- s5-10 uiBus 消费者审计（沿用 s4-10）-----------------------------------

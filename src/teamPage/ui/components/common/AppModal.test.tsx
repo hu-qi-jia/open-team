@@ -289,4 +289,37 @@ describe('team page app modal shell', () => {
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
   })
+
+  // ---------- closeOn: 'button-only'（S6 / T1，编排三弹窗的「仅按钮可关」） ----------
+
+  // ⚠️ 与 'escape-only' 的本质差异：本壳的 Dialog 是受控的（onOpenChange(false)
+  // → onClose），而编排三弹窗迁移前是「无 onOpenChange 的不受控 Dialog +
+  // Escape/背板双 preventDefault」。只挡背板不解 Escape 的话，Escape 仍会走
+  // onOpenChange(false) → onClose —— 弹窗会被意外关掉。因此 button-only 必须
+  // 同时 preventDefault 两条 dismiss 路径。
+
+  it('does not close on Escape when closeOn is button-only', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ closeOn: 'button-only', onClose })
+
+    await user.keyboard('{Escape}')
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
+
+    // Escape 与背板两条路径都不可关——与上面 escape-only 的对照用例同口径，
+    // 那两条绿了才证明这里的「不关」不是点击/按键没送达的空断言。
+    expect(onClose).not.toHaveBeenCalled()
+    expect(document.querySelector(`#${CONTENT_ID}`)).not.toBeNull()
+  })
+
+  it('still routes the close button to onClose when closeOn is button-only', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ closeOn: 'button-only', onClose })
+
+    await user.click(document.querySelector<HTMLButtonElement>(`#${CLOSE_ID}`)!)
+
+    // 唯一出口：自绘 ×（与调用方动作钮同走 onClose）
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
 })

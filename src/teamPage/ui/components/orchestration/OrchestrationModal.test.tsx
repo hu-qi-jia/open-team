@@ -712,10 +712,12 @@ describe('orchestration modal', () => {
     expect(chat).not.toBeNull()
     expect(chat?.querySelector('.orchestration-auto-task-preview')).toBeNull()
     expect(chat?.querySelector('.orchestration-auto-history')).toBeNull()
-    const input = chat?.querySelector<HTMLTextAreaElement>('.orchestration-auto-input')
+    // S6/T3：输入行进了壳的 footer 槽（在 body 之外），textarea/发送键改从
+    // 弹窗根查询；断言语义不变（chat 容器断言不受影响——消息区仍在 body 内）。
+    const input = autoModal.querySelector<HTMLTextAreaElement>('.orchestration-auto-input')
     expect(input).not.toBeNull()
     fireEvent.change(input!, { target: { value: '先规划，再写作，最后审核' } })
-    await userEvent.click(chat!.querySelector<HTMLButtonElement>('.orchestration-auto-submit')!)
+    await userEvent.click(autoModal.querySelector<HTMLButtonElement>('.orchestration-auto-submit')!)
 
     const call = vi.mocked(harness.services.sendRuntimeMessage).mock.calls[0]
     expect(call[0]).toBe('GROUP_ORCHESTRATION_AUTO_GENERATE')
@@ -817,11 +819,13 @@ describe('orchestration modal', () => {
     await openModal(harness)
 
     await userEvent.click(document.querySelector('#auto-orchestration')!)
+    // S6/T3：同上——输入行在壳 footer 槽，从弹窗根查（消息区仍在 chat 内）。
+    const autoRoot = document.querySelector('#orchestration-auto-modal')!
     const chat = document.querySelector('.orchestration-auto-chat')!
     expect(chat.textContent).toContain('已生成写作节点')
-    const input = chat.querySelector<HTMLTextAreaElement>('.orchestration-auto-input')!
+    const input = autoRoot.querySelector<HTMLTextAreaElement>('.orchestration-auto-input')!
     fireEvent.change(input, { target: { value: '增加审核失败回写作' } })
-    await userEvent.click(chat.querySelector<HTMLButtonElement>('.orchestration-auto-submit')!)
+    await userEvent.click(autoRoot.querySelector<HTMLButtonElement>('.orchestration-auto-submit')!)
     await flushAsync()
 
     const payload = vi.mocked(harness.services.sendRuntimeMessage).mock.calls[0][1] as { instruction?: string; flow?: OrchestrationFlow; history?: unknown[] }

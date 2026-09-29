@@ -902,6 +902,7 @@ try {
   }
 
   const legacyRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/legacy.css'), 'utf8')
+  const canvasRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/orchestration-canvas.css'), 'utf8')
   const globalsRaw = await readFile(path.join(root, 'src/teamPage/ui/styles/globals.css'), 'utf8')
   const distCss = await readFile(path.join(dist, 'team.css'), 'utf8')
   const legacyCss = stripComments(legacyRaw)
@@ -942,31 +943,26 @@ try {
   record('s3-12 legacy.css recorded exception', `:root[data-theme="light"] .add-person-site-option 仍有 1 条（legacy.css 原文 2832 行；搬前即 dead、S4 范围），故未列入硬零断言；其余 .add-person-site-option 规则均在 components 层（globals.css×8 / dist components×8）`)
 
   // ② .orchestration-stage-canvas：宿主基块（裸选择器）必须退役；
-  //    `.orchestration-stage-canvas .x6-*` 后代族 11 条（深色 10 + 浅色 1）属 **S6 范围**、
-  //    T3 报告已声明保留——本数被硬断言，**S6 退役后本数需归零并同步改数**。
-  //    另外逐处扫描：每一处出现都必须紧跟「空格 + .x6-」，防止 :hover / 复合形态
-  //    （.orchestration-stage-canvas:hover{、.orchestration-stage-canvas.x6-x{）漏网。
+  //    `.orchestration-stage-canvas .x6-*` 后代族 11 条（深色 10 + 浅色 1）已按计划
+  //    **S6/T5 原文迁往 styles/orchestration-canvas.css**（unlayered：X6 库内部 DOM
+  //    无法加 className，视觉不能被 utilities 覆盖）——legacy 内归零、新文件接住
+  //    同样 11 处（防止「只删不搬」的静默视觉回退），dist 断言见 ⑥。
   const canvasHostRule = /\.orchestration-stage-canvas\s*[,{]/
   const canvasDescendantCount = countOccurrences(legacyCss, '.orchestration-stage-canvas')
   check('s3-12 legacy.css retires the bare .orchestration-stage-canvas host block',
     canvasHostRule.test(legacyCss) === false,
     `bare selector rule ${canvasHostRule.test(legacyCss) ? 'still present' : 'absent'}`
   )
-  check('s3-12 legacy.css keeps exactly the 11 S6-scope .orchestration-stage-canvas .x6-* descendant rules (S6 retirement must zero this number)',
-    canvasDescendantCount === 11,
+  check('s3-12 legacy.css retires all .orchestration-stage-canvas rules (X6 family relocated in S6)',
+    canvasDescendantCount === 0,
     `occurrences ${canvasDescendantCount}`
   )
-  const canvasViolations = []
-  const canvasScan = /\.orchestration-stage-canvas/g
-  for (let match = canvasScan.exec(legacyCss); match !== null; match = canvasScan.exec(legacyCss)) {
-    const tail = legacyCss.slice(match.index + match[0].length, match.index + match[0].length + 8)
-    if (!/^\s+\.x6-/.test(tail)) canvasViolations.push(legacyCss.slice(match.index, match.index + 64).replace(/\s+/g, ' '))
-  }
-  check('s3-12 every legacy .orchestration-stage-canvas occurrence is a .x6-* descendant selector',
-    canvasViolations.length === 0,
-    canvasViolations.length === 0
-      ? `${canvasDescendantCount}/${canvasDescendantCount} hits are "… .x6-…"`
-      : `${canvasViolations.length} violation(s): ${canvasViolations.join(' | ')}`)
+  const canvasCssStripped = stripComments(canvasRaw)
+  const canvasRelocatedCount = countOccurrences(canvasCssStripped, '.orchestration-stage-canvas .x6-')
+  check('s3-12 orchestration-canvas.css carries the relocated 11 .x6-* descendant rules',
+    canvasRelocatedCount === 11,
+    `occurrences ${canvasRelocatedCount}`
+  )
 
   // ③ .role-tone- / .site-pill：legacy 零命中（剥注释）、globals components 层命中
   const paletteTokens = ['.role-tone-', '.site-pill']
