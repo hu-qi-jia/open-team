@@ -173,8 +173,10 @@ try {
   await shot(page, '03-group-template-empty-dark')
 
   // 空态恢复：清空搜索
+  // `.btn` 在 S5/T3 被摘掉（空态改 shadcn Button，钩子类只剩
+  // .group-template-empty-actions）——只把选择器换成后代 `button`，其余不动。
   await page.evaluate(() => {
-    const clear = [...document.querySelectorAll('.group-template-empty-actions .btn')].find(button => button.textContent === '清空搜索')
+    const clear = [...document.querySelectorAll('.group-template-empty-actions button')].find(button => button.textContent === '清空搜索')
     clear?.click()
   })
   await sleep(300)

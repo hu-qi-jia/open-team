@@ -196,7 +196,9 @@ try {
 
   // ---- 6. 全部笔记弹窗：列表 / 切目标 / Escape 关闭 ----
   await page.evaluate(() => document.getElementById('notes-panel')?.classList.add('shot-ignore'))
-  await page.click('#open-all-notes')
+  // #open-all-notes 是 uiBus 命令名，不是 DOM id：Rail 退役（5b14885）时入口钮
+  // 变成了 AppShellFrame 的 ToolButton（无 id，只有 aria-label）。仅换选择器。
+  await page.click('button[aria-label="全部笔记"]')
   await page.waitForSelector('#all-notes-modal:not([hidden])', { timeout: 5000 })
   await page.waitForSelector('#all-notes-editor .ProseMirror', { timeout: 10_000 })
   await new Promise(resolve => setTimeout(resolve, 400))
@@ -221,8 +223,13 @@ try {
   await shot(page, '06-all-notes-modal')
   await page.keyboard.press('Escape')
   await new Promise(resolve => setTimeout(resolve, 300))
-  const closed = await page.evaluate(() => document.getElementById('all-notes-modal')?.hidden)
-  check('Escape closes all-notes modal', closed === true)
+  // Radix 关闭时**卸载**节点，所以「关」= 节点不存在，而不是 hidden=true。
+  // 原写法 `?.hidden === true` 恒为 undefined（前置既存，自 36e2d90 起），现按两种关闭形态判定。
+  const closedState = await page.evaluate(() => {
+    const el = document.getElementById('all-notes-modal')
+    return { present: Boolean(el), hidden: el?.hidden ?? null }
+  })
+  check('Escape closes all-notes modal', !closedState.present || closedState.hidden === true, JSON.stringify(closedState))
 
   // ---- 7. 角色卡：提示词详情弹窗 ----
   await page.evaluate(() => {

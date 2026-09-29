@@ -9,8 +9,9 @@ import { AppModal, type AppModalProps } from './AppModal'
  * 公共弹窗外壳 AppModal 的壳契约单测（S4 / Task 1）。
  * AppModal 是纯组合件：只消费 ui/dialog 原语 + ui/button + lucide X，
  * 不依赖 store / services / uiBus，因此直接 render 即可，无需 TestProviders。
- * 断言分四组：宽度令牌（沟槽统一 48px）、高度策略（auto / fixed）、
- * 头部契约（titleId / descriptionId / 自绘关闭钮）、首焦收敛。
+ * 断言分六组：宽度令牌（沟槽统一 48px）、高度策略（auto / fixed）、
+ * 头部契约（titleId / descriptionId / 自绘关闭钮）、首焦收敛、
+ * footer 槽（S5 / T1：条件渲染 + grid 行数）、closeOn（S5 / T1：背板关闭语义）。
  */
 
 const CONTENT_ID = 'app-modal-test'
@@ -177,5 +178,115 @@ describe('team page app modal shell', () => {
     const el = document.querySelector<HTMLElement>('#app-modal-custom-id')
     expect(el).not.toBeNull()
     expect(el!.classList.contains('app-modal-custom-class')).toBe(true)
+  })
+
+  // ---------- footer 槽（S5 / T1） ----------
+
+  it('renders the footer slot after the body row, as the last child of the content', () => {
+    renderModal({ footer: <button id="app-modal-footer-action">确认创建</button> })
+    const content = contentEl()
+    const footer = content.querySelector<HTMLElement>('[data-slot="modal-footer"]')
+
+    expect(footer).not.toBeNull()
+    // 调用方给的节点必须落在槽内（不是散在正文里）
+    expect(footer!.contains(document.querySelector('#app-modal-footer-action'))).toBe(true)
+    // 钉底：footer 必须是 content 的最后一行（正文行之后）
+    expect(content.lastElementChild).toBe(footer)
+    // 槽自带分隔线与内边距（镜像头部的 border-b … px-6 py-4）
+    expect(footer!.classList.contains('border-t')).toBe(true)
+    expect(footer!.classList.contains('border-border')).toBe(true)
+    expect(footer!.classList.contains('px-6')).toBe(true)
+    expect(footer!.classList.contains('py-4')).toBe(true)
+  })
+
+  it('adds no node at all to the content when no footer is given', () => {
+    renderModal()
+    const content = contentEl()
+
+    // ⭐ 空节点陷阱：无条件渲染一个空 footer，会让 content 凭空多出一个子元素。
+    // 正文行是按「content 的最后一个子元素 / :scope > div」定位的
+    // （people/* 的 5 处用例、ExternalModelsModal、RolePanel），多一个节点
+    // 就会让它们同时误红——测出来的不是回归，是选择器脆性。
+    // 期望值写死：本 fixture 下 content 恒为「头部行 + 正文行」两个子元素。
+    expect(content.children).toHaveLength(2)
+    expect(content.querySelector('[data-slot="modal-footer"]')).toBeNull()
+  })
+
+  it('uses the three-row grid only when a footer is present in fixed height mode', () => {
+    const withoutFooter = renderModal({ height: 'fixed' })
+    const twoRows = contentEl()
+    expect(twoRows.classList.contains('grid-rows-[auto_minmax(0,1fr)]')).toBe(true)
+    expect(twoRows.classList.contains('grid-rows-[auto_minmax(0,1fr)_auto]')).toBe(false)
+    withoutFooter.unmount()
+
+    renderModal({ height: 'fixed', footer: <div id="app-modal-fixed-footer" /> })
+    const threeRows = contentEl()
+    expect(threeRows.classList.contains('grid-rows-[auto_minmax(0,1fr)_auto]')).toBe(true)
+    expect(threeRows.classList.contains('grid-rows-[auto_minmax(0,1fr)]')).toBe(false)
+  })
+
+  it('merges footerClassName onto the footer slot', () => {
+    renderModal({ footer: <div id="app-modal-footer-content" />, footerClassName: 'flex justify-end' })
+    const footer = contentEl().querySelector<HTMLElement>('[data-slot="modal-footer"]')
+
+    // 布局归调用方：壳只给分隔线与内边距，justify-end 这类不焊死在壳里
+    // （S6 的页脚布局未必一样）
+    expect(footer!.classList.contains('flex')).toBe(true)
+    expect(footer!.classList.contains('justify-end')).toBe(true)
+    expect(footer!.classList.contains('border-t')).toBe(true)
+  })
+
+  // ---------- closeOn（S5 / T1） ----------
+
+  // ⚠️ 背板点击一律用 userEvent 走完整指针事件序列（pointerdown → pointerup →
+  // click）：Radix Dialog 固定带 deferPointerDownOutside（见
+  // @radix-ui/react-dialog 的 DialogContentImpl），主键 pointerdown 只做登记、
+  // 后续 click 才真正触发外点关闭。只 dispatch 一个裸 click 会因为缺
+  // pointerdown 而永远不触发关闭——那样「关闭未被调用」型断言会永远绿。
+  // 既有先例：notes/AllNotesModal.test.tsx:181-184 与
+  // shell/GroupTemplateModal.test.tsx:236。
+
+  it('does not close on an overlay click when closeOn is escape-only', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ closeOn: 'escape-only', onClose })
+
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
+
+    // 与下一条「缺省 → 背板点击关」用同一套点击序列，两条互为对照：
+    // 那条绿了才证明这条不是「点击根本没送达」的空断言。
+    expect(onClose).not.toHaveBeenCalled()
+    expect(document.querySelector(`#${CONTENT_ID}`)).not.toBeNull()
+  })
+
+  it('still routes the Escape key to onClose when closeOn is escape-only', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ closeOn: 'escape-only', onClose })
+
+    await user.keyboard('{Escape}')
+
+    // 'escape-only' 只砍掉背板这一条路径，Escape（与 ×）必须照旧
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+  })
+
+  it('still routes the close button to onClose when closeOn is escape-only', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ closeOn: 'escape-only', onClose })
+
+    await user.click(document.querySelector<HTMLButtonElement>(`#${CLOSE_ID}`)!)
+
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes on an overlay click when closeOn is omitted (default)', async () => {
+    const onClose = vi.fn()
+    const user = userEvent.setup()
+    renderModal({ onClose })
+
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]')!)
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
   })
 })

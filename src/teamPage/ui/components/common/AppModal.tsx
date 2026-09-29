@@ -17,6 +17,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
  *   3. 头部结构——标题 + 可选说明 + 右侧动作钮（新建 / 临时添加等）+ 自绘 ×；
  *   4. 关闭钮与首焦——现状 8 处 onOpenAutoFocus + getElementById 的等价改写。
  *
+ * S5 / T1 又补了两件 S4 没做、而现存弹窗里确实各不相同的两件事（都有既有行为
+ * 钉死，不是过度设计）：
+ *   5. footer 槽——钉底行（群模板的「确认创建」）。**条件渲染**：没给 footer
+ *      就不渲染节点，否则正文行的定位（content 的最后一个子元素）会集体误红；
+ *   6. closeOn——背板点击语义。现存两个弹窗恰好相反：全部笔记背板点击关、
+ *      群模板背板点击不关（只认 × 与 Escape）。
+ *
  * 契约纪律：id / aria 一律由调用方透传（#people-library-modal、
  * #close-temporary-person 等 E2E 钩子逐字保留）；关闭语义维持现状——
  * 所有弹窗都是「onOpenChange(false) 才走 close」，Escape 与背板点击因此
@@ -55,6 +62,20 @@ export interface AppModalProps {
   contentId?: string
   contentClassName?: string
   bodyClassName?: string
+  /**
+   * 钉底的页脚行（如群模板的「确认创建」钮）。
+   * ⚠️ 条件渲染：没给 footer 时**不渲染任何节点**——正文行是按 content 的
+   * 最后一个子元素定位的（people/* 的 5 处用例等），空节点会让它们同时误红。
+   */
+  footer?: React.ReactNode
+  /** 给 footer 行加布局类（如 'flex justify-end'）；壳本身不焊死对齐方式。 */
+  footerClassName?: string
+  /**
+   * 背板点击语义。'default' 维持 Radix 默认（背板点击关）；
+   * 'escape-only' 只认 × 与 Escape（群模板现状逐字对译）。
+   * 两种模式下 × 与 Escape 都必须仍能关闭。
+   */
+  closeOn?: 'default' | 'escape-only'
   children: React.ReactNode
 }
 
@@ -81,6 +102,11 @@ type OpenAutoFocusEvent = Parameters<
   NonNullable<React.ComponentProps<typeof DialogContent>['onOpenAutoFocus']>
 >[0]
 
+/** DialogContent 的 onInteractOutside 事件类型（Radix DismissableLayer 的外点交互事件）。 */
+type InteractOutsideEvent = Parameters<
+  NonNullable<React.ComponentProps<typeof DialogContent>['onInteractOutside']>
+>[0]
+
 export function AppModal({
   open,
   onOpenChange,
@@ -98,6 +124,9 @@ export function AppModal({
   contentId,
   contentClassName,
   bodyClassName,
+  footer,
+  footerClassName,
+  closeOn = 'default',
   children,
 }: AppModalProps) {
   // 关闭有两条来源：Radix（Escape / 背板点击 → onOpenChange(false)）与自绘 ×
@@ -143,10 +172,26 @@ export function AppModal({
           'max-w-none sm:max-w-none',
           SIZE_CLASS[size],
           HEIGHT_CLASS[height],
-          height === 'fixed' ? 'grid grid-rows-[auto_minmax(0,1fr)]' : '',
+          // grid 行数按有无 footer 决定：无 footer 时保持两行（不许无条件写三行，
+          // 否则正文行会被挤进一个多余的 0 高轨）。height="auto" 下是 flex 列，
+          // footer 只是最后一行，不需要 grid。
+          height === 'fixed'
+            ? footer
+              ? 'grid grid-rows-[auto_minmax(0,1fr)_auto]'
+              : 'grid grid-rows-[auto_minmax(0,1fr)]'
+            : '',
           contentClassName,
         )}
         onOpenAutoFocus={handleOpenAutoFocus}
+        // 'escape-only' 时挂掉 outside 交互。⚠️ 真正的**行为增量只有背板 pointerdown**：
+        // 焦点外移在本壳（modal 弹窗）里早已被 Radix 自己挡掉——DialogContentModal 内置
+        // onFocusOutside: event => event.preventDefault()，所以焦点路径本来就到不了 onDismiss。
+        // 机制：DismissableLayer 在 onInteractOutside 之后看 event.defaultPrevented 决定是否
+        // onDismiss，因此 preventDefault 即可——与群模板迁移前的写法逐字一致。
+        // 'default' 时**不传**该 prop，维持 Radix 默认（背板点击关）。
+        {...(closeOn === 'escape-only'
+          ? { onInteractOutside: (event: InteractOutsideEvent) => event.preventDefault() }
+          : {})}
       >
         <DialogHeader className="flex-row items-start justify-between gap-3 border-b border-border px-6 py-4 text-left">
           <div className="min-w-0">
@@ -170,7 +215,18 @@ export function AppModal({
           </div>
         </DialogHeader>
         {/* fixed 模式下内容行自带滚动（min-h-0 允许在 grid 行里收缩） */}
-        <div className={cn('min-h-0', height === 'fixed' ? 'overflow-auto' : '', bodyClassName)}>{children}</div>
+        <div
+          data-slot="modal-body"
+          className={cn('min-h-0', height === 'fixed' ? 'overflow-auto' : '', bodyClassName)}
+        >
+          {children}
+        </div>
+        {/* 钉底行：条件渲染，没给 footer 时一个节点都不多（正文行的定位靠得住） */}
+        {footer ? (
+          <div data-slot="modal-footer" className={cn('border-t border-border px-6 py-4', footerClassName)}>
+            {footer}
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   )

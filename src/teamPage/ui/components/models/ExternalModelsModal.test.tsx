@@ -325,7 +325,9 @@ describe('team page external models modal', () => {
     // 正文内边距必须靠 bodyClassName 补回来（本弹窗自己不带任何 padding，
     // jsdom 不算布局；s4-1b 用 #external-model-form 的 left 差值实测）。
     // height="auto" 下正文行不再加 overflow-auto——滚动归壳，避免双滚动条
-    const bodyRow = modal!.lastElementChild as HTMLElement
+    // 定位正文行用显式的 data-slot 直查（`:scope >` 保留「直接子元素」语义）：
+    // lastElementChild 在 footer 槽落地后会指到 footer（S5/T1 起壳有该槽）
+    const bodyRow = modal!.querySelector<HTMLElement>(':scope > [data-slot="modal-body"]')!
     expect(bodyRow.classList.contains('min-h-0')).toBe(true)
     expect(bodyRow.classList.contains('p-6')).toBe(true)
     expect(bodyRow.classList.contains('overflow-auto')).toBe(false)

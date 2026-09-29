@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { cn } from 'cn'
 import { useServices } from '../../context/ServicesContext'
 import { useStoreSelector } from '../../hooks/useStoreSelector'
 import { useT } from '../../hooks/useT'
@@ -6,8 +7,9 @@ import { getAppState, getAppStateVersion } from '../../lib/appStore'
 import type { NoteEditorFactory } from '../../lib/noteEditor'
 import { collectNoteItems, type NoteListItem } from '../../lib/noteItems'
 import { showError } from '../../lib/toast'
+import { AppModal } from '../common/AppModal'
 import { Button } from '../ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog'
+import { Empty, EmptyDescription } from '../ui/empty'
 import { useNoteEditorEngine } from './useNoteEditorEngine'
 
 const TOOLBAR_COMMANDS: Array<{ command: 'bold' | 'italic' | 'strike' | 'bulletList' | 'orderedList'; id: string; label: string; content: React.ReactNode }> = [
@@ -21,9 +23,13 @@ const TOOLBAR_COMMANDS: Array<{ command: 'bold' | 'italic' | 'strike' | 'bulletL
 /*
  * 全部笔记弹窗（原 allNotesView 整体 React 化，P3；W1 起外壳换 Radix
  * Dialog——#all-notes-modal id 移到 DialogContent，Escape/遮罩点击关闭
- * 经 onOpenChange 走 closeAllNotes 先落保存）。内部 id 原样保留
+ * 经 onOpenChange 走 closeAllNotes 先落保存；S5/T2 起再换公共壳
+ * common/AppModal（size=2xl / height=fixed，关闭语义取壳缺省的
+ * 「Escape + 背板点击关」），.all-notes-modal 类名与全部 id 原样保留作钩子
  * （#all-notes-list、#all-notes-active-title/-meta、#all-notes-editor、
- * #all-note-* 工具栏）。与原实现的对译关系：
+ * #all-note-* 工具栏）。legacy 的原值逐属性翻成 utilities：宽度 980→1160
+ * （用户拍板）、高度内容驱动→恒定 760、两栏工作区的内边距改由正文行
+ * （bodyClassName）承担，滚动容器只留左栏列表一个。与原实现的对译关系：
  * - 开启入口：Rail 的 #open-all-notes 点击 → uiBus 'open-all-notes'
  *   （弹窗组件挂载期订阅；关闭时机由 Radix Escape/遮罩与关闭钮汇入
  *   closeAllNotes）；
@@ -114,65 +120,115 @@ export function AllNotesModal({ createEditor }: { createEditor?: NoteEditorFacto
   }
 
   return (
-    <Dialog open={open} onOpenChange={next => { if (!next) closeAllNotes() }}>
-      <DialogContent
-        id="all-notes-modal"
-        aria-labelledby="all-notes-title"
-        showCloseButton={false}
-        className="all-notes-modal max-h-[min(760px,calc(100vh-48px))] w-[min(980px,calc(100vw-48px))] max-w-none sm:max-w-none bg-popover"
-      >
-        <DialogHeader className="flex-row items-start justify-between gap-4 text-left">
-          <div>
-            <DialogTitle id="all-notes-title">{t('全部笔记')}</DialogTitle>
-            <DialogDescription className="tiny">{t('全局、群聊、已删除群聊')}</DialogDescription>
-          </div>
-          <Button id="close-all-notes" variant="ghost" size="icon-sm" type="button" aria-label={t('关闭全部笔记')} onClick={closeAllNotes}>×</Button>
-        </DialogHeader>
-        <div className="all-notes-workspace">
-          <div id="all-notes-list" className="all-notes-list" aria-label={t('笔记范围')}>
-            {items.length === 0 ? (
-              <div className="all-notes-empty">{t('还没有笔记')}</div>
-            ) : items.map(item => (
+    <AppModal
+      open={open}
+      onOpenChange={next => { if (!next) closeAllNotes() }}
+      size="2xl"
+      height="fixed"
+      title={t('全部笔记')}
+      titleId="all-notes-title"
+      description={t('全局、群聊、已删除群聊')}
+      closeId="close-all-notes"
+      closeLabel={t('关闭全部笔记')}
+      onClose={closeAllNotes}
+      contentId="all-notes-modal"
+      // .all-notes-modal 规则由 T4 退役，类名留作 legacy 钩子（既有脚本与
+      // 用例按它取元素；宽度/高度/overflow 已全部由壳 utilities 接管）
+      contentClassName="all-notes-modal"
+      // 两半都承重：p-6 补回壳用 p-0 收掉的原语内边距（本弹窗自身不带
+      // padding，jsdom 不算布局、漏了单测抓不到）；overflow-hidden 抵掉
+      // height="fixed" 给正文行加的 overflow-auto——整壳唯一的滚动容器必须是
+      // 左栏 #all-notes-list，否则两层滚动叠加成双滚动条
+      bodyClassName="overflow-hidden p-6"
+    >
+      {/* 两栏工作区（原 .all-notes-workspace）：h-full + minmax(0,1fr) 撑满
+          正文行，左栏自己滚；≤760px 改单栏——左列表退化成横向滚动条带
+          （auto 行），编辑器行吸收剩余高度。
+          border-t-0 / max-h-none：把两条仍活着的 legacy 属性显式中立——它们
+          的来源（.all-notes-workspace 的 border-top、.all-notes-list 的
+          max-height）都是「内容驱动 + 620 地板」时期的产物，T4 删规则时必须
+          保证渲染不变：border-top 已由壳头部的 border-b 承担（不中立会与它
+          叠成两条相距 24px 的线）；max-height 不中立会让左栏在行内短 13px
+          （border-r 断头 + 底部留空隙）。 */}
+      <div className="all-notes-workspace grid h-full min-h-0 grid-cols-[240px_minmax(0,1fr)] grid-rows-[minmax(0,1fr)] border-t-0 max-[760px]:grid-cols-1 max-[760px]:grid-rows-[auto_minmax(0,1fr)]">
+        <div
+          id="all-notes-list"
+          className="all-notes-list grid max-h-none min-h-0 content-start gap-2 overflow-auto border-r border-border bg-background p-3.5 max-[760px]:flex max-[760px]:overflow-x-auto max-[760px]:border-r-0"
+          aria-label={t('笔记范围')}
+        >
+          {items.length === 0 ? (
+            <Empty className="border border-dashed border-border p-7 md:p-7">
+              <EmptyDescription>{t('还没有笔记')}</EmptyDescription>
+            </Empty>
+          ) : items.map(item => {
+            // 工具类一律走 cn()：模板串里紧贴 ${ 的类名会被扫描器静默丢掉
+            const isActive = item.id === activeTargetId
+            return (
               <button
                 key={item.id}
                 type="button"
-                className={`all-note-target${item.deletedChat ? ' deleted-chat' : ''}${item.id === activeTargetId ? ' active' : ''}`}
+                className={cn(
+                  'all-note-target grid w-full cursor-pointer gap-[5px] rounded-md border border-transparent bg-transparent px-3 py-[11px] text-left text-foreground',
+                  'max-[760px]:min-w-[160px]',
+                  // 选中态压过 hover/focus-visible（legacy 里 .active 规则在
+                  // :hover 之后，故选中项悬停不换底、不换边）——两条分支互斥
+                  isActive
+                    ? 'active'
+                    : cn(
+                        'hover:bg-accent focus-visible:bg-accent',
+                        // legacy 里 .deleted-chat(0,2,0) 排在 :hover(0,2,0) 之后
+                        // → 悬停时琥珀边胜、底色照旧走 :hover 的灰。Tailwind 把
+                        // hover 变体排在基础工具类之后，所以琥珀边必须补一条
+                        // hover/focus-visible 变体，否则会被灰边顶掉。
+                        item.deletedChat
+                          ? 'hover:border-[rgba(248,184,78,0.22)] focus-visible:border-[rgba(248,184,78,0.22)]'
+                          : 'hover:border-muted-foreground/20 focus-visible:border-muted-foreground/20',
+                      ),
+                  item.deletedChat && 'deleted-chat border-[rgba(248,184,78,0.22)]',
+                  isActive && !item.deletedChat && 'border-muted-foreground/32 bg-accent shadow-[inset_3px_0_0_var(--muted-foreground)]',
+                  isActive && item.deletedChat && 'bg-[rgba(248,184,78,0.09)] shadow-[inset_3px_0_0_rgba(248,184,78,0.74)]',
+                )}
                 data-note-target-id={item.id}
-                aria-pressed={item.id === activeTargetId}
+                aria-pressed={isActive}
                 onClick={() => selectTarget(item)}
               >
-                <span className="all-note-target-title">{t(item.title)}</span>
-                <span className="all-note-target-meta">{t(item.meta)}</span>
+                <span className="all-note-target-title truncate text-[13px] font-[820] text-foreground">{t(item.title)}</span>
+                <span className="all-note-target-meta text-[11px] font-[720] text-muted-foreground">{t(item.meta)}</span>
               </button>
-            ))}
-          </div>
-          <section className="all-notes-editor-shell" aria-labelledby="all-notes-active-title">
-            <div className="all-notes-editor-header">
-              <div>
-                <h3 id="all-notes-active-title">{activeTarget ? t(activeTarget.title) : ''}</h3>
-                <p id="all-notes-active-meta" className="tiny">{activeTarget ? t(activeTarget.meta) : ''}</p>
-              </div>
-            </div>
-            <div className="note-toolbar all-note-toolbar">
-              {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
-                <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
-              ))}
-              <span className="note-toolbar-spacer"></span>
-              <Button id="all-note-undo" variant="ghost" size="icon-sm" className="note-tool-btn" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
-              <Button id="all-note-redo" variant="ghost" size="icon-sm" className="note-tool-btn" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
-            </div>
-            <div
-              ref={node => {
-                editorElementRef.current = node
-                setEditorMounted(node !== null)
-              }}
-              id="all-notes-editor"
-              className="notes-editor all-notes-editor"
-              aria-label={t('当前笔记富文本编辑器')}
-            ></div>
-          </section>
+            )
+          })}
         </div>
-      </DialogContent>
-    </Dialog>
+        <section className="all-notes-editor-shell grid min-h-0 min-w-0 grid-rows-[auto_auto_minmax(0,1fr)]" aria-labelledby="all-notes-active-title">
+          <div className="all-notes-editor-header flex items-center justify-between gap-3 border-b border-border px-[18px] pt-4 pb-3">
+            <div>
+              <h3 id="all-notes-active-title" className="m-0 text-base text-foreground">{activeTarget ? t(activeTarget.title) : ''}</h3>
+              <p id="all-notes-active-meta" className="tiny">{activeTarget ? t(activeTarget.meta) : ''}</p>
+            </div>
+          </div>
+          {/* .note-toolbar 的 flex/gap/padding/border 由共享族规则承担（守卫
+              测试钉住、永久保留）；这里只接管 A 组的 .all-note-toolbar 底色 */}
+          <div className="note-toolbar all-note-toolbar bg-background">
+            {TOOLBAR_COMMANDS.map(({ command, id, label, content }) => (
+              <Button key={id} id={id} variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-xs text-muted-foreground" type="button" aria-label={t(label)} onClick={() => engine.runCommand(command)}>{content}</Button>
+            ))}
+            <span className="note-toolbar-spacer flex-1"></span>
+            <Button id="all-note-undo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('撤销')} onClick={() => engine.runCommand('undo')}>↶</Button>
+            <Button id="all-note-redo" variant="ghost" size="icon-sm" className="note-tool-btn size-7 rounded-md text-muted-foreground" type="button" aria-label={t('重做')} onClick={() => engine.runCommand('redo')}>↷</Button>
+          </div>
+          <div
+            ref={node => {
+              editorElementRef.current = node
+              setEditorMounted(node !== null)
+            }}
+            id="all-notes-editor"
+            // min-h-0：抵消 .all-notes-editor 的 min-height:360px（该规则 T4
+            // 退役，编辑器行改由 minmax(0,1fr) 吸收剩余高度）；padding/字体/
+            // overflow 由共享族 .notes-editor 规则（永久保留）承担
+            className="notes-editor all-notes-editor min-h-0"
+            aria-label={t('当前笔记富文本编辑器')}
+          ></div>
+        </section>
+      </div>
+    </AppModal>
   )
 }
